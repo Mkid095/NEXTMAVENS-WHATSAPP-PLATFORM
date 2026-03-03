@@ -27,7 +27,7 @@ export function ChatWindow({ instanceId, chat }: ChatWindowProps) {
 
   const handleSendMessage = async (text: string) => {
     if (!chat) return;
-    await sendMessage.mutateAsync({ number: chat.id.split('@')[0], text });
+    await sendMessage.mutateAsync({ chatJid: chat.id, message: text });
   };
 
   if (!chat) {

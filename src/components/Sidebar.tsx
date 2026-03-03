@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Smartphone, 
-  MessageSquare, 
-  Settings, 
-  Webhook, 
-  LogOut, 
-  Menu, 
+import {
+  LayoutDashboard,
+  Smartphone,
+  MessageSquare,
+  Settings,
+  Webhook,
+  LogOut,
+  Menu,
   X,
   Zap,
   ShieldCheck,
-  BookOpen
+  BookOpen,
+  Users,
+  FileText,
+  Bot,
+  BarChart2,
+  Activity as ActivityIcon,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SidebarItem } from './SidebarItem';
@@ -26,9 +31,14 @@ export function Sidebar() {
     { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/instances', icon: Smartphone, label: 'Instances' },
     { to: '/messages', icon: MessageSquare, label: 'Messaging' },
-    { to: '/webhooks', icon: Webhook, label: 'Webhooks' },
+    { to: '/groups', icon: Users, label: 'Groups' },
+    { to: '/templates', icon: FileText, label: 'Templates' },
+    { to: '/agents', icon: Bot, label: 'Agents' },
+    { to: '/analytics', icon: BarChart2, label: 'Analytics' },
+    { to: '/webhook-logs', icon: ActivityIcon, label: 'Webhook Logs' },
+    { to: '/webhooks', icon: Webhook, label: 'Integrations' },
     { to: '/settings', icon: Settings, label: 'Settings' },
-    { to: 'https://whatsappapi.nextmavens.cloud/docs', icon: BookOpen, label: 'Documentation', external: true },
+    { to: 'https://whatsappapi.nextmavens.cloud/docs', icon: BookOpen, label: 'API Docs', external: true },
   ];
 
   return (

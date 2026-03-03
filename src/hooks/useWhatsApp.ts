@@ -246,6 +246,10 @@ export function useUpdateProfile(instanceId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-instances'] });
       queryClient.invalidateQueries({ queryKey: ['whatsapp-instance-status', instanceId] });
+      toast.success('Profile updated');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update profile');
     },
   });
 }
@@ -312,15 +316,6 @@ export function useDeleteApiKey(instanceId: string) {
     },
     onError: () => {
       toast.error('Failed to delete API key');
-    },
-  });
-}
-
-export function useSendMessage(instanceId: string) {
-  return useMutation({
-    mutationFn: async ({ number, text }: { number: string; text: string }) => {
-      const { data } = await api.post(`/whatsapp/instances/${instanceId}/send`, { number, text });
-      return data;
     },
   });
 }
@@ -443,6 +438,10 @@ export function useCreateAgent(instanceId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agents', instanceId] });
+      toast.success('Agent created');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to create agent');
     },
   });
 }
@@ -452,6 +451,12 @@ export function useUpdateAgentStatus(agentId: string) {
     mutationFn: async (status: 'available' | 'busy' | 'away' | 'offline') => {
       const { data } = await api.put(`/whatsapp/agents/${agentId}/status`, { status });
       return data || null;
+    },
+    onSuccess: () => {
+      toast.success('Agent status updated');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update agent status');
     },
   });
 }
@@ -496,6 +501,10 @@ export function useAssignChat() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['queue'] });
       queryClient.invalidateQueries({ queryKey: ['assignments'] });
+      toast.success('Chat assigned to agent');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to assign chat');
     },
   });
 }
@@ -548,6 +557,10 @@ export function useCreateGroup() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['groups'] });
+      toast.success('Group created successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to create group');
     },
   });
 }
@@ -586,6 +599,10 @@ export function useDeleteGroup() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['groups'] });
       queryClient.invalidateQueries({ queryKey: ['group'] });
+      toast.success('Group deleted');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to delete group');
     },
   });
 }
@@ -610,6 +627,10 @@ export function useAddParticipant(groupJid: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['group-participants', groupJid] });
+      toast.success('Participant added');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to add participant');
     },
   });
 }
@@ -622,6 +643,10 @@ export function useRemoveParticipant(groupJid: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['group-participants', groupJid] });
+      toast.success('Participant removed');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to remove participant');
     },
   });
 }
@@ -669,6 +694,10 @@ export function useCreateTemplate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['templates'] });
+      toast.success('Template created');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to create template');
     },
   });
 }
@@ -682,6 +711,10 @@ export function useUpdateTemplate(templateId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['templates'] });
+      toast.success('Template updated');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update template');
     },
   });
 }
@@ -694,15 +727,26 @@ export function useDeleteTemplate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['templates'] });
+      toast.success('Template deleted');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to delete template');
     },
   });
 }
 
 export function useRenderTemplate(templateId: string) {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (variables: Record<string, string>) => {
       const { data } = await api.post(`/whatsapp/templates/${templateId}/render`, { variables });
       return data || null;
+    },
+    onSuccess: () => {
+      toast.success('Template rendered successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to render template');
     },
   });
 }
@@ -807,6 +851,10 @@ export function useUpdateUserProfile() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['current-user'] });
+      toast.success('Profile updated');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update profile');
     },
   });
 }
@@ -816,6 +864,12 @@ export function useChangePassword() {
     mutationFn: async (credentials: { currentPassword: string; newPassword: string }) => {
       const { data } = await api.post('/auth/change-password', credentials);
       return data;
+    },
+    onSuccess: () => {
+      toast.success('Password changed successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to change password');
     },
   });
 }
@@ -868,6 +922,39 @@ export function useUpdateInstance(instanceId: string) {
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to update instance');
+    },
+  });
+}
+
+export function useSendMessage(instanceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: {
+      chatJid: string;
+      message: string;
+      type?: 'text';
+      mediaUrl?: string;
+      quotedMessageId?: string;
+    }) => {
+      const payload: any = {
+        number: data.chatJid,
+        text: data.message,
+      };
+      if (data.mediaUrl) {
+        payload.media = data.mediaUrl;
+        payload.type = data.type || 'document';
+      }
+      const { data: response } = await api.post(`/whatsapp/instances/${instanceId}/send`, payload);
+      return response.message || null;
+    },
+    onSuccess: (_, variables) => {
+      // Note: We don't have instanceId here in closure? Actually we do via outer scope.
+      // But we need to invalidate messages for the specific chat
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-chats', instanceId] });
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-messages', instanceId, variables.chatJid] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to send message');
     },
   });
 }
