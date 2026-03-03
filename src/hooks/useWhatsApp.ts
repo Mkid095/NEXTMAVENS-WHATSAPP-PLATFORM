@@ -3,21 +3,53 @@ import { api } from '../lib/api';
 
 export interface WhatsAppInstance {
   id: string;
+  orgId: string;
   name: string;
-  status: 'CONNECTED' | 'DISCONNECTED' | 'QR_READY' | 'CONNECTING';
+  evolutionInstanceId?: string;
+  evolutionApiKey?: string; // Public API key for this instance
   phoneNumber?: string;
   profileName?: string;
-  isOnline?: boolean;
+  profilePicture?: string;
+  pushName?: string;
+  status: 'CONNECTED' | 'DISCONNECTED' | 'QR_READY' | 'CONNECTING' | 'CREATING' | 'FAILED';
   battery?: number;
+  isOnline?: boolean;
+  isBusiness?: boolean;
+  connectedAt?: string;
   qrCode?: string;
   pairingCode?: string;
   qrExpiresAt?: string;
-  createdAt: string;
   settings?: {
     rejectCalls?: boolean;
     groupsIgnore?: boolean;
     alwaysOnline?: boolean;
+    readReceipts?: boolean;
+    readStatus?: boolean;
   };
+  typebotEnabled?: boolean;
+  typebotConfig?: any;
+  chatwootEnabled?: boolean;
+  chatwootConfig?: any;
+  webhookUrl?: string;
+  webhookSecret?: string;
+  webhookEvents?: string[];
+  messagesSent?: number;
+  messagesReceived?: number;
+  apiCalls?: number;
+  lastActivityAt?: string;
+  // Reseller / Sub-instance
+  parentInstanceId?: string;
+  isSubInstance?: boolean;
+  clientName?: string;
+  clientEmail?: string;
+  clientMetadata?: any;
+  // Quota
+  quotaLimit?: number;
+  quotaPeriod?: string;
+  quotaUsed?: number;
+  quotaResetAt?: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export function useInstances() {
@@ -34,7 +66,7 @@ export function useCreateInstance() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (instanceData: { name: string }) => {
+    mutationFn: async (instanceData: { name: string; webhookUrl?: string }) => {
       const { data } = await api.post('/whatsapp/instances', instanceData);
       return data.instance || null;
     },

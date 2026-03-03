@@ -7,6 +7,7 @@ import { Webhooks } from './pages/Webhooks';
 import { Settings } from './pages/Settings';
 import { InstanceDetails } from './pages/InstanceDetails';
 import { Login } from './pages/Login';
+import { Register } from './pages/Register';
 import { Sidebar } from './components/Sidebar';
 import { isAuthenticated } from './hooks/useAuth';
 
@@ -52,6 +53,7 @@ export default function App() {
         <Layout>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/instances" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/instances/:id" element={<ProtectedRoute><InstanceDetails /></ProtectedRoute>} />

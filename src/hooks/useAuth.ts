@@ -25,6 +25,15 @@ export function useLogin() {
   });
 }
 
+export function useRegister() {
+  return useMutation({
+    mutationFn: async (credentials: { email: string; password: string; name: string }) => {
+      const { data } = await api.post('/auth/register', credentials);
+      return data;
+    },
+  });
+}
+
 export function useLogout() {
   return () => {
     localStorage.removeItem('accessToken');

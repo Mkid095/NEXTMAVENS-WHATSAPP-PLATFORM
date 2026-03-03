@@ -172,7 +172,7 @@ export function InstanceDetails() {
           )}
 
           {activeTab === 'integration' && (
-            <IntegrationGuide instanceId={instance.id} apiKey={apiKeys?.[0]?.key} />
+            <IntegrationGuide instanceId={instance.id} apiKey={instance.evolutionApiKey} webhookSecret={instance.webhookSecret} />
           )}
 
           {activeTab === 'access' && (

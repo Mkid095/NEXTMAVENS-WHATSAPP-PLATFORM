@@ -5,13 +5,15 @@ import { StatsOverview } from '../components/StatsOverview';
 import { DashboardFilters } from '../components/DashboardFilters';
 import { CreateInstanceModal } from '../components/CreateInstanceModal';
 import { QRWizardModal } from '../components/QRWizardModal';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Loader2, Smartphone } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export function Dashboard() {
   const { data: instances, isLoading, refetch } = useInstances();
   const createInstance = useCreateInstance();
-  
+  const navigate = useNavigate();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -24,9 +26,15 @@ export function Dashboard() {
 
   const handleCreateInstance = async (name: string) => {
     try {
-      await createInstance.mutateAsync({ name });
+      const result = await createInstance.mutateAsync({ name });
       setIsCreateModalOpen(false);
       refetch();
+
+      // Navigate to the new instance details and open QR wizard
+      if (result?.id) {
+        navigate(`/instances/${result.id}`);
+        setActiveWizardId(result.id);
+      }
     } catch (error) {
       console.error('Failed to create instance:', error);
     }
