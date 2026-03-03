@@ -65,8 +65,7 @@ export function AgentsPage() {
 
   const handleStatusChange = async (agentId: string, status: WhatsAppAgent['status']) => {
     try {
-      await updateAgentStatus.mutateAsync(status);
-      toast.success('Agent status updated');
+      await updateAgentStatus.mutateAsync({ agentId, status });
     } catch {}
   };
 

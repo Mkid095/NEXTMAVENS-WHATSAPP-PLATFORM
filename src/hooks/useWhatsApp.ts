@@ -446,14 +446,16 @@ export function useCreateAgent(instanceId: string) {
   });
 }
 
-export function useUpdateAgentStatus(agentId: string) {
+export function useUpdateAgentStatus() {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (status: 'available' | 'busy' | 'away' | 'offline') => {
+    mutationFn: async ({ agentId, status }: { agentId: string; status: 'available' | 'busy' | 'away' | 'offline' }) => {
       const { data } = await api.put(`/whatsapp/agents/${agentId}/status`, { status });
       return data || null;
     },
     onSuccess: () => {
       toast.success('Agent status updated');
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to update agent status');

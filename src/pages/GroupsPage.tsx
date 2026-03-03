@@ -87,9 +87,9 @@ export function GroupsPage() {
   const handleDeleteGroup = async (group: WhatsAppGroup) => {
     if (window.confirm(`Delete group "${group.name}"?`)) {
       try {
-        await deleteGroup.mutateAsync(group.jid);
+        await deleteGroup.mutateAsync(group.id);
         toast.success('Group deleted');
-        if (selectedGroupJid === group.jid) {
+        if (selectedGroupJid === group.id) {
           setSelectedGroupJid(null);
           setIsDetailsModalOpen(false);
         }
