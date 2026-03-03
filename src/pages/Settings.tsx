@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useInstances, useUpdateProfile, useUpdateInstance } from '../hooks/useWhatsApp';
+import { useInstances, useUpdateProfile, useUpdateUserProfile, useUpdateInstance } from '../hooks/useWhatsApp';
 import { Settings as SettingsIcon, User, Smartphone, Bell, Shield, Loader2, Save, CheckCircle2, AlertCircle, Power, Trash2, Webhook, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -257,12 +257,12 @@ export function Settings() {
             </div>
 
             <div className="flex justify-end pt-4">
-              <button 
+              <button
                 onClick={handleSaveSettings}
-                disabled={updateSettings.isPending}
+                disabled={updateInstance.isPending}
                 className="btn-primary"
               >
-                {updateSettings.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {updateInstance.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Save Settings
               </button>
             </div>

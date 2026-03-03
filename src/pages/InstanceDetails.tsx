@@ -21,6 +21,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { IntegrationGuide } from '../components/IntegrationGuide';
 import { SubInstancesTab } from '../components/SubInstancesTab';
+import { Settings } from '../pages/Settings';
 import { format } from 'date-fns';
 
 export function InstanceDetails() {
@@ -277,10 +278,7 @@ export function InstanceDetails() {
           )}
 
           {activeTab === 'settings' && (
-            <div className="card p-12 text-center border-dashed border-zinc-800">
-              <Settings className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
-              <p className="text-zinc-500">Advanced instance settings coming soon.</p>
-            </div>
+            <Settings />
           )}
         </motion.div>
       </AnimatePresence>

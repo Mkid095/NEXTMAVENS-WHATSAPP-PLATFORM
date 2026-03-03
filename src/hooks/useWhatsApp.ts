@@ -797,7 +797,7 @@ export function useCurrentUser() {
   });
 }
 
-export function useUpdateProfile() {
+export function useUpdateUserProfile() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: { name?: string; email?: string }) => {
