@@ -8,7 +8,7 @@ export interface User {
 }
 
 export interface LoginResponse {
-  accessToken: string;
+  token: string;
   user: User;
 }
 
@@ -19,7 +19,7 @@ export function useLogin() {
       return data;
     },
     onSuccess: (data) => {
-      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('accessToken', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
     },
   });
