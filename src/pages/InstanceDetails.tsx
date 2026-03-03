@@ -1,24 +1,26 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useInstances, useApiKeys, useCreateApiKey, useDeleteApiKey } from '../hooks/useWhatsApp';
-import { 
-  ArrowLeft, 
-  Smartphone, 
-  Code2, 
-  Key, 
-  Activity, 
-  Settings, 
-  Loader2, 
-  Plus, 
-  Trash2, 
-  Copy, 
+import {
+  ArrowLeft,
+  Smartphone,
+  Code2,
+  Key,
+  Activity,
+  Settings,
+  Loader2,
+  Plus,
+  Trash2,
+  Copy,
   Check,
   AlertCircle,
-  ShieldCheck
+  ShieldCheck,
+  Users
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { IntegrationGuide } from '../components/IntegrationGuide';
+import { SubInstancesTab } from '../components/SubInstancesTab';
 import { format } from 'date-fns';
 
 export function InstanceDetails() {
@@ -73,6 +75,7 @@ export function InstanceDetails() {
     { id: 'overview', label: 'Overview', icon: Activity },
     { id: 'integration', label: 'Integration Guide', icon: Code2 },
     { id: 'access', label: 'API Access', icon: Key },
+    { id: 'subinstances', label: 'Sub-Instances', icon: Users, showWhen: !instance?.isSubInstance }, // Hide for sub-instances
     { id: 'settings', label: 'Settings', icon: Settings },
   ] as const;
 
@@ -155,8 +158,25 @@ export function InstanceDetails() {
                     </div>
                   </div>
                 </div>
+
+                {/* WhatsApp API Key */}
+                <div className="card bg-blue-500/5 border-blue-500/20">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold text-blue-500">WhatsApp API Key</h3>
+                    <button
+                      onClick={() => copyKey(instance.evolutionApiKey || '')}
+                      className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-all"
+                    >
+                      {copiedKey === instance.evolutionApiKey ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <p className="text-sm text-zinc-400 mb-3">Use this key in the <code className="text-zinc-300 bg-zinc-800 px-1 rounded">apikey</code> header for public API calls.</p>
+                  <code className="text-sm text-blue-400 font-mono block bg-zinc-900 px-3 py-3 rounded break-all">
+                    {instance.evolutionApiKey || 'Not generated yet. Connect your device to generate API key.'}
+                  </code>
+                </div>
               </div>
-              
+
               <div className="space-y-8">
                 <div className="card bg-emerald-500/5 border-emerald-500/20">
                   <h3 className="font-bold text-emerald-500 mb-2">Instance Status</h3>
@@ -173,6 +193,10 @@ export function InstanceDetails() {
 
           {activeTab === 'integration' && (
             <IntegrationGuide instanceId={instance.id} apiKey={instance.evolutionApiKey} webhookSecret={instance.webhookSecret} />
+          )}
+
+          {activeTab === 'subinstances' && !instance.isSubInstance && (
+            <SubInstancesTab parentInstanceId={instance.id} />
           )}
 
           {activeTab === 'access' && (

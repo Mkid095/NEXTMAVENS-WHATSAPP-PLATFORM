@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
+import toast from 'react-hot-toast';
 
 export interface WhatsAppInstance {
   id: string;
@@ -72,6 +73,10 @@ export function useCreateInstance() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-instances'] });
+      toast.success('WhatsApp instance created successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to create instance');
     },
   });
 }
@@ -86,6 +91,10 @@ export function useQRCode(instanceId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-instance-qr', instanceId] });
       queryClient.invalidateQueries({ queryKey: ['whatsapp-instances'] });
+      toast.success('QR code generated! Scan it with your WhatsApp.');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Failed to generate QR');
     },
   });
 }
@@ -123,6 +132,10 @@ export function useDisconnectInstance() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-instances'] });
+      toast.success('Instance disconnected');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Failed to disconnect');
     },
   });
 }
@@ -278,6 +291,10 @@ export function useCreateApiKey(instanceId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-api-keys', instanceId] });
+      toast.success('API key created');
+    },
+    onError: () => {
+      toast.error('Failed to create API key');
     },
   });
 }
@@ -290,6 +307,10 @@ export function useDeleteApiKey(instanceId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-api-keys', instanceId] });
+      toast.success('API key deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete API key');
     },
   });
 }
@@ -302,3 +323,579 @@ export function useSendMessage(instanceId: string) {
     },
   });
 }
+
+// ==========================================
+// SUB-INSTANCES (Reseller)
+// ==========================================
+
+export interface SubInstance extends Omit<WhatsAppInstance, 'isSubInstance' | 'parentInstanceId'> {
+  isSubInstance: true;
+  parentInstanceId: string;
+  clientName?: string;
+  clientEmail?: string;
+  quotaLimit?: number;
+  quotaUsed: number;
+  quotaPeriod?: string;
+}
+
+export function useSubInstances(parentInstanceId: string) {
+  return useQuery({
+    queryKey: ['sub-instances', parentInstanceId],
+    queryFn: async () => {
+      const { data } = await api.get(`/whatsapp/reseller/sub-instances?parentId=${parentInstanceId}`);
+      return (data.subInstances || []) as SubInstance[];
+    },
+    enabled: !!parentInstanceId,
+  });
+}
+
+export function useCreateSubInstance() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: {
+      parentInstanceId: string;
+      name: string;
+      clientName?: string;
+      clientEmail?: string;
+      webhookUrl?: string;
+      quotaLimit?: number;
+      quotaPeriod?: string;
+    }) => {
+      const { data: response } = await api.post('/whatsapp/reseller/create-sub-instance', data);
+      return response.subInstance || null;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sub-instances'] });
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-instances'] });
+    },
+  });
+}
+
+export function useSubInstanceStatus(subInstanceId: string) {
+  return useQuery({
+    queryKey: ['sub-instance-status', subInstanceId],
+    queryFn: async () => {
+      const { data } = await api.get(`/whatsapp/reseller/sub-instances/${subInstanceId}/status`);
+      return data || null;
+    },
+    enabled: !!subInstanceId,
+  });
+}
+
+export function useConnectSubInstance(subInstanceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post(`/whatsapp/reseller/sub-instances/${subInstanceId}/connect`);
+      return data || null;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sub-instance-status', subInstanceId] });
+      queryClient.invalidateQueries({ queryKey: ['sub-instances'] });
+    },
+  });
+}
+
+export function useDeleteSubInstance() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (subInstanceId: string) => {
+      await api.delete(`/whatsapp/reseller/sub-instances/${subInstanceId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sub-instances'] });
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-instances'] });
+    },
+  });
+}
+
+// ==========================================
+// TEAM / AGENTS
+// ==========================================
+
+export interface WhatsAppAgent {
+  id: string;
+  instanceId: string;
+  name: string;
+  status: 'available' | 'busy' | 'away' | 'offline';
+  avatar?: string;
+  createdAt: string;
+}
+
+export function useAgents(instanceId: string) {
+  return useQuery({
+    queryKey: ['agents', instanceId],
+    queryFn: async () => {
+      const { data } = await api.get(`/whatsapp/instances/${instanceId}/agents`);
+      return (data.agents || []) as WhatsAppAgent[];
+    },
+    enabled: !!instanceId,
+  });
+}
+
+export function useCreateAgent(instanceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (name: string, avatar?: string) => {
+      const { data } = await api.post(`/whatsapp/instances/${instanceId}/agents`, { name, avatar });
+      return data.agent || null;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agents', instanceId] });
+    },
+  });
+}
+
+export function useUpdateAgentStatus(agentId: string) {
+  return useMutation({
+    mutationFn: async (status: 'available' | 'busy' | 'away' | 'offline') => {
+      const { data } = await api.put(`/whatsapp/agents/${agentId}/status`, { status });
+      return data || null;
+    },
+  });
+}
+
+export interface ChatAssignment {
+  id: string;
+  chatJid: string;
+  agentId: string;
+  assignedAt: string;
+}
+
+export function useQueue(instanceId: string) {
+  return useQuery({
+    queryKey: ['queue', instanceId],
+    queryFn: async () => {
+      const { data } = await api.get(`/whatsapp/instances/${instanceId}/queue`);
+      return (data.queue || []) as any[];
+    },
+    enabled: !!instanceId,
+    refetchInterval: 5000,
+  });
+}
+
+export function useAssignments(instanceId: string) {
+  return useQuery({
+    queryKey: ['assignments', instanceId],
+    queryFn: async () => {
+      const { data } = await api.get(`/whatsapp/assignments/${instanceId}`);
+      return (data.assignments || []) as ChatAssignment[];
+    },
+    enabled: !!instanceId,
+  });
+}
+
+export function useAssignChat() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ chatJid, agentId }: { chatJid: string; agentId: string }) => {
+      const { data } = await api.post('/whatsapp/assignments', { chatJid, agentId });
+      return data || null;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['queue'] });
+      queryClient.invalidateQueries({ queryKey: ['assignments'] });
+    },
+  });
+}
+
+// ==========================================
+// GROUPS
+// ==========================================
+
+export interface WhatsAppGroup {
+  id: string; // JID
+  instanceId: string;
+  name: string;
+  subject: string;
+  subjectTime: number;
+  description?: string;
+  ownerJid: string;
+  participantsCount: number;
+  creation: number;
+  isReadOnly?: boolean;
+  isAnnounceGroup?: boolean;
+  createdAt: string;
+}
+
+export interface GroupParticipant {
+  id: string;
+  jid: string;
+  name: string;
+  isAdmin: boolean;
+  isContact?: boolean;
+  pushName?: string;
+}
+
+export function useGroups(instanceId: string) {
+  return useQuery({
+    queryKey: ['groups', instanceId],
+    queryFn: async () => {
+      const { data } = await api.get(`/whatsapp/groups?instanceId=${instanceId}`);
+      return (data.groups || []) as WhatsAppGroup[];
+    },
+    enabled: !!instanceId,
+  });
+}
+
+export function useCreateGroup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { instanceId: string; name: string; participants: string[] }) => {
+      const { data: response } = await api.post('/whatsapp/groups', data);
+      return response.group || null;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+    },
+  });
+}
+
+export function useGroupDetails(groupJid: string) {
+  return useQuery({
+    queryKey: ['group', groupJid],
+    queryFn: async () => {
+      const { data } = await api.get(`/whatsapp/groups/${groupJid}`);
+      return data.group || null;
+    },
+    enabled: !!groupJid,
+  });
+}
+
+export function useUpdateGroup(groupJid: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (updates: { subject?: string; description?: string; isAnnounceGroup?: boolean }) => {
+      const { data } = await api.put(`/whatsapp/groups/${groupJid}`, updates);
+      return data || null;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['group', groupJid] });
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+    },
+  });
+}
+
+export function useDeleteGroup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (groupJid: string) => {
+      await api.delete(`/whatsapp/groups/${groupJid}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+      queryClient.invalidateQueries({ queryKey: ['group'] });
+    },
+  });
+}
+
+export function useGroupParticipants(groupJid: string) {
+  return useQuery({
+    queryKey: ['group-participants', groupJid],
+    queryFn: async () => {
+      const { data } = await api.get(`/whatsapp/groups/${groupJid}/participants`);
+      return (data.participants || []) as GroupParticipant[];
+    },
+    enabled: !!groupJid,
+  });
+}
+
+export function useAddParticipant(groupJid: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (phoneNumber: string) => {
+      const { data } = await api.post(`/whatsapp/groups/${groupJid}/participants`, { phoneNumber });
+      return data || null;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['group-participants', groupJid] });
+    },
+  });
+}
+
+export function useRemoveParticipant(groupJid: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (participantJid: string) => {
+      await api.delete(`/whatsapp/groups/${groupJid}/participants/${participantJid}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['group-participants', groupJid] });
+    },
+  });
+}
+
+// ==========================================
+// TEMPLATES
+// ==========================================
+
+export interface MessageTemplate {
+  id: string;
+  instanceId: string;
+  name: string;
+  category: 'marketing' | 'transactional' | 'utility';
+  language: string;
+  status: 'approved' | 'pending' | 'rejected';
+  components: any[]; // header, body, buttons with variables
+  variables: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function useTemplates(instanceId: string) {
+  return useQuery({
+    queryKey: ['templates', instanceId],
+    queryFn: async () => {
+      const { data } = await api.get(`/whatsapp/templates?instanceId=${instanceId}`);
+      return (data.templates || []) as MessageTemplate[];
+    },
+    enabled: !!instanceId,
+  });
+}
+
+export function useCreateTemplate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: {
+      instanceId: string;
+      name: string;
+      category: string;
+      language: string;
+      components: any[];
+    }) => {
+      const { data: response } = await api.post('/whatsapp/templates', data);
+      return response.template || null;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['templates'] });
+    },
+  });
+}
+
+export function useUpdateTemplate(templateId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (updates: Partial<MessageTemplate>) => {
+      const { data } = await api.put(`/whatsapp/templates/${templateId}`, updates);
+      return data || null;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['templates'] });
+    },
+  });
+}
+
+export function useDeleteTemplate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (templateId: string) => {
+      await api.delete(`/whatsapp/templates/${templateId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['templates'] });
+    },
+  });
+}
+
+export function useRenderTemplate(templateId: string) {
+  return useMutation({
+    mutationFn: async (variables: Record<string, string>) => {
+      const { data } = await api.post(`/whatsapp/templates/${templateId}/render`, { variables });
+      return data || null;
+    },
+  });
+}
+
+// ==========================================
+// ANALYTICS
+// ==========================================
+
+export interface AnalyticsData {
+  period: string;
+  totalMessages: number;
+  conversationsStarted: number;
+  conversationsClosed: number;
+  avgResponseTime: number;
+  resolutionRate: number;
+}
+
+export interface AgentAnalytics {
+  agentId: string;
+  agentName: string;
+  messagesHandled: number;
+  avgResponseTime: number;
+  satisfactionScore?: number;
+}
+
+export function useAnalytics(instanceId: string, period: 'day' | 'week' | 'month' = 'week') {
+  return useQuery({
+    queryKey: ['analytics', instanceId, period],
+    queryFn: async () => {
+      const [convRes, msgRes, agentRes, slaRes] = await Promise.all([
+        api.get(`/whatsapp/analytics/conversations?instanceId=${instanceId}&period=${period}`),
+        api.get(`/whatsapp/analytics/messages?instanceId=${instanceId}&period=${period}`),
+        api.get(`/whatsapp/analytics/agents?instanceId=${instanceId}&period=${period}`),
+        api.get(`/whatsapp/analytics/sla?instanceId=${instanceId}&period=${period}`),
+      ]);
+      return {
+        conversations: convRes.data || null,
+        messages: msgRes.data || null,
+        agents: agentRes.data || null,
+        sla: slaRes.data || null,
+      };
+    },
+    enabled: !!instanceId,
+  });
+}
+
+// ==========================================
+// WEBHOOK DELIVERIES
+// ==========================================
+
+export interface WebhookDelivery {
+  id: string;
+  instanceId: string;
+  event: string;
+  status: 'success' | 'failed' | 'pending';
+  responseCode?: number;
+  responseBody?: string;
+  duration?: number;
+  createdAt: string;
+}
+
+export function useWebhookDeliveries(instanceId: string, limit: number = 50) {
+  return useQuery({
+    queryKey: ['webhook-deliveries', instanceId],
+    queryFn: async () => {
+      const { data } = await api.get(`/whatsapp/webhook/deliveries?instanceId=${instanceId}&limit=${limit}`);
+      return (data.deliveries || []) as WebhookDelivery[];
+    },
+    enabled: !!instanceId,
+  });
+}
+
+// ==========================================
+// USER PROFILE
+// ==========================================
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  name: string;
+  orgId: string;
+  role: string;
+  createdAt: string;
+}
+
+export function useCurrentUser() {
+  return useQuery({
+    queryKey: ['current-user'],
+    queryFn: async () => {
+      const { data } = await api.get('/auth/me');
+      return data.user as UserProfile;
+    },
+  });
+}
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { name?: string; email?: string }) => {
+      const { data: response } = await api.put('/auth/profile', data);
+      return response.user || null;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['current-user'] });
+    },
+  });
+}
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: async (credentials: { currentPassword: string; newPassword: string }) => {
+      const { data } = await api.post('/auth/change-password', credentials);
+      return data;
+    },
+  });
+}
+
+// ==========================================
+// SETTINGS (INSTANCE UPDATE)
+// ==========================================
+
+export function useUpdateInstance(instanceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: {
+      name?: string;
+      webhookUrl?: string;
+      webhookEvents?: string[];
+      settings?: any;
+    }) => {
+      const { data: response } = await api.put(`/whatsapp/instances/${instanceId}`, data);
+      return response.instance || null;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-instances'] });
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-instance-status', instanceId] });
+      toast.success('Instance updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update instance');
+    },
+  });
+}
+
+// ==========================================
+// INTEGRATION GUIDE
+// ==========================================
+
+export function useIntegrationGuide(instanceId: string) {
+  return useQuery({
+    queryKey: ['integration-guide', instanceId],
+    queryFn: async () => {
+      const { data } = await api.get(`/whatsapp/instances/${instanceId}/integration-guide`);
+      return data.guide || null;
+    },
+    enabled: !!instanceId,
+  });
+}
+
+// ==========================================
+// PUBLIC API (Instance-specific key auth)
+// ==========================================
+
+// These use the instance's evolutionApiKey, not JWT
+// They need to be called with special headers
+
+export interface PublicApiConfig {
+  instanceId: string;
+  apiKey: string;
+}
+
+export function createPublicApiClient(instanceId: string, apiKey: string) {
+  return axios.create({
+    baseURL: import.meta.env.VITE_API_URL,
+    headers: {
+      'apikey': apiKey,
+      'Content-Type': 'application/json'
+    }
+  });
+}
+
+export function usePublicStatus(instanceId: string, apiKey: string) {
+  return useQuery({
+    queryKey: ['public-status', instanceId],
+    queryFn: async () => {
+      // Use fetch directly with instance API key
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/whatsapp/public/status/${instanceId}`, {
+        headers: { 'apikey': apiKey }
+      });
+      if (!response.ok) throw new Error('Failed to fetch status');
+      return response.json();
+    },
+    enabled: !!instanceId && !!apiKey,
+    refetchInterval: 10000,
+  });
+}
+

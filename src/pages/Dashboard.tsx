@@ -8,6 +8,7 @@ import { QRWizardModal } from '../components/QRWizardModal';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Loader2, Smartphone } from 'lucide-react';
 import { cn } from '../lib/utils';
+import toast from 'react-hot-toast';
 
 export function Dashboard() {
   const { data: instances, isLoading, refetch } = useInstances();

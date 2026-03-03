@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useInstances, useUpdateProfile, useUpdateSettings } from '../hooks/useWhatsApp';
-import { Settings as SettingsIcon, User, Smartphone, Bell, Shield, Loader2, Save, CheckCircle2, AlertCircle, Power, Trash2 } from 'lucide-react';
+import { useInstances, useUpdateProfile, useUpdateInstance } from '../hooks/useWhatsApp';
+import { Settings as SettingsIcon, User, Smartphone, Bell, Shield, Loader2, Save, CheckCircle2, AlertCircle, Power, Trash2, Webhook, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
+import toast from 'react-hot-toast';
 
 export function Settings() {
   const { data: instances, refetch: refetchInstances } = useInstances();
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
   const updateProfile = useUpdateProfile(selectedInstanceId || '');
-  const updateSettings = useUpdateSettings(selectedInstanceId || '');
+  const updateInstance = useUpdateInstance(selectedInstanceId || '');
 
   const selectedInstance = instances?.find(i => i.id === selectedInstanceId);
 
@@ -17,6 +18,19 @@ export function Settings() {
   const [rejectCalls, setRejectCalls] = useState(false);
   const [groupsIgnore, setGroupsIgnore] = useState(false);
   const [alwaysOnline, setAlwaysOnline] = useState(true);
+  const [readReceipts, setReadReceipts] = useState(true);
+  const [readStatus, setReadStatus] = useState(true);
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
+
+  const availableEvents = [
+    'connection.status',
+    'messages.upsert',
+    'messages.update',
+    'contacts.upsert',
+    'groups.update',
+    'presence.update'
+  ];
 
   useEffect(() => {
     if (instances && !selectedInstanceId) {
@@ -28,10 +42,14 @@ export function Settings() {
   useEffect(() => {
     if (selectedInstance) {
       setProfileName(selectedInstance.profileName || selectedInstance.name);
-      setProfileStatus(''); // Status isn't always in the instance object, might need separate fetch
+      setProfileStatus('');
       setRejectCalls(selectedInstance.settings?.rejectCalls || false);
       setGroupsIgnore(selectedInstance.settings?.groupsIgnore || false);
-      setAlwaysOnline(selectedInstance.settings?.alwaysOnline || true);
+      setAlwaysOnline(selectedInstance.settings?.alwaysOnline ?? true);
+      setReadReceipts(selectedInstance.settings?.readReceipts ?? true);
+      setReadStatus(selectedInstance.settings?.readStatus ?? true);
+      setWebhookUrl(selectedInstance.webhookUrl || '');
+      setWebhookEvents(selectedInstance.webhookEvents || []);
     }
   }, [selectedInstance]);
 
@@ -39,18 +57,36 @@ export function Settings() {
     if (!selectedInstanceId) return;
     try {
       await updateProfile.mutateAsync({ name: profileName, status: profileStatus });
+      toast.success('Profile updated successfully');
     } catch (error) {
-      console.error('Failed to update profile:', error);
+      toast.error('Failed to update profile');
     }
   };
 
   const handleSaveSettings = async () => {
     if (!selectedInstanceId) return;
     try {
-      await updateSettings.mutateAsync({ rejectCalls, groupsIgnore, alwaysOnline });
+      await updateInstance.mutateAsync({
+        rejectCalls,
+        groupsIgnore,
+        alwaysOnline,
+        readReceipts,
+        readStatus,
+        webhookUrl: webhookUrl || undefined,
+        webhookEvents: webhookEvents.length > 0 ? webhookEvents : undefined,
+      });
+      toast.success('Settings saved successfully');
     } catch (error) {
-      console.error('Failed to update settings:', error);
+      toast.error('Failed to save settings');
     }
+  };
+
+  const toggleWebhookEvent = (event: string) => {
+    setWebhookEvents(prev =>
+      prev.includes(event)
+        ? prev.filter(e => e !== event)
+        : [...prev, event]
+    );
   };
 
   if (!selectedInstanceId) {
@@ -229,6 +265,53 @@ export function Settings() {
                 {updateSettings.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Save Settings
               </button>
+            </div>
+          </div>
+
+          {/* Webhook Configuration */}
+          <div className="card space-y-6">
+            <div className="flex items-center gap-3 border-b border-zinc-800 pb-4">
+              <Webhook className="w-5 h-5 text-blue-500" />
+              <h3 className="text-lg font-semibold">Webhook Settings</h3>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-zinc-400 mb-2">Webhook URL</label>
+                <input
+                  type="url"
+                  className="input w-full"
+                  placeholder="https://your-server.com/webhooks/whatsapp"
+                  value={webhookUrl}
+                  onChange={(e) => setWebhookUrl(e.target.value)}
+                />
+                <p className="text-xs text-zinc-500 mt-1">We'll send event notifications to this URL.</p>
+              </div>
+
+              {webhookUrl && (
+                <div>
+                  <label className="block text-sm font-medium text-zinc-400 mb-3">Events to Send</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {availableEvents.map(event => (
+                      <div
+                        key={event}
+                        onClick={() => toggleWebhookEvent(event)}
+                        className={cn(
+                          "p-3 rounded-lg border cursor-pointer transition-all text-sm",
+                          webhookEvents.includes(event)
+                            ? "bg-blue-500/10 border-blue-500/30 text-blue-400"
+                            : "bg-zinc-800/30 border-zinc-800 text-zinc-400 hover:border-zinc-700"
+                        )}
+                      >
+                        <code className="font-mono">{event}</code>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-zinc-500 mt-2">
+                    Selected events will be sent to your webhook URL. A secret key will be generated for signature verification.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
