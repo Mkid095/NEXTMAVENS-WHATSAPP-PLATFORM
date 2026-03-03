@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { useSubInstances, useCreateSubInstance, useDeleteSubInstance, useSubInstanceStatus } from '../hooks/useWhatsApp';
+import { useSubInstances, useCreateSubInstance, useDeleteSubInstance, useSubInstanceStatus, WhatsAppInstance } from '../hooks/useWhatsApp';
 import { Plus, Trash2, Smartphone, Copy, Check, Loader2, AlertCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import toast from 'react-hot-toast';
-import { WhatsAppInstance } from '../lib/utils';
 
 interface SubInstancesTabProps {
   parentInstanceId: string;

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
 import { api } from '../lib/api';
 import toast from 'react-hot-toast';
 
@@ -436,9 +437,9 @@ export function useAgents(instanceId: string) {
 export function useCreateAgent(instanceId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (name: string, avatar?: string) => {
-      const { data } = await api.post(`/whatsapp/instances/${instanceId}/agents`, { name, avatar });
-      return data.agent || null;
+    mutationFn: async (data: { name: string; avatar?: string }) => {
+      const { data: response } = await api.post(`/whatsapp/instances/${instanceId}/agents`, data);
+      return response.agent || null;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agents', instanceId] });
@@ -830,9 +831,34 @@ export function useUpdateInstance(instanceId: string) {
       name?: string;
       webhookUrl?: string;
       webhookEvents?: string[];
-      settings?: any;
+      rejectCalls?: boolean;
+      groupsIgnore?: boolean;
+      alwaysOnline?: boolean;
+      readReceipts?: boolean;
+      readStatus?: boolean;
     }) => {
-      const { data: response } = await api.put(`/whatsapp/instances/${instanceId}`, data);
+      // Extract settings fields
+      const { name, webhookUrl, webhookEvents, rejectCalls, groupsIgnore, alwaysOnline, readReceipts, readStatus, ...rest } = data;
+
+      // Build payload - send settings as nested object
+      const payload: any = { ...rest };
+      if (name !== undefined) payload.name = name;
+      if (webhookUrl !== undefined) payload.webhookUrl = webhookUrl;
+      if (webhookEvents !== undefined) payload.webhookEvents = webhookEvents;
+
+      // Build settings object from individual flags
+      const settings: any = {};
+      if (rejectCalls !== undefined) settings.rejectCalls = rejectCalls;
+      if (groupsIgnore !== undefined) settings.groupsIgnore = groupsIgnore;
+      if (alwaysOnline !== undefined) settings.alwaysOnline = alwaysOnline;
+      if (readReceipts !== undefined) settings.readReceipts = readReceipts;
+      if (readStatus !== undefined) settings.readStatus = readStatus;
+
+      if (Object.keys(settings).length > 0) {
+        payload.settings = settings;
+      }
+
+      const { data: response } = await api.put(`/whatsapp/instances/${instanceId}`, payload);
       return response.instance || null;
     },
     onSuccess: () => {

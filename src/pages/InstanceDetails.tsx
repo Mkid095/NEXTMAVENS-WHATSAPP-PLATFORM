@@ -7,7 +7,7 @@ import {
   Code2,
   Key,
   Activity,
-  Settings,
+  Settings as SettingsIcon,
   Loader2,
   Plus,
   Trash2,
@@ -77,7 +77,7 @@ export function InstanceDetails() {
     { id: 'integration', label: 'Integration Guide', icon: Code2 },
     { id: 'access', label: 'API Access', icon: Key },
     { id: 'subinstances', label: 'Sub-Instances', icon: Users, showWhen: !instance?.isSubInstance }, // Hide for sub-instances
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ] as const;
 
   return (
