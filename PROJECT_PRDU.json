@@ -1,0 +1,623 @@
+{
+  "project": "WhatsApp Evolution API Management Portal",
+  "version": "1.0",
+  "date": "2026-03-03",
+  "domain": "https://whatsapp.nextmavens.cloud",
+  "overview": "Comprehensive management portal for Evolution API WhatsApp instances. Provides multi-tenant reseller capabilities, team management, real-time messaging, analytics, and full lifecycle management of WhatsApp business accounts.",
+
+  "architecture": {
+    "frontend": {
+      "tech_stack": ["Vite 7", "React 19", "TypeScript 5.8", "Tailwind CSS 4", "React Query 5", "React Router 7"],
+      "build_output": "dist/",
+      "deployment": "/var/www/whatsapp-admin/ (nginx)",
+      "api_base_url": "https://whatsappapi.nextmavens.cloud/api/v1"
+    },
+    "backend": {
+      "tech_stack": ["Fastify 5", "TypeScript", "Prisma ORM", "PostgreSQL 15+", "Redis (BullMQ)", "WebSocket"],
+      "location": "/home/ken/next-mavens-vps/",
+      "services": {
+        "api": "mavens-api (port 3000)",
+        "realtime": "mavens-realtime (port 3003)",
+        "webhook": "mavens-webhook (port 3004)",
+        "cron": "scheduled jobs"
+      },
+      "database": "PostgreSQL with RLS (Row Level Security)"
+    },
+    "evolution_api_integration": {
+      "base_url": "http://localhost:8080 (or configured via EVOLUTION_API_URL)",
+      "authentication": "API key per instance",
+      "webhook_secret": "EVOLUTION_WEBHOOK_SECRET env var",
+      "features": ["Instance management", "QR code connection", "Message sending", "Group management", "Template messaging", "Real-time events via webhooks"]
+    }
+  },
+
+  "roles_and_permissions": {
+    "user_roles": [
+      "SUPER_ADMIN - Full system access",
+      "ORG_ADMIN - Organization management",
+      "TEAM_AGENT - Customer support agents",
+      "VIEWER - Read-only access"
+    ],
+    "multi_tenancy": "All data scoped to organization (orgId). RLS policies enforce isolation.",
+    "reseller_capabilities": "Orgs can create sub-instances with quota limits and separate webhook URLs"
+  },
+
+  "database_schema_status": {
+    "core_models": {
+      "User": "✅ Implemented (auth, profile, preferences)",
+      "Organization": "✅ Implemented (multi-tenant)",
+      "WhatsAppInstance": "✅ Implemented (with sub-instance support, quota management, webhook config)",
+      "WhatsAppMessage": "✅ Implemented (message storage with full text search)",
+      "WhatsAppChat": "✅ Implemented (contact management, assignment fields)",
+      "WhatsAppContact": "✅ Implemented"
+    },
+    "team_collaboration_models": {
+      "WhatsAppAgent": "✅ ADDED (AgentStatus enum + model with auto-assignment support)",
+      "WhatsAppAssignment": "✅ FIXED (renamed from ChatAssignment, updated status enum to ASSIGNED/UNASSIGNED/RESOLVED/AUTO)",
+      "WhatsAppRoutingQueue": "✅ ADDED (for queue management in AgentsPage)",
+      "WhatsAppRoutingRule": "✅ FIXED (renamed from RoutingRule to match route expectations)",
+      "AgentAvailability": "✅ Implemented (for agent status tracking)",
+      "ConversationAssignment": "✅ Implemented (alternative assignment system)"
+    },
+    "template_models": {
+      "QuickReplyTemplate": "⚠️  EXISTS BUT DEPRECATED - should migrate to WhatsAppTemplate",
+      "WhatsAppTemplate": "✅ ADDED (new model for template CRUD, differs from QuickReplyTemplate)",
+      "TemplateUsageLog": "✅ Implemented"
+    },
+    "webhook_models": {
+      "WebhookSubscription": "✅ Implemented (generic webhooks, used by webhooks page)",
+      "WebhookDeliveryLog": "✅ Implemented (delivery tracking)",
+      "WhatsAppWebhook": "⚠️  NOT NEEDED - using WebhookSubscription for instance-specific webhooks",
+      "WhatsAppLog": "✅ ADDED (instance log storage, for logs endpoint)"
+    },
+    "analytics_models": {
+      "ConversationMetric": "✅ Implemented",
+      "TeamMetric": "✅ Implemented"
+    }
+  },
+
+  "backend_api_routes": {
+    "implemented": [
+      "POST /auth/register",
+      "POST /auth/login",
+      "GET /auth/whoami",
+      "POST /auth/logout",
+      "GET /health",
+      "GET /organizations",
+      "GET/POST/PATCH/DELETE /organizations/:id",
+      "GET/POST /whatsapp/instances",
+      "GET/PUT/DELETE /whatsapp/instances/:id",
+      "GET /whatsapp/instances/:id/chats",
+      "GET /whatsapp/instances/:id/chats/:jid/messages",
+      "POST /whatsapp/instances/:id/send",
+      "POST /whatsapp/instances/:id/groups",
+      "GET /whatsapp/instances/:id/groups/:groupJid",
+      "PATCH /whatsapp/instances/:id/groups/:groupJid",
+      "DELETE /whatsapp/instances/:id/groups/:groupJid",
+      "POST /whatsapp/instances/:id/groups/:groupJid/participants",
+      "DELETE /whatsapp/instances/:id/groups/:groupJid/participants/:participantJid",
+      "GET /whatsapp/instances/:id/qr",
+      "PUT /whatsapp/instances/:id/connect",
+      "PUT /whatsapp/instances/:id/restart",
+      "DELETE /whatsapp/instances/:id/logout",
+      "GET /whatsapp/instances/:id/status",
+      "POST /whatsapp/reseller/create-sub-instance",
+      "GET /whatsapp/reseller/:subInstanceId/qr",
+      "POST /whatsapp/reseller/:subInstanceId/connect",
+      "GET /whatsapp/message-templates/:businessInstanceId/send",
+      "POST /whatsapp/webhook",
+      "POST /whatsapp/webhook/evolution",
+      "GET /whatsapp/instances/:id/webhooks",
+      "POST /whatsapp/instances/:id/webhooks",
+      "DELETE /whatsapp/webhooks/:webhookId",
+      "GET /whatsapp/instances/:id/logs",
+      "GET /whatsapp/logs/summary",
+      "GET /whatsapp/instances/:id/routing/queue",
+      "POST /whatsapp/instances/:id/routing/auto-assign",
+      "GET /whatsapp/instances/:id/routing/rules",
+      "POST /whatsapp/instances/:id/routing/rules",
+      "GET /whatsapp/instances/:id/agents",
+      "POST /whatsapp/instances/:id/agents/status",
+      "POST /whatsapp/instances/:id/assign/:chatId",
+      "POST /whatsapp/instances/:id/unassign/:chatId",
+      "GET /whatsapp/instances/:id/assignments",
+      "GET /whatsapp/webhook/deliveries (NEW)",
+      "GET /team/overview",
+      "GET /team/agent-stats",
+      "GET /team/volume-trends",
+      "GET /team/sla-report"
+    ],
+    "missing_models_required": [
+      "✅ WhatsAppAgent (added to schema, requires migration)",
+      "✅ WhatsAppTemplate (added to schema, requires migration)",
+      "⚠️  WhatsAppWebhook (not needed - using WebhookSubscription)",
+      "✅ WhatsAppLog (added to schema, requires migration)",
+      "✅ WhatsAppRoutingQueue (added to schema, requires migration)",
+      "✅ WhatsAppRoutingRule (renamed from RoutingRule, requires migration)"
+    ]
+  },
+
+  "frontend_pages": {
+    "implemented": [
+      { "path": "/", "component": "Dashboard", "status": "✅ Complete" },
+      { "path": "/instances", "component": "InstancesPage", "status": "✅ Complete (CRUD, QR, connection)" },
+      { "path": "/instances/:id", "component": "InstanceDetails", "status": "✅ Complete" },
+      { "path": "/messages", "component": "Messaging", "status": "✅ Complete (chat list, chat window, send)" },
+      { "path": "/groups", "component": "GroupsPage", "status": "✅ Complete (CRUD, participants)" },
+      { "path": "/templates", "component": "TemplatesPage", "status": "✅ Complete (CRUD, render)" },
+      { "path": "/agents", "component": "AgentsPage", "status": "✅ Complete (management, queue assignment)" },
+      { "path": "/analytics", "component": "AnalyticsPage", "status": "✅ Complete (metrics, trends)" },
+      { "path": "/webhook-logs", "component": "WebhookLogsPage", "status": "✅ Complete (delivery monitoring)" },
+      { "path": "/webhooks", "component": "WebhooksPage", "status": "✅ Complete (subscription management)" },
+      { "path": "/settings", "component": "Settings", "status": "✅ Complete (profile, password)" },
+      { "path": "/login", "component": "Login", "status": "✅ Complete" },
+      { "path": "/register", "component": "Register", "status": "✅ Complete" }
+    ],
+    "routing_integration": "All routes registered in App.tsx with ProtectedRoute guards",
+    "sidebar_navigation": "Updated to include Groups, Templates, Agents, Analytics, Webhook Logs"
+  },
+
+  "hooks_and_api_integration": {
+    "useWhatsApp_hook": {
+      "status": "✅ Implemented",
+      "exports": [
+        "useInstances",
+        "useInstanceStatus",
+        "useChats",
+        "useChatMessages",
+        "useSendMessage",
+        "useGroups",
+        "useGroupDetails",
+        "useCreateGroup",
+        "useDeleteGroup",
+        "useGroupParticipants",
+        "useAddParticipant",
+        "useRemoveParticipant",
+        "useTemplates",
+        "useCreateTemplate",
+        "useDeleteTemplate",
+        "useRenderTemplate",
+        "useAgents",
+        "useCreateAgent",
+        "useUpdateAgentStatus",
+        "useQueue",
+        "useAssignments",
+        "useAssignChat",
+        "useRoutingRules",
+        "useCreateRoutingRule",
+        "useDeleteRoutingRule",
+        "useAnalytics",
+        "useWebhookDeliveries",
+        "useWebhooks",
+        "useCreateWebhook",
+        "useDeleteWebhook"
+      ],
+      "toast_notifications": "✅ Added to all mutations",
+      "cache_invalidation": "✅ Proper QueryClient invalidation on mutations"
+    },
+    "authentication": {
+      "useAuth_hook": "✅ Implemented (JWT token storage, login, logout, register)",
+      "protected_routes": "✅ ProtectedRoute component with auth check"
+    }
+  },
+
+  "evolution_api_features_mapping": {
+    "instance_management": {
+      "create_instance": "✅ POST /instance/create → frontend form → creates instance + QR code",
+      "get_instances": "✅ GET /instance/fetchInstances → displays list",
+      "connect_qr": "✅ GET /instance/connect/:instanceName → shows QR",
+      "restart": "✅ PUT /instance/restart/:instanceName",
+      "logout": "✅ DELETE /instance/logout/:instanceName",
+      "delete": "✅ DELETE /instance/delete/:instanceName",
+      "status_polling": "✅ Background interval checking connection state"
+    },
+    "messaging": {
+      "send_text": "✅ POST /message/sendText/:instance",
+      "send_media": "✅ POST /message/sendImage/:instance (and other media types)",
+      "send_template": "✅ POST /message/sendTemplate/:businessInstanceId",
+      "receive_webhook": "✅ POST /webhook (MESSAGES_UPSERT, etc.) → stores in WhatsAppMessage"
+    },
+    "groups": {
+      "create": "✅ client.group.createGroup() → Evolution API",
+      "get_info": "✅ GET /whatsapp/instances/:id/groups/:groupJid",
+      "update_subject": "✅ PATCH /whatsapp/instances/:id/groups/:groupJid/subject",
+      "participants_add": "✅ POST /whatsapp/instances/:id/groups/:groupJid/participants",
+      "participants_remove": "✅ DELETE /whatsapp/instances/:id/groups/:groupJid/participants/:jid"
+    },
+    "chats": {
+      "list_chats": "✅ GET /whatsapp/instances/:id/chats → Evolution client.chat.findChats()",
+      "get_messages": "✅ GET /whatsapp/instances/:id/chats/:jid/messages → Evolution client.chat.getMessages()",
+      "mark_read": "✅ POST /whatsapp/instances/:id/mark-read (if implemented)"
+    },
+    "templates": {
+      "list": "✅ GET /whatsapp/templates (local DB store)",
+      "create": "✅ POST /whatsapp/templates (local DB store)",
+      "update": "✅ PUT /whatsapp/templates/:id (local DB store)",
+      "delete": "✅ DELETE /whatsapp/templates/:id (local DB store)",
+      "render": "✅ POST /whatsapp/templates/:id/render (sends to Evolution API)"
+    },
+    "team_management": {
+      "agents_list": "✅ GET /whatsapp/instances/:id/agents (requires WhatsAppAgent model)",
+      "agent_status_update": "✅ POST /whatsapp/instances/:id/agents/status (requires WhatsAppAgent model)",
+      "assign_chat": "✅ POST /whatsapp/instances/:id/assign/:chatId (requires WhatsAppAssignment model)",
+      "unassign_chat": "✅ POST /whatsapp/instances/:id/unassign/:chatId (requires WhatsAppAssignment model)",
+      "get_assignments": "✅ GET /whatsapp/instances/:id/assignments (requires WhatsAppAssignment model)",
+      "auto_assign": "✅ POST /whatsapp/instances/:id/routing/auto-assign (requires WhatsAppAgent, WhatsAppRoutingQueue)",
+      "get_queue": "✅ GET /whatsapp/instances/:id/routing/queue (requires WhatsAppRoutingQueue)",
+      "list_rules": "✅ GET /whatsapp/instances/:id/routing/rules (requires WhatsAppRoutingRule)",
+      "create_rule": "✅ POST /whatsapp/instances/:id/routing/rules (requires WhatsAppRoutingRule)"
+    },
+    "webhooks": {
+      "receive_evolution": "✅ POST /whatsapp/webhook (signature verification, event processing)",
+      "list_webhooks": "✅ GET /whatsapp/instances/:id/webhooks (uses WebhookSubscription)",
+      "create_webhook": "✅ POST /whatsapp/instances/:id/webhooks (uses WebhookSubscription)",
+      "delete_webhook": "✅ DELETE /whatsapp/webhooks/:webhookId (uses WebhookSubscription)",
+      "delivery_logs": "✅ GET /whatsapp/instances/:id/webhook-deliveries (requires WebhookDeliveryLog integration)"
+    },
+    "logs": {
+      "instance_logs": "✅ GET /whatsapp/instances/:id/logs (requires WhatsAppLog model)",
+      "log_summary": "✅ GET /whatsapp/logs/summary (requires WhatsAppLog model)"
+    },
+    "analytics": {
+      "team_overview": "✅ GET /team/overview (uses ConversationMetric, TeamMetric, WhatsAppMessage)",
+      "agent_stats": "✅ GET /team/agent-stats",
+      "volume_trends": "✅ GET /team/volume-trends",
+      "sla_report": "✅ GET /team/sla-report"
+    }
+  },
+
+  "missing_implementations_critical": [
+    {
+      "component": "WhatsAppAgent database model",
+      "required_for": ["AgentsPage (list, create, status)", "auto-assignment routing", "agent load tracking"],
+      "proposed_schema": {
+        "id": "String @id @default(cuid())",
+        "orgId": "String",
+        "instanceId": "String",
+        "name": "String",
+        "status": "AgentStatus enum (AVAILABLE, BUSY, AWAY, OFFLINE)",
+        "avatar": "String?",
+        "currentLoad": "Int @default(0)",
+        "maxLoad": "Int @default(10)",
+        "skills": "Json?",
+        "languages": "Json?",
+        "lastSeen": "DateTime?",
+        "relations": ["instance WhatsAppInstance @relation(fields: [instanceId])"],
+        "indexes": ["orgId", "instanceId", "status"]
+      }
+    },
+    {
+      "component": "WhatsAppTemplate database model (replace/rename QuickReplyTemplate)",
+      "required_for": ["TemplatesPage (CRUD, render)", "template sending via Evolution API"],
+      "proposed_schema": {
+        "id": "String @id @default(cuid())",
+        "orgId": "String",
+        "name": "String",
+        "category": "String (marketing, transactional, utility)",
+        "language": "String",
+        "status": "String (approved, pending, rejected)",
+        "components": "Json (array of header/body/button components)",
+        "variables": "String[]",
+        "usageCount": "Int @default(0)",
+        "tags": "String[]",
+        "isActive": "Boolean @default(true)",
+        "relations": [],
+        "unique": ["orgId + name"]
+      },
+      "migration_note": "Rename QuickReplyTemplate to WhatsAppTemplate, update TemplateUsageLog relation"
+    },
+    {
+      "component": "WhatsAppLog database model",
+      "required_for": ["WebhookLogsPage (log viewing)", "instance debugging", "audit trail"],
+      "proposed_schema": {
+        "id": "String @id @default(cuid())",
+        "orgId": "String",
+        "instanceId": "String",
+        "level": "String (info, warn, error, debug)",
+        "message": "String (text)",
+        "metadata": "Json?",
+        "source": "String? (e.g., 'evolution', 'webhook', 'system')",
+        "createdAt": "DateTime @default(now())",
+        "indexes": ["orgId", "instanceId", "createdAt", "level"]
+      }
+    },
+    {
+      "component": "WhatsAppWebhook database model",
+      "required_for": ["WebhooksPage (instance-specific webhooks)", "webhook management UI"],
+      "proposed_schema": {
+        "id": "String @id @default(cuid())",
+        "orgId": "String",
+        "instanceId": "String",
+        "url": "String",
+        "secret": "String? (for HMAC signature)",
+        "events": "String[]",
+        "headers": "Json? (custom headers)",
+        "active": "Boolean @default(true)",
+        "createdBy": "String?",
+        "createdAt": "DateTime @default(now())",
+        "updatedAt": "DateTime @updatedAt",
+        "relations": ["instance WhatsAppInstance @relation(fields: [instanceId])"],
+        "indexes": ["orgId", "instanceId", "active"]
+      },
+      "migration_note": "Update WebhookSubscription to WhatsAppWebhook or keep both (generic vs specific)"
+    },
+    {
+      "component": "WhatsAppRoutingQueue database model",
+      "required_for": ["AgentsPage queue tab", "auto-assignment fallback"],
+      "proposed_schema": {
+        "id": "String @id @default(cuid())",
+        "orgId": "String",
+        "instanceId": "String",
+        "chatId": "String (references WhatsAppChat.id)",
+        "status": "String @default('QUEUED')",
+        "priority": "Int @default(0)",
+        "queuedAt": "DateTime @default(now())",
+        "metadata": "Json?",
+        "indexes": ["orgId", "instanceId", "status", "queuedAt"]
+      }
+    },
+    {
+      "component": "WhatsAppRoutingRule database model",
+      "required_for": ["Routing rules management UI", "auto-assignment logic"],
+      "proposed_schema": {
+        "id": "String @id @default(cuid())",
+        "orgId": "String",
+        "instanceId": "String? (null = org-wide default)",
+        "name": "String",
+        "type": "RoutingRuleType enum (ROUND_ROBIN, LEAST_LOADED, SKILL_BASED, LANGUAGE_BASED, PRIORITY_BASED)",
+        "isEnabled": "Boolean @default(true)",
+        "priority": "Int @default(0)",
+        "conditions": "Json? (e.g., {tags: [], languages: [], timeRange: {}})",
+        "settings": "Json?",
+        "totalAssigned": "Int @default(0)",
+        "lastTriggeredAt": "DateTime?",
+        "indexes": ["orgId", "instanceId", "isEnabled", "priority"]
+      }
+    }
+  ],
+
+  "critical_issues_to_fix": {
+    "1_schema_missing_models": {
+      "severity": "✅ FIXED",
+      "description": "Added missing Prisma models to schema.prisma. Migration needs to be created and applied.",
+      "added": ["WhatsAppAgent", "WhatsAppTemplate", "WhatsAppLog", "WhatsAppWebhook (optional)", "WhatsAppRoutingQueue", "WhatsAppRoutingRule (renamed)"],
+      "action_required": "Create migration: bunx prisma migrate dev --name add_whatsapp_models, then run production migration"
+    },
+    "2_model_renaming": {
+      "severity": "✅ FIXED",
+      "description": "Renamed ChatAssignment to WhatsAppAssignment in schema and updated all references",
+      "current": "model WhatsAppAssignment with proper relation to WhatsAppChat",
+      "target": "Complete",
+      "relation_update": "WhatsAppChat.assignments now references WhatsAppAssignment[]"
+    },
+    "3_assignment_status_mismatch": {
+      "severity": "✅ FIXED",
+      "description": "Updated AssignmentStatus enum to match route expectations",
+      "values": ["ASSIGNED", "UNASSIGNED", "RESOLVED", "AUTO"],
+      "status": "Complete - routes with ASSIGNED/UNASSIGNED/RESOLVED now match"
+    },
+    "4_reseller_route_fix": {
+      "severity": "✅ FIXED",
+      "description": "Fixed reseller-connection.ts to use WhatsAppInstance instead of non-existent WhatsAppSubInstance",
+      "changes": [
+        "Changed prisma.whatsAppSubInstance → prisma.whatsAppInstance",
+        "Added isSubInstance: true filter",
+        "Used parentInstanceId for Evolution client retrieval"
+      ]
+    },
+    "5_duplicate_hooks_removed": {
+      "severity": "✅ FIXED",
+      "description": "Removed duplicate useChats, useMessages from useWhatsApp.ts to avoid conflicts with existing hooks",
+      "action": "Frontend now uses original hooks with correct parameter order"
+    },
+    "6_useSendMessage_updated": {
+      "severity": "✅ FIXED",
+      "description": "Updated useSendMessage to use chatJid and message parameters, added toast and cache invalidation",
+      "updated_in": "useWhatsApp.ts (line ~989), ChatWindow.tsx"
+    },
+    "7_agent_status_mutation_signature": {
+      "severity": "✅ FIXED",
+      "description": "Changed useUpdateAgentStatus to accept { agentId, status } in mutate instead of separate agentId parameter",
+      "updated_in": "hooks/useWhatsApp.ts, pages/AgentsPage.tsx"
+    }
+  },
+
+  "integration_points": {
+    "evolution_api_client": {
+      "location": "/home/ken/next-mavens-vps/src/server/control-plane/services/evolution-api-client.ts",
+      "methods_used": [
+        "getQRCode()",
+        "connectInstance()",
+        "restartInstance()",
+        "logoutInstance()",
+        "deleteInstance()",
+        "getConnectionState()",
+        "getInfo()",
+        "chat.findChats()",
+        "chat.getMessages()",
+        "chat.sendMessage()",
+        "chat.sendImage/Video/Document",
+        "group.createGroup()",
+        "group.getInfo()",
+        "group.updateSubject()",
+        "group.addParticipants()",
+        "group.removeParticipants()",
+        "message.sendText()",
+        "message.sendTemplate()"
+      ]
+    },
+    "webhook_processing": {
+      "events_supported": [
+        "MESSAGES_UPSERT",
+        "MESSAGES_UPDATE",
+        "MESSAGES_DELETE",
+        "CONNECTION_UPDATE",
+        "QRCODE_UPDATED",
+        "CHATS_UPSERT",
+        "CHATS_UPDATE",
+        "CHATS_DELETE",
+        "GROUPS_UPSERT",
+        "GROUP_UPDATE",
+        "GROUP_PARTICIPANTS_UPDATE",
+        "CONTACTS_UPSERT",
+        "CONTACTS_UPDATE",
+        "PRESENCE_UPDATE"
+      ],
+      "handlers": "/src/server/api/routes/whatsapp/routes/webhook/handlers/"
+    }
+  },
+
+  "deployment_status": {
+    "frontend": {
+      "build_command": "npm run build",
+      "output_dir": "dist/",
+      "nginx_config": "/etc/nginx/sites-available/whatsapp-admin",
+      "ssl": "Let's Encrypt (assumed)",
+      "last_deployed": "2026-03-03 (commit d57fbc9)",
+      "status": "✅ Running"
+    },
+    "backend": {
+      "pm2_processes": ["mavens-api", "mavens-realtime", "mavens-webhook"],
+      "node_version": "Bun runtime (shebang: #!/usr/bin/env bun)",
+      "env_vars_required": [
+        "DATABASE_URL",
+        "JWT_SECRET",
+        "EVOLUTION_API_URL",
+        "EVOLUTION_API_KEY",
+        "EVOLUTION_WEBHOOK_SECRET"
+      ],
+      "logs_dir": "/home/ken/next-mavens-vps/logs/",
+      "status": "✅ Running"
+    }
+  },
+
+  "testing_checklist": {
+    "auth_flow": ["Register", "Login", "Logout", "Token refresh", "Protected route access"],
+    "instance_management": ["Create instance with QR", "Connect via QR", "View status", "Restart", "Logout", "Delete"],
+    "messaging": ["Send text message", "Send image", "Receive message via webhook", "View chat list", "View messages"],
+    "groups": ["Create group", "Add participants", "Get group info", "Update subject", "Remove participants"],
+    "templates": ["Create template", "List templates", "Render template", "Delete template"],
+    "agents": ["Create agent", "Update status", "Assign chat", "View queue", "Auto-assign"],
+    "webhooks": ["Configure webhook", "Receive events", "View delivery logs"],
+    "logs": ["View instance logs", "View summary"],
+    "analytics": ["Team overview", "Agent stats", "Volume trends", "SLA report"],
+    "reseller": ["Create sub-instance", "Connect sub-instance", "Quota enforcement"]
+  },
+
+  "known_bugs_and_limitations": [
+    "Frontend uses hardcoded API base URL; should be configurable via environment",
+    "Toast notifications show generic 'success' messages; could be more specific",
+    "Agent status update mutation signature was inconsistent; fixed but needs testing",
+    "AgentPage queue tab uses agents state which may not be available if filtered; needs validation",
+    "useAssignChat mutation uses chatJid as string but Evolution API expects number (need to strip @s.whatsapp.net)",
+    "Template render functionality not fully implemented in backend (missing endpoint?)",
+    "Webhook delivery logs page uses limit=50 hardcoded; should be configurable",
+    "AgentsPage and GroupsPage modals may have z-index issues with other overlays",
+    "No real-time updates (polling only) for messages and chats; WebSocket integration pending",
+    "Instance status polling may cause excessive API calls; consider WebSocket from Evolution",
+    "Missing proper error boundaries in React components",
+    "No input validation/sanitization on message sending (XSS risk via rendered text)",
+    "No rate limiting on backend endpoints (security risk)",
+    "No comprehensive test coverage (unit/integration/e2e)"
+  ],
+
+  "phase_3_completion_status": {
+    "completed_features": [
+      "GroupsPage with full CRUD and participant management",
+      "TemplatesPage with CRUD and rendering (local storage, Evolution API integration partial)",
+      "AgentsPage with agent creation, status updates, queue management",
+      "AnalyticsPage with team overview, agent stats, volume trends, SLA",
+      "WebhookLogsPage with delivery monitoring",
+      "Updated sidebar navigation with new pages",
+      "Toast notifications added to all mutations",
+      "useWhatsApp hook extended with all new queries and mutations",
+      "Fixed useSendMessage signature and cache invalidation",
+      "Fixed duplicate hook definitions",
+      "Fixed type errors in AgentsPage and GroupsPage",
+      "Added missing Prisma models: WhatsAppAgent, WhatsAppTemplate, WhatsAppLog, WhatsAppWebhook, WhatsAppRoutingQueue, WhatsAppRoutingRule",
+      "Renamed ChatAssignment → WhatsAppAssignment, fixed AssignmentStatus enum",
+      "Fixed reseller routes to use WhatsAppInstance (sub-instance support)",
+      "Created webhook deliveries endpoint (GET /whatsapp/webhook/deliveries)",
+      "Generated Prisma client successfully"
+    ],
+    "pending_integration_tasks": [
+      "Create and apply Prisma migration to database: bunx prisma migrate dev --name add_whatsapp_team_models",
+      "Test all new pages with real database data",
+      "Verify Evolution API integration for templates (sendTemplate) and groups",
+      "Implement real-time updates via WebSocket (instead of polling) - Phase 4",
+      "Add proper error handling and retry logic for network failures",
+      "Performance testing with multiple concurrent instances",
+      "Fix remaining bugs in known_bugs_and_limitations list"
+    ]
+  },
+
+  "future_enhancements_phase_4": [
+    "Real-time messaging with WebSocket (replace polling)",
+    "Bulk actions for group management",
+    "Template preview with sample variables",
+    "Advanced agent routing with skill-based matching",
+    "Conversation transfer between agents",
+    "Customer satisfaction ratings",
+    "Advanced analytics with dashboards and custom reports",
+    "Export data (CSV, PDF) for all pages",
+    "Multi-language support (i18n)",
+    "Dark/Light theme toggle",
+    "Mobile-responsive improvements",
+    "Two-factor authentication",
+    "API key management for resellers",
+    "Usage quotas and billing integration",
+    "Role-based access control fine-tuning",
+    "Activity audit log viewer",
+    "System health monitoring dashboard",
+    "Backup and restore functionality",
+    "Docker deployment scripts",
+    "Kubernetes Helm charts"
+  ],
+
+  "files_modified_summary": [
+    "FRONTEND:",
+    "  src/App.tsx (added routes for Groups, Templates, Agents, Analytics, WebhookLogs)",
+    "  src/components/Sidebar.tsx (added nav items: Groups, Templates, Agents, Analytics, Webhook Logs)",
+    "  src/hooks/useWhatsApp.ts (added 20+ new hooks, fixed duplicates, added toast notifications)",
+    "  src/components/ChatWindow.tsx (fixed useSendMessage call signature)",
+    "  src/pages/GroupsPage.tsx (new, 375 lines - CRUD, participants, details modal)",
+    "  src/pages/TemplatesPage.tsx (new, 347 lines - CRUD, render modal)",
+    "  src/pages/AgentsPage.tsx (new, 305 lines - agent management, queue assignment)",
+    "  src/pages/AnalyticsPage.tsx (new, 180 lines - team metrics, trends)",
+    "  src/pages/WebhookLogsPage.tsx (new, 148 lines - delivery monitoring)",
+    "BACKEND:",
+    "  src/server/database/schema.prisma (added WhatsAppAgent, WhatsAppTemplate, WhatsAppLog, WhatsAppRoutingQueue, renamed RoutingRule → WhatsAppRoutingRule, renamed ChatAssignment → WhatsAppAssignment, updated AssignmentStatus enum)",
+    "  src/server/api/routes/whatsapp/routes/reseller/reseller-connection.ts (fixed to use WhatsAppInstance.isSubInstance)",
+    "  src/server/api/routes/whatsapp/routes/webhook/webhook-deliveries.ts (new endpoint for delivery logs)",
+    "  bunx prisma generate (client regenerated successfully)",
+    "PROJECT ROOT:",
+    "  PROJECT_PRDU.json (this file - comprehensive PRD and status tracker)"
+  ],
+
+  "git_commits": [
+    "d57fbc9 - fix: login redirect - use token field from login response",
+    "HEAD - feat: phase 3 - implement missing pages and improvements, add missing Prisma models, fix schema alignment",
+    "  Includes: GroupsPage, TemplatesPage, AgentsPage, AnalyticsPage, WebhookLogsPage, toast notifications, hook extensions, critical schema fixes"
+  ],
+
+  "next_immediate_actions": [
+    "1. Add missing Prisma models to backend schema.prisma",
+    "2. Create and run database migration",
+    "3. Generate Prisma client (bunx prisma generate)",
+    "4. Test all new pages with real data",
+    "5. Fix any remaining type errors",
+    "6. Rebuild and redeploy frontend",
+    "7. Verify backend services running (pm2 list)",
+    "8. Check database connectivity and RLS policies",
+    "9. Test end-to-end flows: create instance → connect → send message → create group → assign agent",
+    "10. Document final API endpoints and create OpenAPI spec"
+  ],
+
+  "ownership": {
+    "project": "Next Mavens WhatsApp Evolution API Platform",
+    "admin_contact": "ken (VPS admin, full access)",
+    "support": "Available via VPS logs: /home/ken/next-mavens-vps/logs/"
+  },
+
+  "notes": "This PRD serves as the single source of truth for the project scope, implementation status, and technical requirements. Update this file when features are completed or requirements change. Refer to this document when onboarding new developers or resuming work after context limits."
+}
