@@ -218,6 +218,50 @@ export function useUpdateSettings(instanceId: string) {
   });
 }
 
+export interface WhatsAppApiKey {
+  id: string;
+  name: string;
+  key: string;
+  createdAt: string;
+  lastUsed?: string;
+}
+
+export function useApiKeys(instanceId: string) {
+  return useQuery({
+    queryKey: ['whatsapp-api-keys', instanceId],
+    queryFn: async () => {
+      const { data } = await api.get(`/whatsapp/instances/${instanceId}/keys`);
+      return (data.keys || []) as WhatsAppApiKey[];
+    },
+    enabled: !!instanceId,
+  });
+}
+
+export function useCreateApiKey(instanceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (keyData: { name: string }) => {
+      const { data } = await api.post(`/whatsapp/instances/${instanceId}/keys`, keyData);
+      return data.key || null;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-api-keys', instanceId] });
+    },
+  });
+}
+
+export function useDeleteApiKey(instanceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (keyId: string) => {
+      await api.delete(`/whatsapp/instances/${instanceId}/keys/${keyId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-api-keys', instanceId] });
+    },
+  });
+}
+
 export function useSendMessage(instanceId: string) {
   return useMutation({
     mutationFn: async ({ number, text }: { number: string; text: string }) => {

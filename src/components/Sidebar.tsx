@@ -10,7 +10,8 @@ import {
   Menu, 
   X,
   Zap,
-  ShieldCheck
+  ShieldCheck,
+  BookOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SidebarItem } from './SidebarItem';
@@ -27,6 +28,7 @@ export function Sidebar() {
     { to: '/messages', icon: MessageSquare, label: 'Messaging' },
     { to: '/webhooks', icon: Webhook, label: 'Webhooks' },
     { to: '/settings', icon: Settings, label: 'Settings' },
+    { to: 'https://whatsappapi.nextmavens.cloud/docs', icon: BookOpen, label: 'Documentation', external: true },
   ];
 
   return (
@@ -51,6 +53,7 @@ export function Sidebar() {
               icon={item.icon}
               label={item.label}
               active={location.pathname === item.to}
+              external={item.external}
             />
           ))}
         </nav>
@@ -126,6 +129,7 @@ export function Sidebar() {
                     icon={item.icon}
                     label={item.label}
                     active={location.pathname === item.to}
+                    external={item.external}
                   />
                 ))}
               </nav>

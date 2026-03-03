@@ -1,6 +1,7 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { WhatsAppInstance, useDisconnectInstance } from '../hooks/useWhatsApp';
-import { Smartphone, Battery, Signal, Power, Trash2, ExternalLink, MessageSquare, Loader2 } from 'lucide-react';
+import { Smartphone, Battery, Signal, Power, Trash2, ExternalLink, MessageSquare, Loader2, Code2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 
@@ -14,6 +15,7 @@ interface InstanceCardProps {
 
 export function InstanceCard({ instance, onConnect, onDelete, onViewDetails }: InstanceCardProps) {
   const disconnect = useDisconnectInstance();
+  const navigate = useNavigate();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -97,19 +99,18 @@ export function InstanceCard({ instance, onConnect, onDelete, onViewDetails }: I
         {instance.status === 'CONNECTED' ? (
           <>
             <button 
-              onClick={() => onViewDetails(instance.id)}
+              onClick={() => navigate(`/instances/${instance.id}`)}
               className="btn-primary flex-1"
             >
-              <MessageSquare className="w-4 h-4" />
-              Messages
+              <Code2 className="w-4 h-4" />
+              Integrate
             </button>
             <button 
-              onClick={() => disconnect.mutate(instance.id)}
-              disabled={disconnect.isPending}
-              className="btn-secondary px-3"
-              title="Disconnect"
+              onClick={() => navigate('/messages')}
+              className="btn-secondary flex-1"
             >
-              {disconnect.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Power className="w-4 h-4" />}
+              <MessageSquare className="w-4 h-4" />
+              Chat
             </button>
           </>
         ) : (

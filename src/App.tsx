@@ -5,6 +5,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Messaging } from './pages/Messaging';
 import { Webhooks } from './pages/Webhooks';
 import { Settings } from './pages/Settings';
+import { InstanceDetails } from './pages/InstanceDetails';
 import { Login } from './pages/Login';
 import { Sidebar } from './components/Sidebar';
 import { isAuthenticated } from './hooks/useAuth';
@@ -53,6 +54,7 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/instances" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/instances/:id" element={<ProtectedRoute><InstanceDetails /></ProtectedRoute>} />
             <Route path="/messages" element={<ProtectedRoute><Messaging /></ProtectedRoute>} />
             <Route path="/webhooks" element={<ProtectedRoute><Webhooks /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

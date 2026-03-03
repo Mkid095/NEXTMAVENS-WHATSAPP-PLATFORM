@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQRCode, useCachedQR, useInstanceStatus } from '../hooks/useWhatsApp';
-import { QrCode, Loader2, CheckCircle2, AlertCircle, Timer } from 'lucide-react';
+import { QrCode, Loader2, CheckCircle2, AlertCircle, Timer, Code2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface QRWizardProps {
@@ -10,6 +11,7 @@ interface QRWizardProps {
 
 export function QRWizard({ instanceId, onConnected }: QRWizardProps) {
   const [step, setStep] = useState<'idle' | 'generating' | 'scanning' | 'connected'>('idle');
+  const navigate = useNavigate();
   
   const generateQR = useQRCode(instanceId);
   const { data: qrData, isLoading: isLoadingQR } = useCachedQR(instanceId, step === 'scanning');
@@ -170,10 +172,16 @@ export function QRWizard({ instanceId, onConnected }: QRWizardProps) {
             <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-12 h-12 text-emerald-500" />
             </div>
-            <div className="space-y-2">
-              <h3 className="text-2xl font-bold text-white">Connected!</h3>
-              <p className="text-zinc-400">
-                Your WhatsApp instance is now ready to use.
+            <div className="space-y-4 pt-4">
+              <button 
+                onClick={() => navigate(`/instances/${instanceId}`)}
+                className="btn-primary w-full py-3"
+              >
+                <Code2 className="w-5 h-5" />
+                View Integration Guide
+              </button>
+              <p className="text-xs text-zinc-500">
+                You can now start sending messages via API.
               </p>
             </div>
           </motion.div>
