@@ -25,9 +25,10 @@ api.interceptors.request.use((config) => {
   }
 
   // Determine which token to use
-  const token = path.startsWith('/whatsapp/reseller/') && !path.includes('/token')
-    ? resellerToken
-    : accessToken;
+  // If path contains '/whatsapp/reseller/' AND does NOT contain '/token', use reseller token
+  // Otherwise, use user access token
+  const isResellerEndpoint = path.includes('/whatsapp/reseller/') && !path.includes('/token');
+  const token = isResellerEndpoint ? resellerToken : accessToken;
 
   // Only set Authorization if token exists and is a non-empty string
   if (token && typeof token === 'string' && token.trim().length > 0) {
@@ -55,7 +56,8 @@ api.interceptors.response.use(
 
       // For reseller API endpoints (except token endpoint), don't automatically logout
       // Let the component handle the error (e.g., prompt to generate token)
-      if (path.startsWith('/whatsapp/reseller/') && !path.includes('/token')) {
+      const isResellerEndpoint = path.includes('/whatsapp/reseller/') && !path.includes('/token');
+      if (isResellerEndpoint) {
         return Promise.reject(error);
       }
 
