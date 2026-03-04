@@ -38,6 +38,7 @@ export function useLogout() {
   return () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('user');
+    localStorage.removeItem('resellerJwtToken');
     window.location.href = '/login';
   };
 }

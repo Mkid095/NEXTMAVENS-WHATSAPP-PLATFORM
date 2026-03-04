@@ -17,6 +17,7 @@ import {
   Bot,
   BarChart2,
   Activity as ActivityIcon,
+  Key,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SidebarItem } from './SidebarItem';
@@ -37,6 +38,7 @@ export function Sidebar() {
     { to: '/analytics', icon: BarChart2, label: 'Analytics' },
     { to: '/webhook-logs', icon: ActivityIcon, label: 'Webhook Logs' },
     { to: '/webhooks', icon: Webhook, label: 'Integrations' },
+    { to: '/reseller-api', icon: Key, label: 'Reseller API' },
     { to: '/settings', icon: Settings, label: 'Settings' },
     { to: 'https://whatsappapi.nextmavens.cloud/docs', icon: BookOpen, label: 'API Docs', external: true },
   ];

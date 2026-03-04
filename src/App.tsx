@@ -13,6 +13,7 @@ import { TemplatesPage } from './pages/TemplatesPage';
 import { AgentsPage } from './pages/AgentsPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { WebhookLogsPage } from './pages/WebhookLogsPage';
+import { ResellerAPISettings } from './pages/ResellerAPISettings';
 import { Sidebar } from './components/Sidebar';
 import { isAuthenticated } from './hooks/useAuth';
 
@@ -70,6 +71,7 @@ export default function App() {
             <Route path="/webhook-logs" element={<ProtectedRoute><WebhookLogsPage /></ProtectedRoute>} />
             <Route path="/webhooks" element={<ProtectedRoute><Webhooks /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/reseller-api" element={<ProtectedRoute><ResellerAPISettings /></ProtectedRoute>} />
           </Routes>
         </Layout>
       </BrowserRouter>

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useInstances, useApiKeys, useCreateApiKey, useDeleteApiKey } from '../hooks/useWhatsApp';
+import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
   Smartphone,
@@ -15,10 +16,13 @@ import {
   Check,
   AlertCircle,
   ShieldCheck,
-  Users
+  Users,
+  ExternalLink,
+  RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import { api } from '../lib/api';
 import { IntegrationGuide } from '../components/IntegrationGuide';
 import { SubInstancesTab } from '../components/SubInstancesTab';
 import { Settings } from '../pages/Settings';
@@ -37,6 +41,27 @@ export function InstanceDetails() {
   const { data: apiKeys, isLoading: isLoadingKeys } = useApiKeys(id || '');
   const createKey = useCreateApiKey(id || '');
   const deleteKey = useDeleteApiKey(id || '');
+
+  // Fetch Reseller JWT Token for the organization
+  const { data: resellerTokenData, isLoading: isLoadingResellerToken, error: resellerTokenError, refetch: refetchResellerToken } = useQuery({
+    queryKey: ['reseller-token', instance?.orgId],
+    queryFn: async () => {
+      const response = await api.get('/whatsapp/reseller/token');
+      return response.data;
+    },
+    enabled: !!instance?.orgId,
+    retry: false,
+  });
+
+  // Safely check if error is a 503 (reseller not configured)
+  const isResellerNotConfigured = resellerTokenError && (resellerTokenError as any)?.response?.status === 503;
+
+  // Store reseller token in localStorage for SubInstancesTab and other reseller API calls
+  useEffect(() => {
+    if (resellerTokenData?.token) {
+      localStorage.setItem('resellerJwtToken', resellerTokenData.token);
+    }
+  }, [resellerTokenData?.token]);
 
   const copyKey = (key: string) => {
     navigator.clipboard.writeText(key);
@@ -176,15 +201,93 @@ export function InstanceDetails() {
                     {instance.evolutionApiKey || 'Not generated yet. Connect your device to generate API key.'}
                   </code>
                 </div>
+
+                {/* Reseller JWT Token */}
+                <div className="card bg-purple-500/5 border-purple-500/20">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold text-purple-500">Reseller JWT Token</h3>
+                    <button
+                      onClick={() => refetchResellerToken()}
+                      disabled={isLoadingResellerToken}
+                      className="text-xs px-3 py-1 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-zinc-300 rounded-lg transition-all flex items-center gap-1"
+                    >
+                      {isLoadingResellerToken ? (
+                        <>Refreshing...</>
+                      ) : (
+                        <>
+                          <RefreshCw className="w-3 h-3" />
+                          Refresh
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-sm text-zinc-400 mb-3">
+                    Use this token to authenticate Reseller API requests for creating and managing sub-instances.
+                  </p>
+                  {isLoadingResellerToken && !resellerTokenData ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
+                    </div>
+                  ) : resellerTokenError ? (
+                    <div className="text-center py-4">
+                      <p className="text-red-400 mb-3">
+                        {isResellerNotConfigured
+                          ? 'Reseller API not configured by platform administrator.'
+                          : 'Failed to load Reseller JWT token.'}
+                      </p>
+                      <button
+                        onClick={() => navigate('/reseller-api')}
+                        className="btn-primary text-sm inline-flex items-center gap-2"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        Go to Reseller API Settings
+                      </button>
+                    </div>
+                  ) : resellerTokenData?.token ? (
+                    <div>
+                      <code className="text-sm text-purple-400 font-mono block bg-zinc-900 px-3 py-3 rounded break-all">
+                        {resellerTokenData.token}
+                      </code>
+                      <div className="flex items-center justify-between mt-2">
+                        <p className="text-xs text-zinc-500">
+                          Expires: {resellerTokenData.expiresAt ? new Date(resellerTokenData.expiresAt).toLocaleDateString() : 'N/A'}
+                        </p>
+                        <button
+                          onClick={() => copyKey(resellerTokenData.token!)}
+                          className="text-xs flex items-center gap-1 text-zinc-400 hover:text-white transition-colors"
+                        >
+                          {copiedKey === resellerTokenData.token ? (
+                            <Check className="w-3 h-3 text-emerald-500" />
+                          ) : (
+                            <Copy className="w-3 h-3" />
+                          )}
+                          {copiedKey === resellerTokenData.token ? 'Copied!' : 'Copy'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-zinc-500 mb-3">No Reseller JWT token generated yet.</p>
+                      <button
+                        onClick={() => navigate('/reseller-api')}
+                        className="btn-primary text-sm inline-flex items-center gap-2"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        Generate Token
+                      </button>
+                    </div>
+                  )}
+                </div>
+
               </div>
 
               <div className="space-y-8">
                 <div className="card bg-emerald-500/5 border-emerald-500/20">
                   <h3 className="font-bold text-emerald-500 mb-2">Instance Status</h3>
                   <p className="text-sm text-zinc-400 leading-relaxed">
-                    Your instance is currently {instance.status.toLowerCase()}. 
-                    {instance.status === 'CONNECTED' 
-                      ? ' All services are operational and ready for integration.' 
+                    Your instance is currently {instance.status.toLowerCase()}.
+                    {instance.status === 'CONNECTED'
+                      ? ' All services are operational and ready for integration.'
                       : ' Please connect your device to start using the API.'}
                   </p>
                 </div>
