@@ -85,6 +85,7 @@ enum Role {
   AGENT
   VIEWER
   API_USER
+  SYSTEM // For system processes (webhooks, cron jobs)
 }
 
 enum Plan {
