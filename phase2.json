@@ -406,7 +406,9 @@
             "Perform manual testing of all scenarios",
             "Verify no console errors or warnings",
             "Test security implications"
-          ]
+          ],
+          "status": "COMPLETED",
+          "completedAt": "2025-03-11T20:30:00Z"
         }
       },
       "validation": {
@@ -507,7 +509,9 @@
             "Perform manual testing of all scenarios",
             "Verify no console errors or warnings",
             "Test security implications"
-          ]
+          ],
+          "status": "COMPLETED",
+          "completedAt": "2025-03-11T20:35:00Z"
         }
       },
       "validation": {
