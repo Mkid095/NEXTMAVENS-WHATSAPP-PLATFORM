@@ -6,6 +6,15 @@
 
 import { prisma } from '../prisma';
 import { ParsedWebhookEvent } from './parsers';
+import { getSocketService } from '../build-real-time-messaging-with-socket.io';
+
+// Helper: Broadcast event to instance room (if socket service is available)
+async function broadcastToInstance(instanceId: string, event: string, data: any): Promise<void> {
+  const socketService = getSocketService();
+  if (socketService) {
+    socketService.broadcastToInstance(instanceId, event, data);
+  }
+}
 
 /**
  * Dispatch webhook event to appropriate handler
@@ -84,9 +93,10 @@ async function handleMessageUpsert(
   // Ensure chat exists first (if not, create it)
   await ensureChatExists(orgId, event.instanceId, chatId, from, to);
 
+  let message;
   try {
     // Try to insert new message (idempotent: fails if exists, then we update)
-    await prisma.whatsAppMessage.create({
+    message = await prisma.whatsAppMessage.create({
       data: {
         id: messageId,
         orgId,
@@ -104,12 +114,31 @@ async function handleMessageUpsert(
       },
     });
 
+    // Broadcast to connected clients
+    await broadcastToInstance(event.instanceId, 'whatsapp:message:upsert', {
+      id: message.id,
+      chatId: message.chatId,
+      messageId: message.messageId,
+      from: message.from,
+      to: message.to,
+      type: message.type,
+      content: message.content,
+      status: message.status,
+      timestamp: message.sentAt?.getTime() || Date.now(),
+    });
+
     return { success: true, result: `Message ${messageId} created` };
   } catch (error: any) {
     // If duplicate key (message already exists), update instead
     if (error.code === 'P2002') {
-      // Unique constraint violation - message already exists, update it
-      await prisma.whatsAppMessage.update({
+      // Fetch existing message to get current data for broadcast
+      const existing = await prisma.whatsAppMessage.findUnique({ where: { id: messageId } });
+      if (!existing) {
+        throw new Error(`Message ${messageId} claimed duplicate but not found`);
+      }
+
+      // Update message
+      message = await prisma.whatsAppMessage.update({
         where: { id: messageId },
         data: {
           status: status,
@@ -118,6 +147,19 @@ async function handleMessageUpsert(
             ? new Date(content.messageTimestamp as string)
             : undefined,
         },
+      });
+
+      // Broadcast update (same event type for upsert)
+      await broadcastToInstance(event.instanceId, 'whatsapp:message:upsert', {
+        id: message.id,
+        chatId: message.chatId,
+        messageId: message.messageId,
+        from: message.from,
+        to: message.to,
+        type: message.type,
+        content: message.content,
+        status: message.status,
+        timestamp: message.sentAt?.getTime() || Date.now(),
       });
 
       return { success: true, result: `Message ${messageId} updated` };
@@ -149,6 +191,14 @@ async function handleMessageUpdate(
       data: { status: status as any },
     });
 
+    // Broadcast status update
+    await broadcastToInstance(event.instanceId, 'whatsapp:message:update', {
+      id: updated.id,
+      chatId: updated.chatId,
+      status: updated.status,
+      timestamp: Date.now(),
+    });
+
     return { success: true, result: `Message ${updated.id} status updated to ${status}` };
   } catch (error: any) {
     if (error.code === 'P2025') {
@@ -177,9 +227,21 @@ async function handleMessageDelete(
   }
 
   try {
+    // Fetch message before delete to get instanceId for broadcast
+    const message = await prisma.whatsAppMessage.findUnique({ where: { id: messageId } });
+
     await prisma.whatsAppMessage.delete({
       where: { id: messageId },
     });
+
+    // Broadcast deletion if we know which instance
+    if (message) {
+      await broadcastToInstance(message.instanceId, 'whatsapp:message:delete', {
+        id: messageId,
+        chatId: message.chatId,
+      });
+    }
+
     return { success: true, result: `Message ${messageId} deleted` };
   } catch (error: any) {
     if (error.code === 'P2025') {
@@ -218,6 +280,13 @@ async function handleConnectionUpdate(
   await prisma.whatsAppInstance.update({
     where: { id: event.instanceId },
     data: { status: prismaStatus as any, lastSeen: new Date() },
+  });
+
+  // Broadcast status change to org room (all agents should see instance status)
+  await broadcastToOrg(orgId, 'whatsapp:instance:status', {
+    instanceId: event.instanceId,
+    status: prismaStatus,
+    timestamp: Date.now(),
   });
 
   return {
@@ -265,10 +334,19 @@ async function handleSendMessage(
   const { messageId, status } = event;
 
   try {
-    await prisma.whatsAppMessage.update({
+    const updated = await prisma.whatsAppMessage.update({
       where: { id: messageId },
       data: { status: status === 'success' ? 'SENT' : 'FAILED' },
     });
+
+    // Broadcast status change (likely to SENT or FAILED)
+    await broadcastToInstance(updated.instanceId, 'whatsapp:message:update', {
+      id: updated.id,
+      chatId: updated.chatId,
+      status: updated.status,
+      timestamp: Date.now(),
+    });
+
     return { success: true, result: `Send confirmation processed` };
   } catch (error: any) {
     if (error.code === 'P2025') {
