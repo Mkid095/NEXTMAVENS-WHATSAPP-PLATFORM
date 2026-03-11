@@ -20,7 +20,7 @@
  */
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { prisma } from '../../lib/prisma.js';
+import { prisma } from '../../lib/prisma';
 import {
   initializeWebhookProcessor,
   processEvolutionWebhook,

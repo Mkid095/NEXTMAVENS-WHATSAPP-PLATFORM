@@ -233,7 +233,8 @@ function extractChatId(data: MessageUpsertData): string {
 
   // Fallback: construct from 'to' field (for incoming) or 'from' (for outgoing)
   // WhatsApp chat ID format: phone@c.us (individual) or group-id@g.us (group)
-  const phone = data.fromMe ? data.to : data.from;
+  const fromMe = data.key?.fromMe;
+  const phone = fromMe ? data.to : data.from;
   return `${phone}@c.us`; // Assume individual chat for now
 }
 

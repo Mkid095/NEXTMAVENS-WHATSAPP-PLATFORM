@@ -74,7 +74,7 @@ export function initializeWebhookProcessor(
 /**
  * Ensure config is initialized
  */
-function ensureInitialized(): asserts config is WebhookProcessorConfig {
+function ensureInitialized(): void {
   if (!config) {
     throw new Error(
       'Webhook processor not initialized. Call initializeWebhookProcessor() first.'
@@ -155,14 +155,14 @@ export async function processEvolutionWebhook(
     const result = await dispatchWebhookHandler(parsedEvent, instanceInfo.orgId);
 
     // Log to console (full audit logging can be added later)
-    console.log(`[Webhook] ${instanceInfo.instanceId} ${jsonBody.event} → ${result.success}`);
+    console.log(`[Webhook] ${instanceInfo.id} ${jsonBody.event} → ${result.success}`);
 
     return {
       success: result.success,
       event: jsonBody.event,
       instanceId: jsonBody.instanceId,
       orgId: instanceInfo.orgId,
-      message: result.result,
+      messageId: result.result,
       processedAt: new Date(),
       error: result.error,
     };

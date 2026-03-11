@@ -16,6 +16,14 @@ async function broadcastToInstance(instanceId: string, event: string, data: any)
   }
 }
 
+// Helper: Broadcast event to org room (if socket service is available)
+async function broadcastToOrg(orgId: string, event: string, data: any): Promise<void> {
+  const socketService = getSocketService();
+  if (socketService) {
+    socketService.broadcastToOrg(orgId, event, data);
+  }
+}
+
 /**
  * Dispatch webhook event to appropriate handler
  */
@@ -106,8 +114,8 @@ async function handleMessageUpsert(
         from: from ?? 'unknown',
         to: to ?? '',
         type: type as any, // Cast to MessageType enum
-        content: content ?? null,
-        status: status ?? 'PENDING',
+        content: (content ?? null) as any,
+        status: (status ?? 'PENDING') as any,
         sentAt: content?.messageTimestamp
           ? new Date(content.messageTimestamp as string)
           : null,
@@ -141,8 +149,8 @@ async function handleMessageUpsert(
       message = await prisma.whatsAppMessage.update({
         where: { id: messageId },
         data: {
-          status: status,
-          content: content ?? undefined,
+          status: status as any,
+          content: (content ?? undefined) as any,
           sentAt: content?.messageTimestamp
             ? new Date(content.messageTimestamp as string)
             : undefined,
