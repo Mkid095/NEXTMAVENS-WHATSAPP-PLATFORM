@@ -315,6 +315,44 @@ const quotaGuard = async (req, reply, next) => {
 };
 ```
 
+**Instance Count Limit Enforcement**:
+
+**Problem**: Org could exceed plan's instance limit.
+
+**Solution**: Check limit BEFORE creating instance.
+
+**Middleware**:
+```typescript
+const instanceLimitGuard = async (req: UserRequest, reply: FastifyReply, next: NextFunction) => {
+  const user = req.user;
+  if (user.role === 'SUPER_ADMIN') return next();
+
+  const org = await prisma.organization.findUnique({
+    where: { id: user.orgId },
+    select: { limits: true }
+  });
+
+  const maxInstances = org.limits?.instances || 1;
+  const currentCount = await prisma.whatsAppInstance.count({
+    where: { orgId: user.orgId, deletedAt: null }
+  });
+
+  if (currentCount >= maxInstances) {
+    return reply.status(403).json({
+      error: 'Instance limit reached',
+      message: `Your plan allows maximum ${maxInstances} instances. Upgrade to add more.`,
+      upgradeUrl: '/pricing'
+    });
+  }
+
+  next();
+};
+```
+
+Apply to: `POST /whatsapp/instances` route.
+
+**UI**: Show "X of Y instances" on dashboard. Disable "Create" button when limit reached.
+
 ---
 
 ### 2.7 SUPER_ADMIN Bypass & Audit
@@ -481,6 +519,95 @@ Return to client
 
 ---
 
+### 3.5 JWT Refresh Endpoint Implementation
+
+**Route**: `POST /auth/refresh`
+
+**Request**:
+```json
+{
+  "refreshToken": "eyJhbGci...refresh_token_string"
+}
+```
+
+**Response**:
+```json
+{
+  "accessToken": "eyJhbGci...access_token",
+  "refreshToken": "eyJhbGci...new_refresh_token",
+  "user": { "id": "...", "email": "...", "role": "..." }
+}
+```
+
+**Logic**:
+1. Hash incoming refresh token (SHA-256)
+2. Look up in `refresh_tokens` table by `tokenHash`
+3. Verify: exists, not expired, not revoked, user is active
+4. **Rotate**: Delete old token, create new refresh token (30d expiry)
+5. Generate new access token (15min expiry)
+6. Return both tokens + user info
+
+**Rate Limit**: 10 refreshes/hour per user (to prevent DoS)
+
+**Database Model**:
+```prisma
+model RefreshToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+```
+
+**Implementation**:
+```typescript
+fastify.post('/auth/refresh', async (req, reply) => {
+  const { refreshToken } = req.body;
+  const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+
+  const token = await prisma.refreshToken.findUnique({
+    where: { tokenHash },
+    include: { user: true }
+  });
+
+  if (!token || token.expiresAt < new Date() || token.revoked) {
+    return reply.status(401).json({ error: 'Invalid refresh token' });
+  }
+
+  // Rotate: delete old, create new
+  await prisma.refreshToken.delete({ where: { id: token.id } });
+
+  const newRefresh = generateRefreshToken();
+  const newHash = crypto.createHash('sha256').update(newRefresh).digest('hex');
+  await prisma.refreshToken.create({
+    data: {
+      tokenHash: newHash,
+      userId: token.userId,
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    }
+  });
+
+  const accessToken = signJWT({
+    userId: token.user.id,
+    orgId: token.user.orgId,
+    role: token.user.role,
+  });
+
+  return {
+    accessToken,
+    refreshToken: newRefresh,
+    user: { id: token.user.id, email: token.user.email, role: token.user.role }
+  };
+});
+```
+
+---
+
 ### 3.5 Session Management
 
 **Decision**: Full session visibility and control for users.
@@ -623,9 +750,9 @@ Headers:
 
 ---
 
-## 3. User Flow & Signup Journey
+## 4. User Flow & Signup Journey
 
-### 3.1 Platform Owner (Super Admin)
+### 4.1 Platform Owner (Super Admin)
 1. Initial setup via direct database seeding
 2. Login at `/admin` (separate route)
 3. Dashboard shows:
@@ -750,7 +877,47 @@ model InstanceQuota {
 - Webhook endpoints for payment events
 - Admin billing page with invoices
 
+### 5.4 Tax Handling (VAT/GST/Sales Tax)
+
+**Decision**: Use **Stripe Tax** for automated tax calculation and compliance.
+
+**Why Stripe Tax**:
+- Automatically calculates VAT, GST, sales tax based on customer location
+- Handles tax registration in multiple countries
+- Generates tax reports for filing
+- Reduces compliance burden
+
+**Implementation**:
+1. Enable Stripe Tax in Stripe dashboard
+2. Set up tax registration for countries where you have nexus (US states, EU, etc.)
+3. In checkout session creation:
+```javascript
+const session = await stripe.checkout.sessions.create({
+  payment_method_types: ['card'],
+  line_items: [{ price: priceId, quantity: 1 }],
+  mode: 'subscription',
+  automatic_tax: { enabled: true }, // Stripe calculates tax
+  customer_email: customerEmail,
+  success_url: `${APP_URL}/billing?success=true`,
+  cancel_url: `${APP_URL}/pricing?canceled=true`,
+});
+```
+4. Display tax amount clearly on invoice: "Subtotal $29, VAT €5.10, Total €34.10"
+
+**Alternative** (if not using Stripe Tax):
+- Manual tax calculation using tax rate tables
+- Integrate with tax API (TaxJar, Avalara)
+- Higher complexity, more error-prone
+
+**Considerations**:
+- **US**: Sales tax varies by state. nexus if you have employees/office there.
+- **EU**: VAT MOSS registration required if selling to consumers. Use Stripe to handle.
+- **UK**: Similar VAT rules.
+- **Consult a tax accountant** for your specific situation.
+
 ---
+
+## 6. Documentation Strategy
 
 ## 6. Documentation Strategy
 
@@ -869,6 +1036,39 @@ model UserRole {
 - Frontend: `usePermission(resource, action)` hook
 - Backend: Permission middleware on all routes
 - UI: Conditionally render buttons/links based on permissions
+
+**API Key Scopes** (Critical for Reseller/External Access):
+
+For users accessing via API key (not JWT), define granular scopes:
+
+```json
+{
+  "scopes": [
+    "instances:read",
+    "messages:write",
+    "groups:read",
+    "templates:read"
+  ]
+}
+```
+
+**Scope Format**: `{resource}:{action}` where:
+- `resource`: `instances`, `messages`, `groups`, `templates`, `agents`, `webhooks`, `settings`
+- `action`: `read`, `write`, `delete`
+
+**Implementation**:
+1. Add `scopes: String[]` field to `ApiKey` model
+2. Middleware checks: `if (!apiKey.scopes.includes('messages:write')) reject`
+3. UI for creating API keys: checkboxes for allowed scopes
+4. Document required scopes per endpoint in API docs
+
+**Default Scopes by Plan**:
+- Free: `instances:read`, `messages:write` (limited)
+- Basic: `instances:read/write`, `messages:read/write`, `groups:read`
+- Pro: All scopes including `agents:read/write`, `analytics:read`
+- Enterprise: Customizable scopes + webhook management
+
+**Rotation**: API keys should be rotated every 90 days. Send email reminder 14 days before expiration.
 
 ---
 
