@@ -7,6 +7,7 @@
  */
 
 import Fastify from 'fastify';
+import http from 'http';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
 import cors from '@fastify/cors';
@@ -76,7 +77,20 @@ const start = async () => {
     const app = await buildServer();
     const port = parseInt(process.env.PORT || '3000', 10);
 
-    app.listen({ port, host: '0.0.0.0' }, (err, address) => {
+    // Create HTTP server and attach Socket.IO
+    const server = http.createServer(app);
+
+    // Initialize Socket.IO with Redis adapter
+    try {
+      const { initializeSocket } = await import('./lib/build-real-time-messaging-with-socket.io/index.js');
+      await initializeSocket(server);
+      console.log("🔌 Socket.IO initialized");
+    } catch (err) {
+      console.error("⚠️ Failed to initialize Socket.IO:", err);
+      // Continue without Socket.IO - logging only
+    }
+
+    server.listen({ port, host: '0.0.0.0' }, (err, address) => {
       if (err) {
         app.log.error(err);
         process.exit(1);
@@ -84,6 +98,7 @@ const start = async () => {
       app.log.info(`Server listening on ${address}`);
       console.log(`🚀 WhatsApp Platform Backend running on port ${port}`);
       console.log(`📡 Webhook endpoint: POST /api/webhooks/evolution`);
+      console.log(`🔌 WebSocket endpoint: ws://${address}/socket.io/`);
       console.log(`🔐 Health check: GET /health`);
     });
   } catch (error) {
