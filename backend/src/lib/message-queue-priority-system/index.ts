@@ -45,16 +45,64 @@ export const queueScheduler = {
 export async function addJob(
   type: MessageType,
   payload: Record<string, unknown>,
-  options: { priority?: MessagePriority } = {}
+  options: {
+    priority?: MessagePriority;
+    deduplication?: {
+      /** Custom deduplication ID (if not provided, will be auto-generated from payload) */
+      id?: string;
+      /** Deduplication TTL in ms (overrides default) */
+      ttl?: number;
+      /** Enable/disable deduplication explicitly */
+      enabled?: boolean;
+      /** Extend TTL on duplicate */
+      extend?: boolean;
+      /** Replace pending job data on duplicate */
+      replace?: boolean;
+      /** Required delay for debounce mode */
+      delay?: number;
+    };
+  } = {}
 ): Promise<any> {
   const priority = options.priority ?? getPriorityForType(type);
+
+  // Build BullMQ job options
+  const bullmqOptions: any = { priority };
+
+  // Integrate deduplication if requested
+  if (options.deduplication) {
+    const dedupConfig = options.deduplication;
+
+    // If ID not provided, generate from payload (requires the deduplication lib)
+    let deduplicationId = dedupConfig.id;
+    if (!deduplicationId) {
+      // Dynamic import to avoid circular dependency with deduplication system
+      try {
+        const dedupLib = await import('../implement-message-deduplication-system');
+        deduplicationId = dedupLib.generateDeduplicationId(type, payload);
+      } catch (e) {
+        // If deduplication lib not available, skip deduplication
+        console.warn('[MessageQueue] Deduplication library not available:', e.message);
+      }
+    }
+
+    if (deduplicationId) {
+      bullmqOptions.deduplication = {
+        id: deduplicationId,
+        ttl: dedupConfig.ttl ?? 60 * 60 * 1000 // Default 1 hour
+      };
+      if (dedupConfig.extend) bullmqOptions.extend = true;
+      if (dedupConfig.replace) bullmqOptions.replace = true;
+      if (dedupConfig.delay) bullmqOptions.delay = dedupConfig.delay;
+    }
+  }
+
   const jobData = {
     type,
     ...payload,
     timestamp: payload.timestamp ?? new Date().toISOString(),
     source: payload.source ?? 'evolution-webhook'
   };
-  return await messageQueue.add(type, jobData, { priority });
+  return await messageQueue.add(type, jobData, bullmqOptions);
 }
 
 export async function addCriticalJob(type: MessageType, payload: Record<string, unknown>): Promise<any> {

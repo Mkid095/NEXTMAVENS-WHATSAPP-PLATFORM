@@ -64,6 +64,11 @@ async function buildServer() {
   // @ts-ignore
   await app.register(phoneValidationRoutes.default || phoneValidationRoutes);
 
+  // Register Message Deduplication System API routes (Step 6)
+  const dedupRoutes = await import('./app/api/implement-message-deduplication-system/route.js');
+  // @ts-ignore
+  await app.register(dedupRoutes.default || dedupRoutes);
+
   // Error handler
   app.setErrorHandler((error, request, reply) => {
     app.log.error(error);

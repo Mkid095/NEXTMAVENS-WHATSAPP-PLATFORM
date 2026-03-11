@@ -14,6 +14,7 @@ import { MessageType, MessagePriority } from './types';
 /**
  * Queue a message upsert
  * Priority: MEDIUM
+ * Deduplication: Enabled (1 hour throttle)
  */
 export async function queueMessageUpsert(data: {
   messageId: string;
@@ -27,7 +28,13 @@ export async function queueMessageUpsert(data: {
   status?: string;
   timestamp?: string;
 }): Promise<any> {
-  return await addJob(MessageType.MESSAGE_UPSERT, { ...data });
+  return await addJob(MessageType.MESSAGE_UPSERT, { ...data }, {
+    deduplication: {
+      enabled: true,
+      ttl: 60 * 60 * 1000, // 1 hour
+      extend: true
+    }
+  });
 }
 
 /**
