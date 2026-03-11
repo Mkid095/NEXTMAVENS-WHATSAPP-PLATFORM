@@ -13,6 +13,38 @@ This document outlines the comprehensive plan for enhancing the WhatsApp Evoluti
 
 ---
 
+## Table of Contents
+
+**Note**: Section numbering may have minor gaps/duplications due to incremental development. Use this TOC for navigation.
+
+1. [Current System Status](#1-current-system-status)
+2. [Multi-Tenancy & User Roles Architecture](#2-multi-tenancy--user-roles-architecture)
+3. [Authentication & Security (Enterprise Hardening)](#3-authentication--security-enterprise-hardening)
+4. [User Flow & Signup Journey](#4-user-flow--signup-journey)
+5. [Instance Management & Multi-Sub-Instances](#5-instance-management--multi-sub-instances)
+6. [Payment & Billing System (Phase 3+)](#6-payment--billing-system-phase-3)
+7. [Documentation Strategy](#7-documentation-strategy)
+8. [Role-Based Access Control (RBAC) Refinement](#8-role-based-access-control-rbac-refinement)
+9. [Internal Chat Application Enhancement](#9-internal-chat-application-enhancement)
+10. [API Documentation & Developer Experience](#10-api-documentation--developer-experience)
+11. [Rate Limiting Implementation](#11-rate-limiting-implementation)
+12. [Super Admin Monitoring Dashboard](#12-super-admin-monitoring-dashboard)
+13. [SEO & Marketing Site](#13-seo--marketing-site)
+14. [Enterprise-Grade Critical Fixes (Phase 1 Priority)](#14-enterprise-grade-critical-fixes-phase-1-priority)
+15. [Testing Strategy (Enhanced)](#15-testing-strategy-enhanced)
+16. [Monitoring & Observability (Phase 8+)](#16-monitoring--observability-phase-8)
+17. [Implementation Phases (Updated)](#17-implementation-phases-updated)
+18. [Database Schema Migrations (Critical)](#18-database-schema-migrations-critical)
+19. [Deployment Checklist (Enterprise)](#19-deployment-checklist-enterprise)
+20. [Product Roadmap (Beyond Phase 8)](#20-product-roadmap-beyond-phase-8)
+21. [Success Metrics & KPIs](#21-success-metrics--kpis)
+22. [Risk Mitigation (Enterprise-Grade)](#22-risk-mitigation-enterprise-grade)
+23. [Required Resources](#23-required-resources)
+24. [Immediate Next Steps](#24-immediate-next-steps)
+25. [Appendix](#25-appendix)
+
+---
+
 ## 1. Current System Status
 
 ### ✅ What We Have Now
@@ -315,44 +347,6 @@ const quotaGuard = async (req, reply, next) => {
 };
 ```
 
-**Instance Count Limit Enforcement**:
-
-**Problem**: Org could exceed plan's instance limit.
-
-**Solution**: Check limit BEFORE creating instance.
-
-**Middleware**:
-```typescript
-const instanceLimitGuard = async (req: UserRequest, reply: FastifyReply, next: NextFunction) => {
-  const user = req.user;
-  if (user.role === 'SUPER_ADMIN') return next();
-
-  const org = await prisma.organization.findUnique({
-    where: { id: user.orgId },
-    select: { limits: true }
-  });
-
-  const maxInstances = org.limits?.instances || 1;
-  const currentCount = await prisma.whatsAppInstance.count({
-    where: { orgId: user.orgId, deletedAt: null }
-  });
-
-  if (currentCount >= maxInstances) {
-    return reply.status(403).json({
-      error: 'Instance limit reached',
-      message: `Your plan allows maximum ${maxInstances} instances. Upgrade to add more.`,
-      upgradeUrl: '/pricing'
-    });
-  }
-
-  next();
-};
-```
-
-Apply to: `POST /whatsapp/instances` route.
-
-**UI**: Show "X of Y instances" on dashboard. Disable "Create" button when limit reached.
-
 ---
 
 ### 2.7 SUPER_ADMIN Bypass & Audit
@@ -516,95 +510,6 @@ Return to client
 - Set `HttpOnly` + `Secure` + `SameSite=Strict` cookies for tokens (if using cookies)
 - Or use `Authorization: Bearer <token>` header with secure storage (React Native, mobile)
 - Implement token blacklist for logout (store JTI in Redis with expiry)
-
----
-
-### 3.5 JWT Refresh Endpoint Implementation
-
-**Route**: `POST /auth/refresh`
-
-**Request**:
-```json
-{
-  "refreshToken": "eyJhbGci...refresh_token_string"
-}
-```
-
-**Response**:
-```json
-{
-  "accessToken": "eyJhbGci...access_token",
-  "refreshToken": "eyJhbGci...new_refresh_token",
-  "user": { "id": "...", "email": "...", "role": "..." }
-}
-```
-
-**Logic**:
-1. Hash incoming refresh token (SHA-256)
-2. Look up in `refresh_tokens` table by `tokenHash`
-3. Verify: exists, not expired, not revoked, user is active
-4. **Rotate**: Delete old token, create new refresh token (30d expiry)
-5. Generate new access token (15min expiry)
-6. Return both tokens + user info
-
-**Rate Limit**: 10 refreshes/hour per user (to prevent DoS)
-
-**Database Model**:
-```prisma
-model RefreshToken {
-  id        String   @id @default(cuid())
-  tokenHash String   @unique
-  userId    String
-  expiresAt DateTime
-  revoked   Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([expiresAt])
-}
-```
-
-**Implementation**:
-```typescript
-fastify.post('/auth/refresh', async (req, reply) => {
-  const { refreshToken } = req.body;
-  const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
-
-  const token = await prisma.refreshToken.findUnique({
-    where: { tokenHash },
-    include: { user: true }
-  });
-
-  if (!token || token.expiresAt < new Date() || token.revoked) {
-    return reply.status(401).json({ error: 'Invalid refresh token' });
-  }
-
-  // Rotate: delete old, create new
-  await prisma.refreshToken.delete({ where: { id: token.id } });
-
-  const newRefresh = generateRefreshToken();
-  const newHash = crypto.createHash('sha256').update(newRefresh).digest('hex');
-  await prisma.refreshToken.create({
-    data: {
-      tokenHash: newHash,
-      userId: token.userId,
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    }
-  });
-
-  const accessToken = signJWT({
-    userId: token.user.id,
-    orgId: token.user.orgId,
-    role: token.user.role,
-  });
-
-  return {
-    accessToken,
-    refreshToken: newRefresh,
-    user: { id: token.user.id, email: token.user.email, role: token.user.role }
-  };
-});
-```
 
 ---
 
@@ -877,47 +782,7 @@ model InstanceQuota {
 - Webhook endpoints for payment events
 - Admin billing page with invoices
 
-### 5.4 Tax Handling (VAT/GST/Sales Tax)
-
-**Decision**: Use **Stripe Tax** for automated tax calculation and compliance.
-
-**Why Stripe Tax**:
-- Automatically calculates VAT, GST, sales tax based on customer location
-- Handles tax registration in multiple countries
-- Generates tax reports for filing
-- Reduces compliance burden
-
-**Implementation**:
-1. Enable Stripe Tax in Stripe dashboard
-2. Set up tax registration for countries where you have nexus (US states, EU, etc.)
-3. In checkout session creation:
-```javascript
-const session = await stripe.checkout.sessions.create({
-  payment_method_types: ['card'],
-  line_items: [{ price: priceId, quantity: 1 }],
-  mode: 'subscription',
-  automatic_tax: { enabled: true }, // Stripe calculates tax
-  customer_email: customerEmail,
-  success_url: `${APP_URL}/billing?success=true`,
-  cancel_url: `${APP_URL}/pricing?canceled=true`,
-});
-```
-4. Display tax amount clearly on invoice: "Subtotal $29, VAT €5.10, Total €34.10"
-
-**Alternative** (if not using Stripe Tax):
-- Manual tax calculation using tax rate tables
-- Integrate with tax API (TaxJar, Avalara)
-- Higher complexity, more error-prone
-
-**Considerations**:
-- **US**: Sales tax varies by state. nexus if you have employees/office there.
-- **EU**: VAT MOSS registration required if selling to consumers. Use Stripe to handle.
-- **UK**: Similar VAT rules.
-- **Consult a tax accountant** for your specific situation.
-
 ---
-
-## 6. Documentation Strategy
 
 ## 6. Documentation Strategy
 
@@ -1036,39 +901,6 @@ model UserRole {
 - Frontend: `usePermission(resource, action)` hook
 - Backend: Permission middleware on all routes
 - UI: Conditionally render buttons/links based on permissions
-
-**API Key Scopes** (Critical for Reseller/External Access):
-
-For users accessing via API key (not JWT), define granular scopes:
-
-```json
-{
-  "scopes": [
-    "instances:read",
-    "messages:write",
-    "groups:read",
-    "templates:read"
-  ]
-}
-```
-
-**Scope Format**: `{resource}:{action}` where:
-- `resource`: `instances`, `messages`, `groups`, `templates`, `agents`, `webhooks`, `settings`
-- `action`: `read`, `write`, `delete`
-
-**Implementation**:
-1. Add `scopes: String[]` field to `ApiKey` model
-2. Middleware checks: `if (!apiKey.scopes.includes('messages:write')) reject`
-3. UI for creating API keys: checkboxes for allowed scopes
-4. Document required scopes per endpoint in API docs
-
-**Default Scopes by Plan**:
-- Free: `instances:read`, `messages:write` (limited)
-- Basic: `instances:read/write`, `messages:read/write`, `groups:read`
-- Pro: All scopes including `agents:read/write`, `analytics:read`
-- Enterprise: Customizable scopes + webhook management
-
-**Rotation**: API keys should be rotated every 90 days. Send email reminder 14 days before expiration.
 
 ---
 
@@ -2954,191 +2786,7 @@ model Plan {
 
 ---
 
-## 14. Database Schema Enhancements
-
-### 14.1 Missing Models (Check Current Schema)
-
-Based on the existing plan, verify these exist:
-- ✅ `WhatsAppAgent`
-- ✅ `WhatsAppTemplate`
-- ✅ `WhatsAppLog`
-- ✅ `WhatsWebhook` or `WebhookSubscription`
-- ✅ `WhatsAppRoutingQueue`
-- ✅ `WhatsAppRoutingRule`
-- ✅ `WhatsAppAssignment` (renamed from ChatAssignment)
-
-**If missing, add immediately**.
-
-### 14.2 New Models Needed
-
-```prisma
-model Subscription {
-  id                String   @id @default(cuid())
-  orgId             String
-  planId            String
-  stripeSubscriptionId String? @unique
-  status            SubscriptionStatus
-  currentPeriodStart DateTime
-  currentPeriodEnd   DateTime
-  cancelAtPeriodEnd Boolean @default(false)
-  cancelledAt       DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  @@index([orgId])
-  @@index([status])
-}
-
-model QuotaUsage {
-  id         String   @id @default(cuid())
-  orgId      String
-  instanceId String?
-  type       QuotaType // RATE_10MIN, MONTHLY
-  used       Int @default(0)
-  limit      Int
-  periodStart DateTime
-  periodEnd   DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@unique([orgId, instanceId, type, periodStart])
-  @@index([orgId])
-}
-
-model Invitation {
-  id         String   @id @default(cuid())
-  token       String   @unique
-  email      String
-  orgId      String
-  role       RoleType
-  invitedBy  String
-  expiresAt  DateTime
-  acceptedAt DateTime?
-  createdAt  DateTime @default(now())
-}
-
-model APIToken { // For API-only users
-  id          String   @id @default(cuid())
-  name        String
-  tokenHash   String   @unique
-  userId      String?
-  orgId       String
-  scopes      Json // array of allowed scopes
-  lastUsedAt  DateTime?
-  expiresAt   DateTime?
-  createdAt   DateTime @default(now())
-}
-
-model SEOMetadata {
-  id          String   @id @default(cuid())
-  path        String   @unique // "/pricing", "/features", etc.
-  title       String
-  description String
-  keywords    String?
-  ogImage     String?
-  canonical   String?
-  schema      Json? // JSON-LD structured data
-  updatedAt   DateTime @updatedAt
-}
-```
-
----
-
-## 15. Technical Improvements Checklist
-
-### Security
-- [ ] Helmet.js middleware (security headers)
-- [ ] CORS configuration (whitelist domains)
-- [ ] Rate limiting (per IP, per user, per endpoint)
-- [ ] Request size limits (prevent DoS)
-- [ ] SQL injection prevention (Prisma handles this)
-- [ ] XSS prevention (DOMPurify for rendered HTML)
-- [ ] CSRF protection (CSRF tokens)
-- [ ] Two-factor authentication (TOTP)
-- [ ] Password strength requirements (min length, complexity)
-- [ ] Session timeout & idle logout
-- [ ] Audit logging (all admin actions)
-
-### Performance
-- [ ] API response caching (Redis)
-- [ ] Database query optimization (add indexes)
-- [ ] Connection pooling (PgBouncer)
-- [ ] Image optimization (sharp, serve WebP)
-- [ ] Gzip/Brotli compression
-- [ ] CDN for static assets
-- [ ] Lazy loading for components
-- [ ] Virtual scrolling for large lists
-- [ ] Database connection pooling (already with Prisma)
-
-### Reliability
-- [ ] Circuit breaker pattern for Evolution API calls
-- [ ] Retry with exponential backoff
-- [ ] Dead letter queue for failed webhooks
-- [ ] Graceful shutdown
-- [ ] Graceful error handling (user-friendly messages)
-- [ ] Request timeouts
-- [ ] Health checks for all services
-
-### Code Quality
-- [ ] TypeScript strict mode
-- [ ] ESLint + Prettier
-- [ ] Husky pre-commit hooks
-- [ ] Conventional commits
-- [ ] Dependency updates automation (Dependabot)
-- [ ] Documentation for internal APIs
-
----
-
-## 16. Testing Strategy
-
-### Unit Tests
-**Target**: 80%+ coverage
-
-```bash
-# Backend
-npm test -- --coverage --watch
-# Frontend
-npm test -- --coverage --watchAll
-```
-
-**Coverage Goals**:
-- API route handlers: 90%
-- Business logic services: 85%
-- React components: 75%
-- Hooks: 80%
-
-### Integration Tests
-- [ ] API endpoint tests (supertest)
-- [ ] Database transaction tests
-- [ ] Webhook delivery tests
-- [ ] Authentication flow tests
-
-### E2E Tests (Playwright)
-```typescript
-describe('User Journey', () => {
-  it('should register, create instance, and send message', async () => {
-    await page.goto('/register');
-    // ... fill form
-    await page.click('button[type="submit"]');
-    await expect(page).toHaveURL('/onboarding');
-    // ... continue
-  });
-});
-```
-
-**Critical journeys to test**:
-- New user registration & onboarding
-- Instance creation & QR connection
-- Send/receive messages
-- Create group & add participants
-- Create template & send
-- Invite team member
-- Reseller create sub-instance
-- Payment checkout flow
-
----
-
-## 16. Database Schema Migrations (Critical)
+## 17. Database Schema Migrations (Critical)
 
 ### 16.1 Missing Models (Verify & Create)
 
@@ -3650,7 +3298,7 @@ npm run build
 
 ---
 
-## 18. Product Roadmap (Beyond Phase 8)
+ (Beyond Phase 8)
 
 ### Q2 2026
 - AI-powered message suggestions (Gemini API)
