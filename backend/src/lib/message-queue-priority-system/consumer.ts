@@ -25,6 +25,21 @@ function isMessageDelete(job: Job): boolean {
 function isInstanceStatusUpdate(job: Job): boolean {
   return job.name === MessageType.INSTANCE_STATUS_UPDATE;
 }
+function isContactUpdate(job: Job): boolean {
+  return job.name === MessageType.CONTACT_UPDATE;
+}
+function isAnalyticsEvent(job: Job): boolean {
+  return job.name === MessageType.ANALYTICS_EVENT;
+}
+function isWebhookEvent(job: Job): boolean {
+  return job.name === MessageType.WEBHOOK_EVENT;
+}
+function isDatabaseCleanup(job: Job): boolean {
+  return job.name === MessageType.DATABASE_CLEANUP;
+}
+function isCacheRefresh(job: Job): boolean {
+  return job.name === MessageType.CACHE_REFRESH;
+}
 
 // ============================================================================
 // Job Processors
@@ -218,6 +233,60 @@ async function processInstanceStatusUpdate(job: Job): Promise<void> {
 }
 
 // ============================================================================
+// Additional Job Processors for Extended Message Types
+// ============================================================================
+
+async function processContactUpdate(job: Job): Promise<void> {
+  const data = job.data as any;
+  if (!data || !data.contactId || !data.instanceId || !data.orgId) {
+    throw new Error('Invalid contact update job data');
+  }
+  const { contactId, instanceId, orgId, changes } = data;
+  console.log(`[QueueWorker] Updating contact ${contactId} for instance ${instanceId}`);
+  // Future: apply changes to contact in DB and notify via socket
+}
+
+async function processAnalyticsEvent(job: Job): Promise<void> {
+  const data = job.data as any;
+  if (!data || !data.eventName) {
+    throw new Error('Invalid analytics event job data');
+  }
+  const { eventName, properties } = data;
+  console.log(`[QueueWorker] Analytics event: ${eventName}`, properties);
+  // Future: store analytics, maybe forward to analytics service
+}
+
+async function processWebhookEvent(job: Job): Promise<void> {
+  const data = job.data as any;
+  if (!data || !data.webhookId || !data.event) {
+    throw new Error('Invalid webhook event job data');
+  }
+  const { webhookId, event } = data;
+  console.log(`[QueueWorker] Webhook ${webhookId} event: ${event}`);
+  // Future: deliver to webhook subscribers
+}
+
+async function processDatabaseCleanup(job: Job): Promise<void> {
+  const data = job.data as any;
+  if (!data || !data.olderThanDays || !Array.isArray(data.tables)) {
+    throw new Error('Invalid database cleanup job data');
+  }
+  const { olderThanDays, tables } = data;
+  console.log(`[QueueWorker] Database cleanup: delete from ${tables.join(', ')} older than ${olderThanDays} days`);
+  // Future: perform cleanup via Prisma raw queries
+}
+
+async function processCacheRefresh(job: Job): Promise<void> {
+  const data = job.data as any;
+  if (!data || !data.cacheKey || !data.refreshFunction) {
+    throw new Error('Invalid cache refresh job data');
+  }
+  const { cacheKey, refreshFunction } = data;
+  console.log(`[QueueWorker] Cache refresh: ${cacheKey} via ${refreshFunction}`);
+  // Future: invoke refresh function
+}
+
+// ============================================================================
 // Main Processor
 // ============================================================================
 
@@ -233,6 +302,16 @@ async function processJob(job: Job): Promise<void> {
       await processMessageDelete(job);
     } else if (isInstanceStatusUpdate(job)) {
       await processInstanceStatusUpdate(job);
+    } else if (isContactUpdate(job)) {
+      await processContactUpdate(job);
+    } else if (isAnalyticsEvent(job)) {
+      await processAnalyticsEvent(job);
+    } else if (isWebhookEvent(job)) {
+      await processWebhookEvent(job);
+    } else if (isDatabaseCleanup(job)) {
+      await processDatabaseCleanup(job);
+    } else if (isCacheRefresh(job)) {
+      await processCacheRefresh(job);
     } else {
       console.warn(`[QueueWorker] Unknown job name: ${job.name}`);
       throw new Error(`Unsupported job type: ${job.name}`);

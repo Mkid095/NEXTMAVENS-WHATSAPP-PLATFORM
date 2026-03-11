@@ -1,0 +1,1763 @@
+{
+  "phase": 7,
+  "name": "Advanced UX & Features",
+  "description": "Real-time WebSocket, reactions, search, dark mode, AI, analytics, A/B testing",
+  "duration_days": 14,
+  "priority": "MEDIUM",
+  "dependencies": [
+    1,
+    2,
+    4
+  ],
+  "total_steps": 17,
+  "estimated_total_hours": 104,
+  "sharedRules": {
+    "noEmojis": "No emojis in code, comments, UI, logs, or documentation",
+    "maxFileLines": 250,
+    "featureBasedModules": "Organize code by feature, not by layer",
+    "primaryColorsOnly": "Use primary colors only: #3B82F6 (blue), #10B981 (green), #F59E0B (amber), #EF4444 (red)",
+    "researchFirst": "Use Context7 MCP + Brave Search before ANY implementation. Document findings.",
+    "workflowEnforced": "Commit → Push → Update JSON → Write Report. In that order.",
+    "testBeforeComplete": "Run full test suite before marking step complete. All tests must pass.",
+    "fullyImplemented": "No placeholders, TODOs, or incomplete code. Everything must work.",
+    "modularArchitecture": "Keep files under 250 lines. Split when needed.",
+    "seoOptimized": "All frontend pages must have proper meta tags, structured data, and semantic HTML",
+    "apiVersioning": "All APIs must be versioned (v1, v2) with backward compatibility policy"
+  },
+  "workflow": [
+    "Read this phase file completely",
+    "For each step in order:",
+    "  1. Research: Use Context7 MCP (library docs) + Brave Search (best practices)",
+    "  2. Write research doc: docs/research/phase{X}-step{Y}-research.md",
+    "  3. Create branch: git checkout -b phase{X}-step-{Y}-{kebab-title}",
+    "  4. Implement step-by-step following implementation details",
+    "  5. Run all tests: npm run test:all (or equivalent)",
+    "  6. Fix any failures before proceeding",
+    "  7. Commit with conventional commit: feat(phase{}): step Y - title",
+    "  8. Push to remote",
+    "  9. Update this phase{}.json with completion data",
+    "  10. Write report: reports/phase{X}-step-{Y}-report.md",
+    "  11. Mark step as completed in JSON",
+    "  12. Create Pull Request, get review, merge",
+    "  13. Move to next step"
+  ],
+  "steps": [
+    {
+      "id": 1,
+      "title": "Research Real-time WebSocket Architecture Patterns",
+      "riskLevel": "CRITICAL",
+      "estimatedHours": 4,
+      "objective": "Complete implementation of Research Real-time WebSocket Architecture Patterns with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['research', 'real-time', 'websocket']",
+          "Research Real-time WebSocket Architecture Patterns implementation examples",
+          "Next.js/PostgreSQL/Redis ['research', 'real-time'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['research', 'real-time']?",
+          "How to test ['research', 'real-time'] effectively?",
+          "What are common pitfalls in ['research', 'real-time'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Research Real-time WebSocket Architecture Patterns system",
+          "file": "src/lib/research-real-time-websocket-architecture-patterns/index.ts",
+          "code": "// Implementation of Research Real-time WebSocket Architecture Patterns\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Research Real-time WebSocket Architecture Patterns implementation with validation and error handling",
+          "file": "src/app/api/research-real-time-websocket-architecture-patterns/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Research Real-time WebSocket Architecture Patterns thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Research Real-time WebSocket Architecture Patterns",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/research-real-time-websocket-architecture-patterns/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase7-step1-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Research Real-time WebSocket Architecture Patterns",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 4
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Replace Polling with Socket.io Real-time Messaging",
+      "riskLevel": "CRITICAL",
+      "estimatedHours": 8,
+      "objective": "Complete implementation of Replace Polling with Socket.io Real-time Messaging with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['replace', 'polling', 'with']",
+          "Replace Polling with Socket.io Real-time Messaging implementation examples",
+          "Next.js/PostgreSQL/Redis ['replace', 'polling'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['replace', 'polling']?",
+          "How to test ['replace', 'polling'] effectively?",
+          "What are common pitfalls in ['replace', 'polling'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Replace Polling with Socket.io Real-time Messaging system",
+          "file": "src/lib/replace-polling-with-socket.io-real-time-messaging/index.ts",
+          "code": "// Implementation of Replace Polling with Socket.io Real-time Messaging\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Replace Polling with Socket.io Real-time Messaging implementation with validation and error handling",
+          "file": "src/app/api/replace-polling-with-socket.io-real-time-messaging/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Replace Polling with Socket.io Real-time Messaging thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Replace Polling with Socket.io Real-time Messaging",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/replace-polling-with-socket.io-real-time-messaging/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase7-step2-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Replace Polling with Socket.io Real-time Messaging",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 8
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Implement Chat Transfer Between Agents",
+      "riskLevel": "HIGH",
+      "estimatedHours": 6,
+      "objective": "Complete implementation of Implement Chat Transfer Between Agents with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['implement', 'chat', 'transfer']",
+          "Implement Chat Transfer Between Agents implementation examples",
+          "Next.js/PostgreSQL/Redis ['implement', 'chat'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['implement', 'chat']?",
+          "How to test ['implement', 'chat'] effectively?",
+          "What are common pitfalls in ['implement', 'chat'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Implement Chat Transfer Between Agents system",
+          "file": "src/lib/implement-chat-transfer-between-agents/index.ts",
+          "code": "// Implementation of Implement Chat Transfer Between Agents\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Implement Chat Transfer Between Agents implementation with validation and error handling",
+          "file": "src/app/api/implement-chat-transfer-between-agents/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Implement Chat Transfer Between Agents thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Implement Chat Transfer Between Agents",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/implement-chat-transfer-between-agents/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase7-step3-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Implement Chat Transfer Between Agents",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 6
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Add Internal Notes & Private Comments",
+      "riskLevel": "HIGH",
+      "estimatedHours": 6,
+      "objective": "Complete implementation of Add Internal Notes & Private Comments with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['add', 'internal', 'notes']",
+          "Add Internal Notes & Private Comments implementation examples",
+          "Next.js/PostgreSQL/Redis ['add', 'internal'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['add', 'internal']?",
+          "How to test ['add', 'internal'] effectively?",
+          "What are common pitfalls in ['add', 'internal'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Add Internal Notes & Private Comments system",
+          "file": "src/lib/add-internal-notes-&-private-comments/index.ts",
+          "code": "// Implementation of Add Internal Notes & Private Comments\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Add Internal Notes & Private Comments implementation with validation and error handling",
+          "file": "src/app/api/add-internal-notes-&-private-comments/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Add Internal Notes & Private Comments thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Add Internal Notes & Private Comments",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/add-internal-notes-&-private-comments/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase7-step4-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Add Internal Notes & Private Comments",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 6
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Implement Message Reactions & Replies",
+      "riskLevel": "MEDIUM",
+      "estimatedHours": 5,
+      "objective": "Complete implementation of Implement Message Reactions & Replies with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['implement', 'message', 'reactions']",
+          "Implement Message Reactions & Replies implementation examples",
+          "Next.js/PostgreSQL/Redis ['implement', 'message'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['implement', 'message']?",
+          "How to test ['implement', 'message'] effectively?",
+          "What are common pitfalls in ['implement', 'message'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Implement Message Reactions & Replies system",
+          "file": "src/lib/implement-message-reactions-&-replies/index.ts",
+          "code": "// Implementation of Implement Message Reactions & Replies\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Implement Message Reactions & Replies implementation with validation and error handling",
+          "file": "src/app/api/implement-message-reactions-&-replies/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Implement Message Reactions & Replies thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Implement Message Reactions & Replies",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/implement-message-reactions-&-replies/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase7-step5-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Implement Message Reactions & Replies",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 5
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Add File Upload & Media Support",
+      "riskLevel": "HIGH",
+      "estimatedHours": 8,
+      "objective": "Complete implementation of Add File Upload & Media Support with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['add', 'file', 'upload']",
+          "Add File Upload & Media Support implementation examples",
+          "Next.js/PostgreSQL/Redis ['add', 'file'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['add', 'file']?",
+          "How to test ['add', 'file'] effectively?",
+          "What are common pitfalls in ['add', 'file'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Add File Upload & Media Support system",
+          "file": "src/lib/add-file-upload-&-media-support/index.ts",
+          "code": "// Implementation of Add File Upload & Media Support\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Add File Upload & Media Support implementation with validation and error handling",
+          "file": "src/app/api/add-file-upload-&-media-support/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Add File Upload & Media Support thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Add File Upload & Media Support",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/add-file-upload-&-media-support/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase7-step6-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Add File Upload & Media Support",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 8
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Implement Full-Text Search with Meilisearch",
+      "riskLevel": "HIGH",
+      "estimatedHours": 8,
+      "objective": "Complete implementation of Implement Full-Text Search with Meilisearch with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['implement', 'full-text', 'search']",
+          "Implement Full-Text Search with Meilisearch implementation examples",
+          "Next.js/PostgreSQL/Redis ['implement', 'full-text'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['implement', 'full-text']?",
+          "How to test ['implement', 'full-text'] effectively?",
+          "What are common pitfalls in ['implement', 'full-text'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Implement Full-Text Search with Meilisearch system",
+          "file": "src/lib/implement-full-text-search-with-meilisearch/index.ts",
+          "code": "// Implementation of Implement Full-Text Search with Meilisearch\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Implement Full-Text Search with Meilisearch implementation with validation and error handling",
+          "file": "src/app/api/implement-full-text-search-with-meilisearch/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Implement Full-Text Search with Meilisearch thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Implement Full-Text Search with Meilisearch",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/implement-full-text-search-with-meilisearch/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase7-step7-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Implement Full-Text Search with Meilisearch",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 8
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Add Keyboard Shortcuts & Accessibility",
+      "riskLevel": "MEDIUM",
+      "estimatedHours": 5,
+      "objective": "Complete implementation of Add Keyboard Shortcuts & Accessibility with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['add', 'keyboard', 'shortcuts']",
+          "Add Keyboard Shortcuts & Accessibility implementation examples",
+          "Next.js/PostgreSQL/Redis ['add', 'keyboard'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['add', 'keyboard']?",
+          "How to test ['add', 'keyboard'] effectively?",
+          "What are common pitfalls in ['add', 'keyboard'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Add Keyboard Shortcuts & Accessibility system",
+          "file": "src/lib/add-keyboard-shortcuts-&-accessibility/index.ts",
+          "code": "// Implementation of Add Keyboard Shortcuts & Accessibility\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Add Keyboard Shortcuts & Accessibility implementation with validation and error handling",
+          "file": "src/app/api/add-keyboard-shortcuts-&-accessibility/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Add Keyboard Shortcuts & Accessibility thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Add Keyboard Shortcuts & Accessibility",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/add-keyboard-shortcuts-&-accessibility/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase7-step8-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Add Keyboard Shortcuts & Accessibility",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 5
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Implement Dark Mode & Theme System",
+      "riskLevel": "MEDIUM",
+      "estimatedHours": 5,
+      "objective": "Complete implementation of Implement Dark Mode & Theme System with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['implement', 'dark', 'mode']",
+          "Implement Dark Mode & Theme System implementation examples",
+          "Next.js/PostgreSQL/Redis ['implement', 'dark'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['implement', 'dark']?",
+          "How to test ['implement', 'dark'] effectively?",
+          "What are common pitfalls in ['implement', 'dark'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Implement Dark Mode & Theme System system",
+          "file": "src/lib/implement-dark-mode-&-theme-system/index.ts",
+          "code": "// Implementation of Implement Dark Mode & Theme System\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Implement Dark Mode & Theme System implementation with validation and error handling",
+          "file": "src/app/api/implement-dark-mode-&-theme-system/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Implement Dark Mode & Theme System thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Implement Dark Mode & Theme System",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/implement-dark-mode-&-theme-system/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase7-step9-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Implement Dark Mode & Theme System",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 5
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Add Advanced Chat Features: Templates & Quick Replies",
+      "riskLevel": "MEDIUM",
+      "estimatedHours": 6,
+      "objective": "Complete implementation of Add Advanced Chat Features: Templates & Quick Replies with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['add', 'advanced', 'chat']",
+          "Add Advanced Chat Features: Templates & Quick Replies implementation examples",
+          "Next.js/PostgreSQL/Redis ['add', 'advanced'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['add', 'advanced']?",
+          "How to test ['add', 'advanced'] effectively?",
+          "What are common pitfalls in ['add', 'advanced'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Add Advanced Chat Features: Templates & Quick Replies system",
+          "file": "src/lib/add-advanced-chat-features:-templates-&-quick-replies/index.ts",
+          "code": "// Implementation of Add Advanced Chat Features: Templates & Quick Replies\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Add Advanced Chat Features: Templates & Quick Replies implementation with validation and error handling",
+          "file": "src/app/api/add-advanced-chat-features:-templates-&-quick-replies/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Add Advanced Chat Features: Templates & Quick Replies thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Add Advanced Chat Features: Templates & Quick Replies",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/add-advanced-chat-features:-templates-&-quick-replies/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase7-step10-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Add Advanced Chat Features: Templates & Quick Replies",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 6
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Add Chat Archiving & Search Within Chat",
+      "riskLevel": "MEDIUM",
+      "estimatedHours": 5,
+      "objective": "Complete implementation of Add Chat Archiving & Search Within Chat with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['add', 'chat', 'archiving']",
+          "Add Chat Archiving & Search Within Chat implementation examples",
+          "Next.js/PostgreSQL/Redis ['add', 'chat'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['add', 'chat']?",
+          "How to test ['add', 'chat'] effectively?",
+          "What are common pitfalls in ['add', 'chat'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Add Chat Archiving & Search Within Chat system",
+          "file": "src/lib/add-chat-archiving-&-search-within-chat/index.ts",
+          "code": "// Implementation of Add Chat Archiving & Search Within Chat\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Add Chat Archiving & Search Within Chat implementation with validation and error handling",
+          "file": "src/app/api/add-chat-archiving-&-search-within-chat/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Add Chat Archiving & Search Within Chat thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Add Chat Archiving & Search Within Chat",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/add-chat-archiving-&-search-within-chat/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase7-step11-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Add Chat Archiving & Search Within Chat",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 5
+        }
+      }
+    },
+    {
+      "id": 12,
+      "title": "Build Dashboard Customization & User Preferences",
+      "riskLevel": "LOW",
+      "estimatedHours": 4,
+      "objective": "Complete implementation of Build Dashboard Customization & User Preferences with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['build', 'dashboard', 'customization']",
+          "Build Dashboard Customization & User Preferences implementation examples",
+          "Next.js/PostgreSQL/Redis ['build', 'dashboard'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['build', 'dashboard']?",
+          "How to test ['build', 'dashboard'] effectively?",
+          "What are common pitfalls in ['build', 'dashboard'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Build Dashboard Customization & User Preferences system",
+          "file": "src/lib/build-dashboard-customization-&-user-preferences/index.ts",
+          "code": "// Implementation of Build Dashboard Customization & User Preferences\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Build Dashboard Customization & User Preferences implementation with validation and error handling",
+          "file": "src/app/api/build-dashboard-customization-&-user-preferences/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Build Dashboard Customization & User Preferences thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Build Dashboard Customization & User Preferences",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/build-dashboard-customization-&-user-preferences/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase7-step12-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Build Dashboard Customization & User Preferences",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 4
+        }
+      }
+    },
+    {
+      "id": 13,
+      "title": "Build Template Marketplace & Code Gallery",
+      "riskLevel": "MEDIUM",
+      "estimatedHours": 6,
+      "objective": "Complete implementation of Build Template Marketplace & Code Gallery with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['build', 'template', 'marketplace']",
+          "Build Template Marketplace & Code Gallery implementation examples",
+          "Next.js/PostgreSQL/Redis ['build', 'template'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['build', 'template']?",
+          "How to test ['build', 'template'] effectively?",
+          "What are common pitfalls in ['build', 'template'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design template marketplace data model and seed with 50+ templates",
+          "file": "src/lib/build-template-marketplace-&-code-gallery/index.ts",
+          "code": "// Implementation of Build Template Marketplace & Code Gallery\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Build Template Marketplace & Code Gallery implementation with validation and error handling",
+          "file": "src/app/api/build-template-marketplace-&-code-gallery/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Build Template Marketplace & Code Gallery thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Build Template Marketplace & Code Gallery",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/build-template-marketplace-&-code-gallery/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase7-step13-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Build Template Marketplace & Code Gallery",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 6
+        }
+      }
+    },
+    {
+      "id": 14,
+      "title": "Integrate Claude AI for Smart Message Suggestions",
+      "riskLevel": "HIGH",
+      "estimatedHours": 8,
+      "objective": "Complete implementation of Integrate Claude AI for Smart Message Suggestions with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['integrate', 'claude', 'ai']",
+          "Integrate Claude AI for Smart Message Suggestions implementation examples",
+          "Next.js/PostgreSQL/Redis ['integrate', 'claude'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['integrate', 'claude']?",
+          "How to test ['integrate', 'claude'] effectively?",
+          "What are common pitfalls in ['integrate', 'claude'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Integrate Claude API with caching and prompt engineering",
+          "file": "src/lib/integrate-claude-ai-for-smart-message-suggestions/index.ts",
+          "code": "// Implementation of Integrate Claude AI for Smart Message Suggestions\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Integrate Claude AI for Smart Message Suggestions implementation with validation and error handling",
+          "file": "src/app/api/integrate-claude-ai-for-smart-message-suggestions/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Integrate Claude AI for Smart Message Suggestions thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Integrate Claude AI for Smart Message Suggestions",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/integrate-claude-ai-for-smart-message-suggestions/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase7-step14-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Integrate Claude AI for Smart Message Suggestions",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 8
+        }
+      }
+    },
+    {
+      "id": 15,
+      "title": "Build Advanced Analytics with ROI & CLV Prediction",
+      "riskLevel": "HIGH",
+      "estimatedHours": 7,
+      "objective": "Complete implementation of Build Advanced Analytics with ROI & CLV Prediction with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['build', 'advanced', 'analytics']",
+          "Build Advanced Analytics with ROI & CLV Prediction implementation examples",
+          "Next.js/PostgreSQL/Redis ['build', 'advanced'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['build', 'advanced']?",
+          "How to test ['build', 'advanced'] effectively?",
+          "What are common pitfalls in ['build', 'advanced'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design advanced analytics data model tracking ROI, CLV, conversions",
+          "file": "src/lib/build-advanced-analytics-with-roi-&-clv-prediction/index.ts",
+          "code": "// Implementation of Build Advanced Analytics with ROI & CLV Prediction\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Build Advanced Analytics with ROI & CLV Prediction implementation with validation and error handling",
+          "file": "src/app/api/build-advanced-analytics-with-roi-&-clv-prediction/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Build Advanced Analytics with ROI & CLV Prediction thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Build Advanced Analytics with ROI & CLV Prediction",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/build-advanced-analytics-with-roi-&-clv-prediction/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase7-step15-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Build Advanced Analytics with ROI & CLV Prediction",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 7
+        }
+      }
+    },
+    {
+      "id": 16,
+      "title": "Built-in A/B Testing for WhatsApp Templates",
+      "riskLevel": "MEDIUM",
+      "estimatedHours": 6,
+      "objective": "Complete implementation of Built-in A/B Testing for WhatsApp Templates with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['built-in', 'a/b', 'testing']",
+          "Built-in A/B Testing for WhatsApp Templates implementation examples",
+          "Next.js/PostgreSQL/Redis ['built-in', 'a/b'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['built-in', 'a/b']?",
+          "How to test ['built-in', 'a/b'] effectively?",
+          "What are common pitfalls in ['built-in', 'a/b'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Extend template model for A/B testing with traffic allocation",
+          "file": "src/lib/built-in-a/b-testing-for-whatsapp-templates/index.ts",
+          "code": "// Implementation of Built-in A/B Testing for WhatsApp Templates\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Built-in A/B Testing for WhatsApp Templates implementation with validation and error handling",
+          "file": "src/app/api/built-in-a/b-testing-for-whatsapp-templates/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Built-in A/B Testing for WhatsApp Templates thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Built-in A/B Testing for WhatsApp Templates",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/built-in-a/b-testing-for-whatsapp-templates/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase7-step16-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Built-in A/B Testing for WhatsApp Templates",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 6
+        }
+      }
+    },
+    {
+      "id": 17,
+      "title": "Multi-WhatsApp Account Aggregation Dashboard",
+      "riskLevel": "HIGH",
+      "estimatedHours": 7,
+      "objective": "Complete implementation of Multi-WhatsApp Account Aggregation Dashboard with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['multi-whatsapp', 'account', 'aggregation']",
+          "Multi-WhatsApp Account Aggregation Dashboard implementation examples",
+          "Next.js/PostgreSQL/Redis ['multi-whatsapp', 'account'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['multi-whatsapp', 'account']?",
+          "How to test ['multi-whatsapp', 'account'] effectively?",
+          "What are common pitfalls in ['multi-whatsapp', 'account'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design multi-account architecture for aggregating WhatsApp numbers",
+          "file": "src/lib/multi-whatsapp-account-aggregation-dashboard/index.ts",
+          "code": "// Implementation of Multi-WhatsApp Account Aggregation Dashboard\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Multi-WhatsApp Account Aggregation Dashboard implementation with validation and error handling",
+          "file": "src/app/api/multi-whatsapp-account-aggregation-dashboard/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Multi-WhatsApp Account Aggregation Dashboard thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Multi-WhatsApp Account Aggregation Dashboard",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/multi-whatsapp-account-aggregation-dashboard/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase7-step17-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Multi-WhatsApp Account Aggregation Dashboard",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 7
+        }
+      }
+    }
+  ]
+}

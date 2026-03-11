@@ -1,0 +1,132 @@
+{
+  "version": "2.0",
+  "total_phases": 8,
+  "total_steps": 107,
+  "sharedRules": {
+    "noEmojis": "No emojis in code, comments, UI, logs, or documentation",
+    "maxFileLines": 250,
+    "featureBasedModules": "Organize code by feature, not by layer",
+    "primaryColorsOnly": "Use primary colors only: #3B82F6 (blue), #10B981 (green), #F59E0B (amber), #EF4444 (red)",
+    "researchFirst": "Use Context7 MCP + Brave Search before ANY implementation. Document findings.",
+    "workflowEnforced": "Commit → Push → Update JSON → Write Report. In that order.",
+    "testBeforeComplete": "Run full test suite before marking step complete. All tests must pass.",
+    "fullyImplemented": "No placeholders, TODOs, or incomplete code. Everything must work.",
+    "modularArchitecture": "Keep files under 250 lines. Split when needed.",
+    "seoOptimized": "All frontend pages must have proper meta tags, structured data, and semantic HTML",
+    "apiVersioning": "All APIs must be versioned (v1, v2) with backward compatibility policy"
+  },
+  "phases": [
+    {
+      "id": 1,
+      "name": "Enterprise-Grade Critical Fixes",
+      "description": "Foundation: Security, reliability, compliance. Must complete before anything else.",
+      "duration_days": 14,
+      "priority": "CRITICAL",
+      "dependencies": [],
+      "step_count": 14,
+      "estimated_hours": 68,
+      "file": "phase1.json"
+    },
+    {
+      "id": 2,
+      "name": "Reliability & Messaging Hardening",
+      "description": "Bulletproof messaging: WebSocket, retries, validation, metrics",
+      "duration_days": 14,
+      "priority": "HIGH",
+      "dependencies": [
+        1
+      ],
+      "step_count": 14,
+      "estimated_hours": 70,
+      "file": "phase2.json"
+    },
+    {
+      "id": 3,
+      "name": "Payment & Billing System",
+      "description": "Complete Stripe billing: subscriptions, invoices, tax, usage tracking",
+      "duration_days": 21,
+      "priority": "HIGH",
+      "dependencies": [
+        1
+      ],
+      "step_count": 12,
+      "estimated_hours": 64,
+      "file": "phase3.json"
+    },
+    {
+      "id": 4,
+      "name": "API & Developer Experience",
+      "description": "OpenAPI, SDKs, developer portal, webhooks, API security",
+      "duration_days": 14,
+      "priority": "HIGH",
+      "dependencies": [
+        1,
+        3
+      ],
+      "step_count": 13,
+      "estimated_hours": 77,
+      "file": "phase4.json"
+    },
+    {
+      "id": 5,
+      "name": "Super Admin & Monitoring Dashboard",
+      "description": "Admin UI: metrics, tenants, revenue, alerts, audit logs",
+      "duration_days": 14,
+      "priority": "MEDIUM",
+      "dependencies": [
+        1
+      ],
+      "step_count": 11,
+      "estimated_hours": 74,
+      "file": "phase5.json"
+    },
+    {
+      "id": 6,
+      "name": "Testing & Quality Assurance",
+      "description": "Unit, integration, E2E, load, security, mutation testing",
+      "duration_days": 14,
+      "priority": "HIGH",
+      "dependencies": [
+        1,
+        2
+      ],
+      "step_count": 13,
+      "estimated_hours": 80,
+      "file": "phase6.json"
+    },
+    {
+      "id": 7,
+      "name": "Advanced UX & Features",
+      "description": "Real-time WebSocket, reactions, search, dark mode, AI, analytics, A/B testing",
+      "duration_days": 14,
+      "priority": "MEDIUM",
+      "dependencies": [
+        1,
+        2,
+        4
+      ],
+      "step_count": 17,
+      "estimated_hours": 104,
+      "file": "phase7.json"
+    },
+    {
+      "id": 8,
+      "name": "Deployment & Production Readiness",
+      "description": "Terraform, CI/CD, SOC2, backups, DR, monitoring, rollback safety",
+      "duration_days": 14,
+      "priority": "CRITICAL",
+      "dependencies": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "step_count": 13,
+      "estimated_hours": 82,
+      "file": "phase8.json"
+    }
+  ]
+}

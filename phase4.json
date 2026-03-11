@@ -1,0 +1,1358 @@
+{
+  "phase": 4,
+  "name": "API & Developer Experience",
+  "description": "OpenAPI, SDKs, developer portal, webhooks, API security",
+  "duration_days": 14,
+  "priority": "HIGH",
+  "dependencies": [
+    1,
+    3
+  ],
+  "total_steps": 13,
+  "estimated_total_hours": 77,
+  "sharedRules": {
+    "noEmojis": "No emojis in code, comments, UI, logs, or documentation",
+    "maxFileLines": 250,
+    "featureBasedModules": "Organize code by feature, not by layer",
+    "primaryColorsOnly": "Use primary colors only: #3B82F6 (blue), #10B981 (green), #F59E0B (amber), #EF4444 (red)",
+    "researchFirst": "Use Context7 MCP + Brave Search before ANY implementation. Document findings.",
+    "workflowEnforced": "Commit → Push → Update JSON → Write Report. In that order.",
+    "testBeforeComplete": "Run full test suite before marking step complete. All tests must pass.",
+    "fullyImplemented": "No placeholders, TODOs, or incomplete code. Everything must work.",
+    "modularArchitecture": "Keep files under 250 lines. Split when needed.",
+    "seoOptimized": "All frontend pages must have proper meta tags, structured data, and semantic HTML",
+    "apiVersioning": "All APIs must be versioned (v1, v2) with backward compatibility policy"
+  },
+  "workflow": [
+    "Read this phase file completely",
+    "For each step in order:",
+    "  1. Research: Use Context7 MCP (library docs) + Brave Search (best practices)",
+    "  2. Write research doc: docs/research/phase{X}-step{Y}-research.md",
+    "  3. Create branch: git checkout -b phase{X}-step-{Y}-{kebab-title}",
+    "  4. Implement step-by-step following implementation details",
+    "  5. Run all tests: npm run test:all (or equivalent)",
+    "  6. Fix any failures before proceeding",
+    "  7. Commit with conventional commit: feat(phase{}): step Y - title",
+    "  8. Push to remote",
+    "  9. Update this phase{}.json with completion data",
+    "  10. Write report: reports/phase{X}-step-{Y}-report.md",
+    "  11. Mark step as completed in JSON",
+    "  12. Create Pull Request, get review, merge",
+    "  13. Move to next step"
+  ],
+  "steps": [
+    {
+      "id": 1,
+      "title": "Design & Implement OpenAPI 3.1 Specification",
+      "riskLevel": "CRITICAL",
+      "estimatedHours": 8,
+      "objective": "Complete implementation of Design & Implement OpenAPI 3.1 Specification with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['design', '&', 'implement']",
+          "Design & Implement OpenAPI 3.1 Specification implementation examples",
+          "Next.js/PostgreSQL/Redis ['design', '&'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['design', '&']?",
+          "How to test ['design', '&'] effectively?",
+          "What are common pitfalls in ['design', '&'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Design & Implement OpenAPI 3.1 Specification system",
+          "file": "src/lib/design-&-implement-openapi-3.1-specification/index.ts",
+          "code": "// Implementation of Design & Implement OpenAPI 3.1 Specification\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Design & Implement OpenAPI 3.1 Specification implementation with validation and error handling",
+          "file": "src/app/api/design-&-implement-openapi-3.1-specification/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Design & Implement OpenAPI 3.1 Specification thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Design & Implement OpenAPI 3.1 Specification",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/design-&-implement-openapi-3.1-specification/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase4-step1-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Design & Implement OpenAPI 3.1 Specification",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 8
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Generate Interactive API Documentation (Redoc)",
+      "riskLevel": "HIGH",
+      "estimatedHours": 5,
+      "objective": "Complete implementation of Generate Interactive API Documentation (Redoc) with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['generate', 'interactive', 'api']",
+          "Generate Interactive API Documentation (Redoc) implementation examples",
+          "Next.js/PostgreSQL/Redis ['generate', 'interactive'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['generate', 'interactive']?",
+          "How to test ['generate', 'interactive'] effectively?",
+          "What are common pitfalls in ['generate', 'interactive'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Generate Interactive API Documentation (Redoc) system",
+          "file": "src/lib/generate-interactive-api-documentation-(redoc)/index.ts",
+          "code": "// Implementation of Generate Interactive API Documentation (Redoc)\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Generate Interactive API Documentation (Redoc) implementation with validation and error handling",
+          "file": "src/app/api/generate-interactive-api-documentation-(redoc)/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Generate Interactive API Documentation (Redoc) thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Generate Interactive API Documentation (Redoc)",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/generate-interactive-api-documentation-(redoc)/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase4-step2-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Generate Interactive API Documentation (Redoc)",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 5
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Build Node.js/TypeScript SDK",
+      "riskLevel": "HIGH",
+      "estimatedHours": 7,
+      "objective": "Complete implementation of Build Node.js/TypeScript SDK with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['build', 'node.js/typescript', 'sdk']",
+          "Build Node.js/TypeScript SDK implementation examples",
+          "Next.js/PostgreSQL/Redis ['build', 'node.js/typescript'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['build', 'node.js/typescript']?",
+          "How to test ['build', 'node.js/typescript'] effectively?",
+          "What are common pitfalls in ['build', 'node.js/typescript'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Build Node.js/TypeScript SDK system",
+          "file": "src/lib/build-node.js/typescript-sdk/index.ts",
+          "code": "// Implementation of Build Node.js/TypeScript SDK\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Build Node.js/TypeScript SDK implementation with validation and error handling",
+          "file": "src/app/api/build-node.js/typescript-sdk/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Build Node.js/TypeScript SDK thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Build Node.js/TypeScript SDK",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/build-node.js/typescript-sdk/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase4-step3-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Build Node.js/TypeScript SDK",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 7
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Build Python SDK",
+      "riskLevel": "HIGH",
+      "estimatedHours": 7,
+      "objective": "Complete implementation of Build Python SDK with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['build', 'python', 'sdk']",
+          "Build Python SDK implementation examples",
+          "Next.js/PostgreSQL/Redis ['build', 'python'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['build', 'python']?",
+          "How to test ['build', 'python'] effectively?",
+          "What are common pitfalls in ['build', 'python'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Build Python SDK system",
+          "file": "src/lib/build-python-sdk/index.ts",
+          "code": "// Implementation of Build Python SDK\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Build Python SDK implementation with validation and error handling",
+          "file": "src/app/api/build-python-sdk/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Build Python SDK thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Build Python SDK",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/build-python-sdk/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase4-step4-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Build Python SDK",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 7
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Build PHP SDK",
+      "riskLevel": "HIGH",
+      "estimatedHours": 7,
+      "objective": "Complete implementation of Build PHP SDK with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['build', 'php', 'sdk']",
+          "Build PHP SDK implementation examples",
+          "Next.js/PostgreSQL/Redis ['build', 'php'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['build', 'php']?",
+          "How to test ['build', 'php'] effectively?",
+          "What are common pitfalls in ['build', 'php'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Build PHP SDK system",
+          "file": "src/lib/build-php-sdk/index.ts",
+          "code": "// Implementation of Build PHP SDK\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Build PHP SDK implementation with validation and error handling",
+          "file": "src/app/api/build-php-sdk/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Build PHP SDK thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Build PHP SDK",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/build-php-sdk/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase4-step5-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Build PHP SDK",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 7
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Implement API Key Management with Scopes",
+      "riskLevel": "CRITICAL",
+      "estimatedHours": 6,
+      "objective": "Complete implementation of Implement API Key Management with Scopes with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['implement', 'api', 'key']",
+          "Implement API Key Management with Scopes implementation examples",
+          "Next.js/PostgreSQL/Redis ['implement', 'api'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['implement', 'api']?",
+          "How to test ['implement', 'api'] effectively?",
+          "What are common pitfalls in ['implement', 'api'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Implement API Key Management with Scopes system",
+          "file": "src/lib/implement-api-key-management-with-scopes/index.ts",
+          "code": "// Implementation of Implement API Key Management with Scopes\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Implement API Key Management with Scopes implementation with validation and error handling",
+          "file": "src/app/api/implement-api-key-management-with-scopes/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Implement API Key Management with Scopes thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Implement API Key Management with Scopes",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/implement-api-key-management-with-scopes/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase4-step6-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Implement API Key Management with Scopes",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 6
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Build Webhook Management System",
+      "riskLevel": "HIGH",
+      "estimatedHours": 6,
+      "objective": "Complete implementation of Build Webhook Management System with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['build', 'webhook', 'management']",
+          "Build Webhook Management System implementation examples",
+          "Next.js/PostgreSQL/Redis ['build', 'webhook'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['build', 'webhook']?",
+          "How to test ['build', 'webhook'] effectively?",
+          "What are common pitfalls in ['build', 'webhook'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Build Webhook Management System system",
+          "file": "src/lib/build-webhook-management-system/index.ts",
+          "code": "// Implementation of Build Webhook Management System\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Build Webhook Management System implementation with validation and error handling",
+          "file": "src/app/api/build-webhook-management-system/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Build Webhook Management System thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Build Webhook Management System",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/build-webhook-management-system/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase4-step7-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Build Webhook Management System",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 6
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Create Developer Portal (Docusaurus)",
+      "riskLevel": "HIGH",
+      "estimatedHours": 8,
+      "objective": "Complete implementation of Create Developer Portal (Docusaurus) with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['create', 'developer', 'portal']",
+          "Create Developer Portal (Docusaurus) implementation examples",
+          "Next.js/PostgreSQL/Redis ['create', 'developer'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['create', 'developer']?",
+          "How to test ['create', 'developer'] effectively?",
+          "What are common pitfalls in ['create', 'developer'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Create Developer Portal (Docusaurus) system",
+          "file": "src/lib/create-developer-portal-(docusaurus)/index.ts",
+          "code": "// Implementation of Create Developer Portal (Docusaurus)\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Create Developer Portal (Docusaurus) implementation with validation and error handling",
+          "file": "src/app/api/create-developer-portal-(docusaurus)/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Create Developer Portal (Docusaurus) thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Create Developer Portal (Docusaurus)",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/create-developer-portal-(docusaurus)/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase4-step8-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Create Developer Portal (Docusaurus)",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 8
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Add SDK Versioning & Compatibility Policy",
+      "riskLevel": "MEDIUM",
+      "estimatedHours": 3,
+      "objective": "Complete implementation of Add SDK Versioning & Compatibility Policy with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['add', 'sdk', 'versioning']",
+          "Add SDK Versioning & Compatibility Policy implementation examples",
+          "Next.js/PostgreSQL/Redis ['add', 'sdk'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['add', 'sdk']?",
+          "How to test ['add', 'sdk'] effectively?",
+          "What are common pitfalls in ['add', 'sdk'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Add SDK Versioning & Compatibility Policy system",
+          "file": "src/lib/add-sdk-versioning-&-compatibility-policy/index.ts",
+          "code": "// Implementation of Add SDK Versioning & Compatibility Policy\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Add SDK Versioning & Compatibility Policy implementation with validation and error handling",
+          "file": "src/app/api/add-sdk-versioning-&-compatibility-policy/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Add SDK Versioning & Compatibility Policy thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Add SDK Versioning & Compatibility Policy",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/add-sdk-versioning-&-compatibility-policy/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase4-step9-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Add SDK Versioning & Compatibility Policy",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 3
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Implement SDK Testing with Contract Tests",
+      "riskLevel": "HIGH",
+      "estimatedHours": 5,
+      "objective": "Complete implementation of Implement SDK Testing with Contract Tests with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['implement', 'sdk', 'testing']",
+          "Implement SDK Testing with Contract Tests implementation examples",
+          "Next.js/PostgreSQL/Redis ['implement', 'sdk'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['implement', 'sdk']?",
+          "How to test ['implement', 'sdk'] effectively?",
+          "What are common pitfalls in ['implement', 'sdk'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Implement SDK Testing with Contract Tests system",
+          "file": "src/lib/implement-sdk-testing-with-contract-tests/index.ts",
+          "code": "// Implementation of Implement SDK Testing with Contract Tests\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Implement SDK Testing with Contract Tests implementation with validation and error handling",
+          "file": "src/app/api/implement-sdk-testing-with-contract-tests/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Implement SDK Testing with Contract Tests thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Implement SDK Testing with Contract Tests",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/implement-sdk-testing-with-contract-tests/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase4-step10-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Implement SDK Testing with Contract Tests",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 5
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Add Rate Limit & Error Handling Guides",
+      "riskLevel": "MEDIUM",
+      "estimatedHours": 4,
+      "objective": "Complete implementation of Add Rate Limit & Error Handling Guides with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['add', 'rate', 'limit']",
+          "Add Rate Limit & Error Handling Guides implementation examples",
+          "Next.js/PostgreSQL/Redis ['add', 'rate'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['add', 'rate']?",
+          "How to test ['add', 'rate'] effectively?",
+          "What are common pitfalls in ['add', 'rate'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Implement Redis-based rate limiting with configurable limits",
+          "file": "src/lib/add-rate-limit-&-error-handling-guides/index.ts",
+          "code": "// Implementation of Add Rate Limit & Error Handling Guides\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Add Rate Limit & Error Handling Guides implementation with validation and error handling",
+          "file": "src/app/api/add-rate-limit-&-error-handling-guides/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Add Rate Limit & Error Handling Guides thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Add Rate Limit & Error Handling Guides",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/add-rate-limit-&-error-handling-guides/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase4-step11-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Add Rate Limit & Error Handling Guides",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 4
+        }
+      }
+    },
+    {
+      "id": 12,
+      "title": "Create SDK Authentication Examples",
+      "riskLevel": "HIGH",
+      "estimatedHours": 5,
+      "objective": "Complete implementation of Create SDK Authentication Examples with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['create', 'sdk', 'authentication']",
+          "Create SDK Authentication Examples implementation examples",
+          "Next.js/PostgreSQL/Redis ['create', 'sdk'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['create', 'sdk']?",
+          "How to test ['create', 'sdk'] effectively?",
+          "What are common pitfalls in ['create', 'sdk'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Create SDK Authentication Examples system",
+          "file": "src/lib/create-sdk-authentication-examples/index.ts",
+          "code": "// Implementation of Create SDK Authentication Examples\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Create SDK Authentication Examples implementation with validation and error handling",
+          "file": "src/app/api/create-sdk-authentication-examples/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Create SDK Authentication Examples thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Create SDK Authentication Examples",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/create-sdk-authentication-examples/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase4-step12-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Create SDK Authentication Examples",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 5
+        }
+      }
+    },
+    {
+      "id": 13,
+      "title": "Implement Enterprise SEO for Developer Portal & Marketing Site",
+      "riskLevel": "HIGH",
+      "estimatedHours": 6,
+      "objective": "Complete implementation of Implement Enterprise SEO for Developer Portal & Marketing Site with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['implement', 'enterprise', 'seo']",
+          "Implement Enterprise SEO for Developer Portal & Marketing Site implementation examples",
+          "Next.js/PostgreSQL/Redis ['implement', 'enterprise'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['implement', 'enterprise']?",
+          "How to test ['implement', 'enterprise'] effectively?",
+          "What are common pitfalls in ['implement', 'enterprise'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Configure Next.js with next-seo for automatic meta tags and structured data",
+          "file": "src/lib/implement-enterprise-seo-for-developer-portal-&-marketing-site/index.ts",
+          "code": "// Implementation of Implement Enterprise SEO for Developer Portal & Marketing Site\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Implement Enterprise SEO for Developer Portal & Marketing Site implementation with validation and error handling",
+          "file": "src/app/api/implement-enterprise-seo-for-developer-portal-&-marketing-site/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Implement Enterprise SEO for Developer Portal & Marketing Site thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Implement Enterprise SEO for Developer Portal & Marketing Site",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/implement-enterprise-seo-for-developer-portal-&-marketing-site/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase4-step13-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Implement Enterprise SEO for Developer Portal & Marketing Site",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 6
+        }
+      }
+    }
+  ]
+}

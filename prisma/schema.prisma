@@ -1,0 +1,529 @@
+// Prisma schema for NEXTMAVENS WhatsApp Evolution API Platform
+// Phase 1, Step 1: Enterprise-Grade Foundation with RLS
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │ Core Multi-Tenancy Models                                  │
+// └─────────────────────────────────────────────────────────────┘
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String   // "Acme Corp"
+  slug        String   @unique // "acme-corp"
+  plan        Plan     @default(FREE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  members      Member[]
+  instances    WhatsAppInstance[]
+  templates    WhatsAppTemplate[]
+  agents       WhatsAppAgent[]
+  assignments  WhatsAppAssignment[]
+  webhooks     WebhookSubscription[]
+  quotaUsages  QuotaUsage[]
+  invoices     Invoice[]
+  payments     Payment[]
+  auditLogs    AuditLog[]  // Audit logs for this org
+
+  @@map("organizations")
+  @@index([slug])
+}
+
+model Member {
+  id        String   @id @default(cuid())
+  userId    String
+  orgId     String
+  role      Role     // ORG_ADMIN, MANAGER, AGENT, VIEWER
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User      @relation(fields: [userId], references: [id])
+  org Organization @relation(fields: [orgId], references: [id])
+
+  @@unique([userId, orgId])
+  @@map("members")
+  @@index([orgId])
+  @@index([userId])
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  password     String
+  name         String?
+  avatar       String?
+  role         Role     // SUPER_ADMIN, ORG_ADMIN, MANAGER, AGENT, VIEWER, API_USER
+  isActive     Boolean  @default(true)
+  mfaEnabled   Boolean  @default(false)
+  mfaSecret    String?  // encrypted TOTP secret
+  lastLogin    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  memberships Member[]
+  agents      WhatsAppAgent[]  // Agent profiles for this user
+  auditLogs   AuditLog[]       // Audit logs for actions by this user
+
+  @@map("users")
+  @@index([email])
+}
+
+enum Role {
+  SUPER_ADMIN
+  ORG_ADMIN
+  MANAGER
+  AGENT
+  VIEWER
+  API_USER
+  SYSTEM // For system processes (webhooks, cron jobs)
+}
+
+enum Plan {
+  FREE
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │ WhatsApp Instance Models                                   │
+// └─────────────────────────────────────────────────────────────┘
+
+model WhatsAppInstance {
+  id          String   @id @default(cuid())
+  orgId       String
+  name        String   // "Support Team"
+  phoneNumber String   @unique // E.164 format: +1234567890
+  qrCode      String?  // Base64 QR code image
+  status      InstanceStatus @default(DISCONNECTED)
+  token       String?  // Evolution API token
+  webhookUrl  String?  // Customer's webhook endpoint
+  isPrimary   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastSeen    DateTime?
+
+  // Relations
+  org        Organization    @relation(fields: [orgId], references: [id])
+  messages   WhatsAppMessage[]
+  chats      WhatsAppChat[]
+  templates  WhatsAppTemplate[]
+  agents     WhatsAppAgent[]  // Agents that can use this instance
+  assignments WhatsAppAssignment[]  // Assignments for chats on this instance
+  webhooks   WebhookSubscription[]
+
+  @@map("whatsapp_instances")
+  @@index([orgId])
+  @@index([phoneNumber])
+  @@index([status])
+}
+
+enum InstanceStatus {
+  DISCONNECTED
+  CONNECTING
+  CONNECTED
+  RECONNECTING
+  ERROR
+}
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │ Messaging Models                                           │
+// └─────────────────────────────────────────────────────────────┘
+
+model WhatsAppMessage {
+  id             String   @id @default(cuid())
+  orgId          String
+  instanceId     String
+  chatId         String
+  messageId      String   // WhatsApp message ID (from Evolution API)
+  parentMessageId String? // For replies
+  from           String   // E.164 phone number or "me"
+  to             String   // E.164 phone number
+  type           MessageType // text, image, document, audio, video, location, button, template
+  content        Json?    // Text body or media info
+  status         MessageStatus
+  priority       Int       @default(0) // 0=normal, 1=high, -1=low
+  quotedData     Json?     // Quoted message data
+  metadata       Json?     // Delivery timestamp, etc.
+  createdAt      DateTime  @default(now())
+  sentAt         DateTime?
+
+  // Relations
+  instance WhatsAppInstance @relation(fields: [instanceId], references: [id])
+  chat     WhatsAppChat    @relation(fields: [chatId], references: [id])
+
+  @@map("whatsapp_messages")
+  @@index([orgId])
+  @@index([instanceId])
+  @@index([chatId])
+  @@index([messageId])
+  @@index([createdAt])
+  @@index([status])
+  @@index([from])
+  @@index([to])
+  @@unique([orgId, messageId])
+}
+
+enum MessageType {
+  text
+  image
+  document
+  audio
+  video
+  location
+  button
+  template
+  reaction
+}
+
+enum MessageStatus {
+  PENDING
+  SENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  REJECTED
+}
+
+model WhatsAppChat {
+  id          String   @id @default(cuid())
+  orgId       String
+  instanceId  String
+  chatId      String   // WhatsApp chat ID
+  phone       String   // Customer's phone (E.164)
+  name        String?  // Customer name
+  avatar      String?
+  lastMessageAt DateTime?
+  unreadCount Int     @default(0)
+  isGroup     Boolean  @default(false)
+  isArchived  Boolean  @default(false)
+  isPinned    Boolean  @default(false)
+  metadata    Json?    // Custom fields
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  instance    WhatsAppInstance @relation(fields: [instanceId], references: [id])
+  messages    WhatsAppMessage[]
+  assignment  WhatsAppAssignment?  // Current assignment (one agent per chat)
+
+  @@map("whatsapp_chats")
+  @@index([orgId])
+  @@index([instanceId])
+  @@index([chatId])
+  @@index([phone])
+  @@index([lastMessageAt])
+  @@unique([orgId, chatId])
+}
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │ Template Models                                            │
+// └─────────────────────────────────────────────────────────────┘
+
+model WhatsAppTemplate {
+  id           String   @id @default(cuid())
+  orgId        String
+  instanceId   String?
+  name         String
+  language     String   @default("en")
+  category     TemplateCategory
+  status       TemplateStatus @default(DRAFT)
+  components   Json     // Header, body, footer, buttons
+  variables    String[] // ["name", "order_id"]
+  sampleData   Json?
+  mediaUrl     String?
+  quality      Float?   // A/B test quality score
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  approvedAt   DateTime?
+  rejectedAt   DateTime?
+  rejectionReason String?
+
+  // Relations
+  org      Organization      @relation(fields: [orgId], references: [id])
+  instance WhatsAppInstance? @relation(fields: [instanceId], references: [id])
+
+  @@map("whatsapp_templates")
+  @@index([orgId])
+  @@index([instanceId])
+  @@index([status])
+  @@unique([orgId, name, language])
+}
+
+enum TemplateCategory {
+  MARKETING
+  TRANSACTIONAL
+  UTILITY
+}
+
+enum TemplateStatus {
+  DRAFT
+  PENDING_SUBMISSION
+  SUBMITTED
+  APPROVED
+  REJECTED
+  PAUSED
+}
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │ Agent & Assignment Models                                  │
+// └─────────────────────────────────────────────────────────────┘
+
+model WhatsAppAgent {
+  id        String   @id @default(cuid())
+  orgId     String
+  userId    String   // References User.id
+  instanceId String? // Which WhatsApp instance this agent is assigned to (optional)
+  isActive  Boolean  @default(true)
+  maxChats  Int      @default(10)
+  createdAt DateTime @default(now())
+
+  // Relations
+  org        Organization     @relation(fields: [orgId], references: [id])
+  user       User             @relation(fields: [userId], references: [id])
+  instance   WhatsAppInstance? @relation(fields: [instanceId], references: [id])
+  assignments WhatsAppAssignment[]
+
+  @@unique([userId, orgId])
+  @@map("whatsapp_agents")
+  @@index([orgId])
+  @@index([userId])
+  @@index([instanceId])
+}
+
+model WhatsAppAssignment {
+  id         String   @id @default(cuid())
+  orgId      String
+  instanceId String   // The WhatsApp instance this chat belongs to
+  chatId     String
+  agentId    String
+  assignedAt DateTime @default(now())
+  assignedBy String?  // User ID who assigned
+
+  // Relations
+  org      Organization    @relation(fields: [orgId], references: [id])
+  instance WhatsAppInstance @relation(fields: [instanceId], references: [id])
+  chat     WhatsAppChat    @relation(fields: [chatId], references: [id])
+  agent    WhatsAppAgent   @relation(fields: [agentId], references: [id])
+
+  @@unique([chatId]) // One agent per chat
+  @@map("whatsapp_assignments")
+  @@index([orgId])
+  @@index([instanceId])
+  @@index([agentId])
+  @@index([chatId])
+}
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │ Webhook Models                                             │
+// └─────────────────────────────────────────────────────────────┘
+
+model WebhookSubscription {
+  id          String   @id @default(cuid())
+  orgId       String
+  instanceId  String
+  eventType   String   // "message.sent", "message.delivered", etc.
+  url         String   // Customer's webhook URL
+  secret      String   // HMAC secret for verification
+  isActive    Boolean  @default(true)
+  retryCount  Int      @default(3)
+  createdAt   DateTime @default(now())
+
+  // Relations
+  org       Organization    @relation(fields: [orgId], references: [id])
+  instance  WhatsAppInstance @relation(fields: [instanceId], references: [id])
+  deliveries WebhookDeliveryLog[]
+
+  @@map("webhook_subscriptions")
+  @@index([orgId])
+  @@index([instanceId])
+  @@unique([orgId, instanceId, eventType, url])
+}
+
+model WebhookDeliveryLog {
+  id             String   @id @default(cuid())
+  orgId          String
+  subscriptionId String
+  eventId        String   // Unique event ID for deduplication
+  payload        Json
+  status         WebhookDeliveryStatus
+  attempts       Int      @default(0)
+  lastAttemptAt  DateTime?
+  errorMessage   String?
+  nextRetryAt    DateTime?
+  createdAt      DateTime @default(now())
+
+  // Relations
+  subscription WebhookSubscription @relation(fields: [subscriptionId], references: [id])
+
+  @@map("webhook_delivery_logs")
+  @@index([orgId])
+  @@index([subscriptionId])
+  @@index([eventId])
+  @@index([status])
+  @@index([nextRetryAt])
+  @@unique([orgId, eventId])
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  DELIVERED
+  FAILED
+  RETRYING
+  DEAD
+}
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │ Quota & Billing Models                                     │
+// └─────────────────────────────────────────────────────────────┘
+
+model QuotaUsage {
+  id         String   @id @default(cuid())
+  orgId      String
+  metric     QuotaMetric // "messages_sent", "active_instances", "api_calls"
+  value      BigInt
+  period     QuotaPeriod // "hourly", "daily", "monthly"
+  periodStart DateTime // Start of period (e.g., 2025-03-01 00:00:00)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  org Organization @relation(fields: [orgId], references: [id])
+
+  @@unique([orgId, metric, period, periodStart])
+  @@map("quota_usages")
+  @@index([orgId])
+  @@index([metric, period, periodStart])
+}
+
+enum QuotaMetric {
+  messages_sent
+  active_instances
+  api_calls
+  storage_usage
+}
+
+enum QuotaPeriod {
+  hourly
+  daily
+  monthly
+}
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │ Billing Models                                             │
+// └─────────────────────────────────────────────────────────────┘
+
+model Invoice {
+  id               String   @id @default(cuid())
+  orgId            String
+  stripeInvoiceId  String   @unique
+  number           String   // Human-readable: INV-2025-001
+  amount           Int      // Cents
+  currency         String   @default("USD")
+  status           InvoiceStatus
+  periodStart      DateTime
+  periodEnd        DateTime
+  dueDate          DateTime
+  paidAt           DateTime?
+  pdfUrl           String?
+  createdAt        DateTime @default(now())
+
+  // Relations
+  org    Organization    @relation(fields: [orgId], references: [id])
+  items  InvoiceItem[]
+
+  @@map("invoices")
+  @@index([orgId])
+  @@index([stripeInvoiceId])
+  @@index([status])
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTIBLE
+}
+
+model InvoiceItem {
+  id            String   @id @default(cuid())
+  invoiceId     String
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id])
+  orgId         String   // Denormalized for RLS performance
+  description   String
+  quantity      Int
+  unitPriceCents Int
+  totalCents    Int
+  metadata      Json?
+
+  @@map("invoice_items")
+  @@index([invoiceId])
+  @@index([orgId])
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  orgId           String
+  stripePaymentId String   @unique
+  invoiceId       String?
+  amount          Int      // Cents
+  currency        String   @default("USD")
+  status          PaymentStatus
+  methodType      String?  // "card", "bank_transfer"
+  createdAt       DateTime @default(now())
+
+  // Relations
+  org Organization @relation(fields: [orgId], references: [id])
+
+  @@map("payments")
+  @@index([orgId])
+  @@index([stripePaymentId])
+}
+
+enum PaymentStatus {
+  SUCCEEDED
+  FAILED
+  PROCESSING
+  REQUIRES_ACTION
+  CANCELED
+}
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │ Audit & Compliance                                         │
+// └─────────────────────────────────────────────────────────────┘
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  orgId       String?  // NULL for SUPER_ADMIN actions
+  userId      String   // Who performed the action
+  action      String   // "user.created", "template.deleted", "instance.disconnected"
+  resource    String   // Type of resource affected
+  resourceId  String?  // ID of affected resource
+  changes     Json?    // Before/after values
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  org     Organization? @relation(fields: [orgId], references: [id])
+  user    User          @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+  @@index([orgId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([orgId, createdAt]) // For org-specific logs
+}

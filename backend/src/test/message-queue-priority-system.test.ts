@@ -3,6 +3,8 @@
  * Tests the queue core, producer, and consumer modules
  */
 
+/// <reference types="jest" />
+
 import { jest } from '@jest/globals';
 import {
   MessagePriority,
@@ -14,11 +16,11 @@ import {
   validateAnalyticsEvent,
   validateMessageUpsert,
   validateMessageDelete
-} from '../src/lib/message-queue-priority-system/types';
-import { MessageStatusUpdateJob, InstanceStatusUpdateJob } from '../src/lib/message-queue-priority-system/types';
+} from '../lib/message-queue-priority-system/types';
+import { MessageStatusUpdateJob, InstanceStatusUpdateJob } from '../lib/message-queue-priority-system/types';
 
 // Mock BullMQ to avoid Redis dependency in unit tests
-jest.mock('../src/lib/message-queue-priority-system/index', () => ({
+jest.mock('../lib/message-queue-priority-system/index', () => ({
   messageQueue: {
     add: jest.fn().mockResolvedValue({ id: 'job-123', opts: { priority: 10 } }),
     getWaitingCount: jest.fn().mockResolvedValue(0),
@@ -39,7 +41,7 @@ jest.mock('../src/lib/message-queue-priority-system/index', () => ({
     quit: jest.fn(),
     ping: jest.fn().mockResolvedValue('PONG')
   },
-  getPriorityForType: jest.requireActual('../src/lib/message-queue-priority-system/index').getPriorityForType,
+  getPriorityForType: jest.requireActual('../lib/message-queue-priority-system/index').getPriorityForType,
   addJob: jest.fn().mockResolvedValue({ id: 'job-123', opts: { priority: 10 } }),
   addCriticalJob: jest.fn().mockResolvedValue({ id: 'job-123', opts: { priority: 1 } }),
   addBackgroundJob: jest.fn().mockResolvedValue({ id: 'job-123', opts: { priority: 100 } }),
@@ -60,7 +62,7 @@ jest.mock('../src/lib/message-queue-priority-system/index', () => ({
   QUEUE_NAME: 'whatsapp-messages'
 }));
 
-jest.mock('../src/lib/message-queue-priority-system/consumer', () => ({
+jest.mock('../lib/message-queue-priority-system/consumer', () => ({
   startWorker: jest.fn().mockReturnValue({
     concurrency: 10,
     processedJobs: 0,
@@ -251,7 +253,7 @@ describe('Message Queue Priority System - Unit Tests', () => {
   });
 
   describe('Worker Lifecycle', () => {
-    const { startWorker, stopWorker, getWorkerStatus } = require('../src/lib/message-queue-priority-system/consumer');
+    const { startWorker, stopWorker, getWorkerStatus } = require('../lib/message-queue-priority-system/consumer');
 
     test('startWorker creates worker with correct concurrency', () => {
       const worker = startWorker();

@@ -1,0 +1,1256 @@
+{
+  "phase": 3,
+  "name": "Payment & Billing System",
+  "description": "Complete Stripe billing: subscriptions, invoices, tax, usage tracking",
+  "duration_days": 21,
+  "priority": "HIGH",
+  "dependencies": [
+    1
+  ],
+  "total_steps": 12,
+  "estimated_total_hours": 64,
+  "sharedRules": {
+    "noEmojis": "No emojis in code, comments, UI, logs, or documentation",
+    "maxFileLines": 250,
+    "featureBasedModules": "Organize code by feature, not by layer",
+    "primaryColorsOnly": "Use primary colors only: #3B82F6 (blue), #10B981 (green), #F59E0B (amber), #EF4444 (red)",
+    "researchFirst": "Use Context7 MCP + Brave Search before ANY implementation. Document findings.",
+    "workflowEnforced": "Commit → Push → Update JSON → Write Report. In that order.",
+    "testBeforeComplete": "Run full test suite before marking step complete. All tests must pass.",
+    "fullyImplemented": "No placeholders, TODOs, or incomplete code. Everything must work.",
+    "modularArchitecture": "Keep files under 250 lines. Split when needed.",
+    "seoOptimized": "All frontend pages must have proper meta tags, structured data, and semantic HTML",
+    "apiVersioning": "All APIs must be versioned (v1, v2) with backward compatibility policy"
+  },
+  "workflow": [
+    "Read this phase file completely",
+    "For each step in order:",
+    "  1. Research: Use Context7 MCP (library docs) + Brave Search (best practices)",
+    "  2. Write research doc: docs/research/phase{X}-step{Y}-research.md",
+    "  3. Create branch: git checkout -b phase{X}-step-{Y}-{kebab-title}",
+    "  4. Implement step-by-step following implementation details",
+    "  5. Run all tests: npm run test:all (or equivalent)",
+    "  6. Fix any failures before proceeding",
+    "  7. Commit with conventional commit: feat(phase{}): step Y - title",
+    "  8. Push to remote",
+    "  9. Update this phase{}.json with completion data",
+    "  10. Write report: reports/phase{X}-step-{Y}-report.md",
+    "  11. Mark step as completed in JSON",
+    "  12. Create Pull Request, get review, merge",
+    "  13. Move to next step"
+  ],
+  "steps": [
+    {
+      "id": 1,
+      "title": "Set Up Stripe Account & Webhook Configuration",
+      "riskLevel": "CRITICAL",
+      "estimatedHours": 4,
+      "objective": "Complete implementation of Set Up Stripe Account & Webhook Configuration with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['set', 'up', 'stripe']",
+          "Set Up Stripe Account & Webhook Configuration implementation examples",
+          "Next.js/PostgreSQL/Redis ['set', 'up'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['set', 'up']?",
+          "How to test ['set', 'up'] effectively?",
+          "What are common pitfalls in ['set', 'up'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Set Up Stripe Account & Webhook Configuration system",
+          "file": "src/lib/set-up-stripe-account-&-webhook-configuration/index.ts",
+          "code": "// Implementation of Set Up Stripe Account & Webhook Configuration\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Set Up Stripe Account & Webhook Configuration implementation with validation and error handling",
+          "file": "src/app/api/set-up-stripe-account-&-webhook-configuration/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Set Up Stripe Account & Webhook Configuration thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Set Up Stripe Account & Webhook Configuration",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/set-up-stripe-account-&-webhook-configuration/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase3-step1-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Set Up Stripe Account & Webhook Configuration",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 4
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Build Checkout Flow with Stripe Checkout",
+      "riskLevel": "HIGH",
+      "estimatedHours": 6,
+      "objective": "Complete implementation of Build Checkout Flow with Stripe Checkout with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['build', 'checkout', 'flow']",
+          "Build Checkout Flow with Stripe Checkout implementation examples",
+          "Next.js/PostgreSQL/Redis ['build', 'checkout'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['build', 'checkout']?",
+          "How to test ['build', 'checkout'] effectively?",
+          "What are common pitfalls in ['build', 'checkout'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Build Checkout Flow with Stripe Checkout system",
+          "file": "src/lib/build-checkout-flow-with-stripe-checkout/index.ts",
+          "code": "// Implementation of Build Checkout Flow with Stripe Checkout\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Build Checkout Flow with Stripe Checkout implementation with validation and error handling",
+          "file": "src/app/api/build-checkout-flow-with-stripe-checkout/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Build Checkout Flow with Stripe Checkout thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Build Checkout Flow with Stripe Checkout",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/build-checkout-flow-with-stripe-checkout/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase3-step2-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Build Checkout Flow with Stripe Checkout",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 6
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Implement Subscription Management API",
+      "riskLevel": "HIGH",
+      "estimatedHours": 7,
+      "objective": "Complete implementation of Implement Subscription Management API with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['implement', 'subscription', 'management']",
+          "Implement Subscription Management API implementation examples",
+          "Next.js/PostgreSQL/Redis ['implement', 'subscription'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['implement', 'subscription']?",
+          "How to test ['implement', 'subscription'] effectively?",
+          "What are common pitfalls in ['implement', 'subscription'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Implement Subscription Management API system",
+          "file": "src/lib/implement-subscription-management-api/index.ts",
+          "code": "// Implementation of Implement Subscription Management API\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Implement Subscription Management API implementation with validation and error handling",
+          "file": "src/app/api/implement-subscription-management-api/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Implement Subscription Management API thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Implement Subscription Management API",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/implement-subscription-management-api/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase3-step3-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Implement Subscription Management API",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 7
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Build Invoice Generation & Download",
+      "riskLevel": "HIGH",
+      "estimatedHours": 6,
+      "objective": "Complete implementation of Build Invoice Generation & Download with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['build', 'invoice', 'generation']",
+          "Build Invoice Generation & Download implementation examples",
+          "Next.js/PostgreSQL/Redis ['build', 'invoice'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['build', 'invoice']?",
+          "How to test ['build', 'invoice'] effectively?",
+          "What are common pitfalls in ['build', 'invoice'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Build Invoice Generation & Download system",
+          "file": "src/lib/build-invoice-generation-&-download/index.ts",
+          "code": "// Implementation of Build Invoice Generation & Download\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Build Invoice Generation & Download implementation with validation and error handling",
+          "file": "src/app/api/build-invoice-generation-&-download/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Build Invoice Generation & Download thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Build Invoice Generation & Download",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/build-invoice-generation-&-download/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase3-step4-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Build Invoice Generation & Download",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 6
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Implement Usage-Based Billing & Overage",
+      "riskLevel": "HIGH",
+      "estimatedHours": 7,
+      "objective": "Complete implementation of Implement Usage-Based Billing & Overage with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['implement', 'usage-based', 'billing']",
+          "Implement Usage-Based Billing & Overage implementation examples",
+          "Next.js/PostgreSQL/Redis ['implement', 'usage-based'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['implement', 'usage-based']?",
+          "How to test ['implement', 'usage-based'] effectively?",
+          "What are common pitfalls in ['implement', 'usage-based'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Implement Usage-Based Billing & Overage system",
+          "file": "src/lib/implement-usage-based-billing-&-overage/index.ts",
+          "code": "// Implementation of Implement Usage-Based Billing & Overage\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Implement Usage-Based Billing & Overage implementation with validation and error handling",
+          "file": "src/app/api/implement-usage-based-billing-&-overage/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Implement Usage-Based Billing & Overage thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Implement Usage-Based Billing & Overage",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/implement-usage-based-billing-&-overage/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase3-step5-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Implement Usage-Based Billing & Overage",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 7
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Add Stripe Tax Integration (VAT/GST/Sales Tax)",
+      "riskLevel": "CRITICAL",
+      "estimatedHours": 5,
+      "objective": "Complete implementation of Add Stripe Tax Integration (VAT/GST/Sales Tax) with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['add', 'stripe', 'tax']",
+          "Add Stripe Tax Integration (VAT/GST/Sales Tax) implementation examples",
+          "Next.js/PostgreSQL/Redis ['add', 'stripe'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['add', 'stripe']?",
+          "How to test ['add', 'stripe'] effectively?",
+          "What are common pitfalls in ['add', 'stripe'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Add Stripe Tax Integration (VAT/GST/Sales Tax) system",
+          "file": "src/lib/add-stripe-tax-integration-(vat/gst/sales-tax)/index.ts",
+          "code": "// Implementation of Add Stripe Tax Integration (VAT/GST/Sales Tax)\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Add Stripe Tax Integration (VAT/GST/Sales Tax) implementation with validation and error handling",
+          "file": "src/app/api/add-stripe-tax-integration-(vat/gst/sales-tax)/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Add Stripe Tax Integration (VAT/GST/Sales Tax) thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Add Stripe Tax Integration (VAT/GST/Sales Tax)",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/add-stripe-tax-integration-(vat/gst/sales-tax)/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase3-step6-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Add Stripe Tax Integration (VAT/GST/Sales Tax)",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 5
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Build Billing Admin Dashboard",
+      "riskLevel": "HIGH",
+      "estimatedHours": 6,
+      "objective": "Complete implementation of Build Billing Admin Dashboard with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['build', 'billing', 'admin']",
+          "Build Billing Admin Dashboard implementation examples",
+          "Next.js/PostgreSQL/Redis ['build', 'billing'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['build', 'billing']?",
+          "How to test ['build', 'billing'] effectively?",
+          "What are common pitfalls in ['build', 'billing'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Build Billing Admin Dashboard system",
+          "file": "src/lib/build-billing-admin-dashboard/index.ts",
+          "code": "// Implementation of Build Billing Admin Dashboard\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Build Billing Admin Dashboard implementation with validation and error handling",
+          "file": "src/app/api/build-billing-admin-dashboard/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Build Billing Admin Dashboard thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Build Billing Admin Dashboard",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/build-billing-admin-dashboard/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase3-step7-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Build Billing Admin Dashboard",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 6
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Implement Card Updates & Payment Method Management",
+      "riskLevel": "HIGH",
+      "estimatedHours": 5,
+      "objective": "Complete implementation of Implement Card Updates & Payment Method Management with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['implement', 'card', 'updates']",
+          "Implement Card Updates & Payment Method Management implementation examples",
+          "Next.js/PostgreSQL/Redis ['implement', 'card'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['implement', 'card']?",
+          "How to test ['implement', 'card'] effectively?",
+          "What are common pitfalls in ['implement', 'card'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Implement Card Updates & Payment Method Management system",
+          "file": "src/lib/implement-card-updates-&-payment-method-management/index.ts",
+          "code": "// Implementation of Implement Card Updates & Payment Method Management\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Implement Card Updates & Payment Method Management implementation with validation and error handling",
+          "file": "src/app/api/implement-card-updates-&-payment-method-management/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Implement Card Updates & Payment Method Management thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Implement Card Updates & Payment Method Management",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/implement-card-updates-&-payment-method-management/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase3-step8-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Implement Card Updates & Payment Method Management",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 5
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Build Coupon & Discount System",
+      "riskLevel": "MEDIUM",
+      "estimatedHours": 4,
+      "objective": "Complete implementation of Build Coupon & Discount System with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['build', 'coupon', '&']",
+          "Build Coupon & Discount System implementation examples",
+          "Next.js/PostgreSQL/Redis ['build', 'coupon'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['build', 'coupon']?",
+          "How to test ['build', 'coupon'] effectively?",
+          "What are common pitfalls in ['build', 'coupon'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Build Coupon & Discount System system",
+          "file": "src/lib/build-coupon-&-discount-system/index.ts",
+          "code": "// Implementation of Build Coupon & Discount System\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Build Coupon & Discount System implementation with validation and error handling",
+          "file": "src/app/api/build-coupon-&-discount-system/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Build Coupon & Discount System thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Build Coupon & Discount System",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/build-coupon-&-discount-system/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase3-step9-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Build Coupon & Discount System",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 4
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Add Billing Notifications & Emails",
+      "riskLevel": "MEDIUM",
+      "estimatedHours": 4,
+      "objective": "Complete implementation of Add Billing Notifications & Emails with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['add', 'billing', 'notifications']",
+          "Add Billing Notifications & Emails implementation examples",
+          "Next.js/PostgreSQL/Redis ['add', 'billing'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['add', 'billing']?",
+          "How to test ['add', 'billing'] effectively?",
+          "What are common pitfalls in ['add', 'billing'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Add Billing Notifications & Emails system",
+          "file": "src/lib/add-billing-notifications-&-emails/index.ts",
+          "code": "// Implementation of Add Billing Notifications & Emails\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Add Billing Notifications & Emails implementation with validation and error handling",
+          "file": "src/app/api/add-billing-notifications-&-emails/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Add Billing Notifications & Emails thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Add Billing Notifications & Emails",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/add-billing-notifications-&-emails/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase3-step10-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Add Billing Notifications & Emails",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 4
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Create Billing Webhook endpoints & Security",
+      "riskLevel": "CRITICAL",
+      "estimatedHours": 4,
+      "objective": "Complete implementation of Create Billing Webhook endpoints & Security with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['create', 'billing', 'webhook']",
+          "Create Billing Webhook endpoints & Security implementation examples",
+          "Next.js/PostgreSQL/Redis ['create', 'billing'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['create', 'billing']?",
+          "How to test ['create', 'billing'] effectively?",
+          "What are common pitfalls in ['create', 'billing'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Create Billing Webhook endpoints & Security system",
+          "file": "src/lib/create-billing-webhook-endpoints-&-security/index.ts",
+          "code": "// Implementation of Create Billing Webhook endpoints & Security\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Create Billing Webhook endpoints & Security implementation with validation and error handling",
+          "file": "src/app/api/create-billing-webhook-endpoints-&-security/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Create Billing Webhook endpoints & Security thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Create Billing Webhook endpoints & Security",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/create-billing-webhook-endpoints-&-security/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase3-step11-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Create Billing Webhook endpoints & Security",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 4
+        }
+      }
+    },
+    {
+      "id": 12,
+      "title": "Implement Metered Usage Billing",
+      "riskLevel": "HIGH",
+      "estimatedHours": 6,
+      "objective": "Complete implementation of Implement Metered Usage Billing with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['implement', 'metered', 'usage']",
+          "Implement Metered Usage Billing implementation examples",
+          "Next.js/PostgreSQL/Redis ['implement', 'metered'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['implement', 'metered']?",
+          "How to test ['implement', 'metered'] effectively?",
+          "What are common pitfalls in ['implement', 'metered'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Implement Metered Usage Billing system",
+          "file": "src/lib/implement-metered-usage-billing/index.ts",
+          "code": "// Implementation of Implement Metered Usage Billing\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Implement Metered Usage Billing implementation with validation and error handling",
+          "file": "src/app/api/implement-metered-usage-billing/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Implement Metered Usage Billing thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Implement Metered Usage Billing",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/implement-metered-usage-billing/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase3-step12-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Implement Metered Usage Billing",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 6
+        }
+      }
+    }
+  ]
+}

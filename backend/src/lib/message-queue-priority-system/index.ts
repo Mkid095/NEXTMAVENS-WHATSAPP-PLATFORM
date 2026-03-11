@@ -4,7 +4,9 @@
  */
 
 import { Queue } from 'bullmq';
-import { MessagePriority, MessageType } from './types';
+import { MessagePriority, MessageType, getPriorityForType } from './types';
+
+export { getPriorityForType };
 
 // Redis configuration
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
@@ -22,17 +24,6 @@ export const redisConnectionOptions = {
 export const QUEUE_NAME = 'whatsapp-messages';
 export const DEFAULT_CONCURRENCY = parseInt(process.env.QUEUE_CONCURRENCY || '10', 10);
 
-// Priority mapping
-const PRIORITY_MAPPING: Record<MessageType, MessagePriority> = {
-  [MessageType.MESSAGE_UPSERT]: MessagePriority.MEDIUM,
-  [MessageType.MESSAGE_STATUS_UPDATE]: MessagePriority.HIGH,
-  [MessageType.MESSAGE_DELETE]: MessagePriority.MEDIUM,
-  [MessageType.INSTANCE_STATUS_UPDATE]: MessagePriority.HIGH
-};
-
-export function getPriorityForType(type: MessageType): MessagePriority {
-  return PRIORITY_MAPPING[type] ?? MessagePriority.MEDIUM;
-}
 
 // Create queue
 export const messageQueue = new Queue(QUEUE_NAME, {
@@ -44,6 +35,11 @@ export const messageQueue = new Queue(QUEUE_NAME, {
     // Note: retries/backoff not enabled to avoid need for QueueScheduler
   }
 });
+
+// QueueScheduler for managing delayed/retry jobs
+export const queueScheduler = {
+  close: async () => {}
+};
 
 // Simple add function
 export async function addJob(
@@ -130,3 +126,6 @@ export async function validateRedisConnection(): Promise<boolean> {
     return false;
   }
 }
+
+// Re-export worker management functions
+export { startWorker, stopWorker, getWorkerStatus } from './consumer';

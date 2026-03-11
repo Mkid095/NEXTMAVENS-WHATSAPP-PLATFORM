@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply, FastifyError } from 'fastify';
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma.js';
 
 /**
@@ -20,7 +20,7 @@ export async function authMiddleware(
     const authHeader = request.headers.authorization as string | undefined;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      done(new FastifyError(401, 'Missing or invalid Authorization header'));
+      done(new Error('Missing or invalid Authorization header') as any);
       return;
     }
 
@@ -47,12 +47,12 @@ export async function authMiddleware(
     });
 
     if (!user) {
-      done(new FastifyError(401, 'User not found'));
+      done(new Error('User not found') as any);
       return;
     }
 
     if (!user.isActive) {
-      done(new FastifyError(401, 'User account is deactivated'));
+      done(new Error('User account is deactivated') as any);
       return;
     }
 
@@ -63,16 +63,16 @@ export async function authMiddleware(
   } catch (error: any) {
     // Handle specific JWT errors
     if (error.name === 'JsonWebTokenError') {
-      done(new FastifyError(401, 'Invalid token'));
+      done(new Error('Invalid token') as any);
       return;
     }
     if (error.name === 'TokenExpiredError') {
-      done(new FastifyError(401, 'Token expired'));
+      done(new Error('Token expired') as any);
       return;
     }
 
     console.error('Auth middleware error:', error);
-    done(error as FastifyError);
+    done(error as any);
   }
 }
 

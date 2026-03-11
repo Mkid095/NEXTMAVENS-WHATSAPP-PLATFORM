@@ -6,6 +6,8 @@
  * Run: docker run -p 6379:6379 redis:alpine
  */
 
+/// <reference types="jest" />
+
 import { jest } from '@jest/globals';
 import Redis from 'ioredis';
 import {
@@ -17,14 +19,16 @@ import {
   addJob,
   addCriticalJob,
   addBackgroundJob,
-  validateRedisConnection
-} from '../src/lib/message-queue-priority-system/index';
+  validateRedisConnection,
+  pauseQueue,
+  resumeQueue
+} from '../lib/message-queue-priority-system/index';
 import {
   MessageType,
   MessagePriority,
   MessageStatusUpdateJob,
   InstanceStatusUpdateJob
-} from '../src/lib/message-queue-priority-system/types';
+} from '../lib/message-queue-priority-system/types';
 
 // Redis configuration for tests
 const TEST_REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379/1';
