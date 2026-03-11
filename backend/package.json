@@ -1,0 +1,29 @@
+{
+  "name": "nextmavens-backend",
+  "version": "1.0.0",
+  "description": "NEXTMAVENS WhatsApp API Platform - Backend",
+  "main": "src/server.ts",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "db:seed": "tsx src/lib/seed.ts",
+    "test": "tsx src/test/rls.integration.test.ts",
+    "test:rls": "tsx src/test/rls.integration.test.ts",
+    "setup": "node setup.mjs",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.4.1"
+  },
+  "devDependencies": {
+    "prisma": "^6.4.1",
+    "tsx": "^4.19.2",
+    "typescript": "~5.8.2",
+    "@types/node": "^22.14.0"
+  }
+}
