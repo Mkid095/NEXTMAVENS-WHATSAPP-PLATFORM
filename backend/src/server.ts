@@ -69,6 +69,11 @@ async function buildServer() {
   // @ts-ignore
   await app.register(dedupRoutes.default || dedupRoutes);
 
+  // Register Message Delivery Receipts System API routes (Step 7)
+  const receiptRoutes = await import('./app/api/build-message-delivery-receipts-system/route.js');
+  // @ts-ignore
+  await app.register(receiptRoutes.default || receiptRoutes);
+
   // Error handler
   app.setErrorHandler((error, request, reply) => {
     app.log.error(error);

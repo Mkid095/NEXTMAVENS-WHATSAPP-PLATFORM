@@ -154,9 +154,15 @@ model WhatsAppMessage {
   status         MessageStatus
   priority       Int       @default(0) // 0=normal, 1=high, -1=low
   quotedData     Json?     // Quoted message data
-  metadata       Json?     // Delivery timestamp, etc.
-  createdAt      DateTime  @default(now())
+  metadata       Json?     // Additional metadata (legacy)
+  // Delivery receipt timestamps
   sentAt         DateTime?
+  deliveredAt    DateTime?
+  readAt         DateTime?
+  failedAt       DateTime?
+  failureReason  String?   // Reason if status is FAILED/REJECTED
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   // Relations
   instance WhatsAppInstance @relation(fields: [instanceId], references: [id])
@@ -171,6 +177,9 @@ model WhatsAppMessage {
   @@index([status])
   @@index([from])
   @@index([to])
+  @@index([sentAt])
+  @@index([deliveredAt])
+  @@index([readAt])
   @@unique([orgId, messageId])
 }
 
