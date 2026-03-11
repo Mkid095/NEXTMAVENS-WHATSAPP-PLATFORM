@@ -18,7 +18,8 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@prisma/client": "^6.4.1"
+    "@prisma/client": "^6.4.1",
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "prisma": "^6.4.1",

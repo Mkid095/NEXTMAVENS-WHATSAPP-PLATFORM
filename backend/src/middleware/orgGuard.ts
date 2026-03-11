@@ -29,9 +29,12 @@ export async function orgGuard(
 
     // SUPER_ADMIN bypasses org checks - can see all orgs
     if (user.role === 'SUPER_ADMIN') {
-      // Set RLS context to NULL (admin bypass policy allows all)
+      // Set RLS context: role = SUPER_ADMIN enables bypass, org can be NULL
       await prisma.$executeRaw`
-        SET app.current_org = NULL
+        SELECT set_config('app.current_user_role', 'SUPER_ADMIN', false)
+      `;
+      await prisma.$executeRaw`
+        SELECT set_config('app.current_org', NULL, false)
       `;
       done();
       return;
@@ -67,7 +70,10 @@ export async function orgGuard(
     // Set RLS context for this database session
     // All subsequent queries automatically filter by this orgId
     await prisma.$executeRaw`
-      SET app.current_org = ${orgId}
+      SELECT set_config('app.current_org', ${orgId}, false)
+    `;
+    await prisma.$executeRaw`
+      SELECT set_config('app.current_user_role', ${member.role}, false)
     `;
 
     // Store org context on request for convenience
@@ -99,7 +105,12 @@ export async function orgGuardSimple(
     }
 
     if (user.role === 'SUPER_ADMIN') {
-      await prisma.$executeRaw`SET app.current_org = NULL`;
+      await prisma.$executeRaw`
+        SELECT set_config('app.current_user_role', 'SUPER_ADMIN', false)
+      `;
+      await prisma.$executeRaw`
+        SELECT set_config('app.current_org', NULL, false)
+      `;
       done();
       return;
     }
@@ -115,6 +126,7 @@ export async function orgGuardSimple(
         userId: user.id,
         orgId: user.orgId,
       },
+      select: { id: true, role: true },
     });
 
     if (!member) {
@@ -123,7 +135,10 @@ export async function orgGuardSimple(
     }
 
     await prisma.$executeRaw`
-      SET app.current_org = ${user.orgId}
+      SELECT set_config('app.current_org', ${user.orgId}, false)
+    `;
+    await prisma.$executeRaw`
+      SELECT set_config('app.current_user_role', ${member.role}, false)
     `;
 
     (request as any).currentOrgId = user.orgId;
