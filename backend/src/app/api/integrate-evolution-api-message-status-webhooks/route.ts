@@ -99,11 +99,18 @@ export async function registerEvolutionWebhookRoutes(fastify: FastifyInstance) {
           });
         }
 
-        // For processing errors, still return 200 (idempotency, will be retried via monitoring)
-        // Actually, for 5xx Evolution may retry. But we want to avoid duplicate processing.
-        // Since our processing is idempotent, we can return 500 to trigger retry.
-        // But need to be careful to not pollute DB with partial failures.
-        // Let's return 500 for non-signature errors to allow retry.
+        // If error was captured to DLQ, we've already saved it for later analysis/retry
+        // Return 200 to prevent Evolution from retrying (we have the data)
+        if ((error as any).capturedToDlq) {
+          return reply.code(200).send({
+            received: true,
+            processed: false,
+            error: error.message,
+            deadLetterCaptured: true,
+          });
+        }
+
+        // For other processing errors, return 500 to allow Evolution to retry
         return reply.code(500).send({
           received: true,
           processed: false,
