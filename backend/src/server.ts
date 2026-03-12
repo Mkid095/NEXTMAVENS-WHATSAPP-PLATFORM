@@ -21,6 +21,7 @@ import { prisma, verifyDatabaseSetup } from './lib/prisma.js';
 import { authMiddleware } from './middleware/auth.ts';
 import { orgGuard } from './middleware/orgGuard.ts';
 import { getRateLimiter, generateIdentifier } from './lib/rate-limiting-with-redis/index.ts';
+import { getQuotaLimiter, QuotaMetric } from './lib/implement-quota-enforcement-middleware/index.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -83,8 +84,8 @@ async function buildServer() {
     // ------------------------------------------------------------------------
     // 5. Rate Limiting (skip admin endpoints)
     // ------------------------------------------------------------------------
-    // Admin rate limiting management endpoints should not be rate-limited
-    if (request.url?.startsWith('/admin/rate-limiting')) {
+    // Admin endpoints should not be rate-limited to prevent lockout
+    if (request.url?.startsWith('/admin/rate-limiting') || request.url?.startsWith('/admin/quotas')) {
       return;
     }
 
@@ -114,6 +115,41 @@ async function buildServer() {
             limit: rule.maxRequests,
             windowMs: rule.windowMs
           });
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // 6. Quota Enforcement (global API calls quota)
+    // ------------------------------------------------------------------------
+    // Skip health, webhooks, and admin endpoints
+    if (!request.url?.startsWith('/admin') && request.url !== '/health' && !request.url?.startsWith('/api/webhooks/evolution')) {
+      try {
+        const quotaLimiter = getQuotaLimiter();
+        const orgId = (request as any).currentOrgId;
+        if (orgId && quotaLimiter) {
+          // Check API calls quota (1 per request)
+          const result = await quotaLimiter.check(orgId, QuotaMetric.API_CALLS, 1);
+          reply.header('X-Quota-Limit', result.limit.toString());
+          reply.header('X-Quota-Remaining', result.remaining.toString());
+          if (!result.allowed) {
+            return reply.code(429)
+              .header('Retry-After', Math.ceil((result.resetAt.getTime() - Date.now()) / 1000).toString())
+              .send({
+                error: 'Quota exceeded',
+                message: `API quota limit exceeded. Reset at ${result.resetAt.toISOString()}`,
+                quota: {
+                  metric: 'api_calls',
+                  current: result.current,
+                  limit: result.limit,
+                  remaining: result.remaining,
+                  resetAt: result.resetAt.toISOString()
+                }
+              });
+          }
+        }
+      } catch (err) {
+        console.error('Quota middleware error:', err);
+        // Fail open: allow request
       }
     }
   });
@@ -170,6 +206,11 @@ async function buildServer() {
   const rateLimitRoutes = await import('./app/api/rate-limiting-with-redis/route.js');
   // @ts-ignore
   await app.register(rateLimitRoutes.default || rateLimitRoutes);
+
+  // Register Quota Enforcement System API routes (Phase 1 Step 6)
+  const quotaRoutes = await import('./app/api/implement-quota-enforcement-middleware/route.js');
+  // @ts-ignore
+  await app.register(quotaRoutes.default || quotaRoutes);
 
   // Error handler
   app.setErrorHandler((error, request, reply) => {
