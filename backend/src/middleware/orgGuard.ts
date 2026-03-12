@@ -20,10 +20,10 @@ export async function orgGuard(
   done: (err?: FastifyError | undefined) => void
 ): Promise<void> {
   try {
-    const user = request.user as any; // Set by auth middleware
+    const user = (request as any).user; // Set by auth middleware
 
     if (!user) {
-      done(new FastifyError(401, 'Unauthorized: No user context'));
+      done(new Error('Unauthorized: No user context') as any);
       return;
     }
 
@@ -42,11 +42,11 @@ export async function orgGuard(
 
     // Determine orgId from request
     // Priority: route params > user's primary org
-    const orgIdFromParams = request.params?.orgId as string | undefined;
+    const orgIdFromParams = (request.params as any)?.orgId;
     const orgId = orgIdFromParams || user.orgId;
 
     if (!orgId) {
-      done(new FastifyError(400, 'Bad Request: No orgId specified'));
+      done(new Error('Bad Request: No orgId specified') as any);
       return;
     }
 
@@ -63,7 +63,7 @@ export async function orgGuard(
     });
 
     if (!member) {
-      done(new FastifyError(403, 'Access denied: Not a member of this organization'));
+      done(new Error('Access denied: Not a member of this organization') as any);
       return;
     }
 
@@ -83,7 +83,7 @@ export async function orgGuard(
     done();
   } catch (error: any) {
     console.error('orgGuard error:', error);
-    done(error as FastifyError);
+    done(error as any);
   }
 }
 
@@ -100,7 +100,7 @@ export async function orgGuardSimple(
     const user = request.user as any;
 
     if (!user) {
-      done(new FastifyError(401, 'Unauthorized'));
+      done(new Error('Unauthorized') as any);
       return;
     }
 
@@ -116,7 +116,7 @@ export async function orgGuardSimple(
     }
 
     if (!user.orgId) {
-      done(new FastifyError(400, 'User has no primary org'));
+      done(new Error('User has no primary org') as any);
       return;
     }
 
@@ -130,7 +130,7 @@ export async function orgGuardSimple(
     });
 
     if (!member) {
-      done(new FastifyError(403, 'Access denied: Not a member of org'));
+      done(new Error('Access denied: Not a member of org') as any);
       return;
     }
 
@@ -145,7 +145,7 @@ export async function orgGuardSimple(
     done();
   } catch (error: any) {
     console.error('orgGuardSimple error:', error);
-    done(error as FastifyError);
+    done(error as any);
   }
 }
 

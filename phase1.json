@@ -1,0 +1,1616 @@
+{
+  "phase": 1,
+  "name": "Enterprise-Grade Critical Fixes",
+  "description": "Foundation: Security, reliability, compliance. Must complete before anything else.",
+  "duration_days": 14,
+  "priority": "CRITICAL",
+  "dependencies": [],
+  "total_steps": 14,
+  "estimated_total_hours": 68,
+  "sharedRules": {
+    "noEmojis": "No emojis in code, comments, UI, logs, or documentation",
+    "maxFileLines": 250,
+    "featureBasedModules": "Organize code by feature, not by layer",
+    "primaryColorsOnly": "Use primary colors only: #3B82F6 (blue), #10B981 (green), #F59E0B (amber), #EF4444 (red)",
+    "researchFirst": "Use Context7 MCP + Brave Search before ANY implementation. Document findings.",
+    "workflowEnforced": "Commit \u2192 Push \u2192 Update JSON \u2192 Write Report. In that order.",
+    "testBeforeComplete": "Run full test suite before marking step complete. All tests must pass.",
+    "fullyImplemented": "No placeholders, TODOs, or incomplete code. Everything must work.",
+    "modularArchitecture": "Keep files under 250 lines. Split when needed.",
+    "seoOptimized": "All frontend pages must have proper meta tags, structured data, and semantic HTML",
+    "apiVersioning": "All APIs must be versioned (v1, v2) with backward compatibility policy"
+  },
+  "workflow": [
+    "Read this phase file completely",
+    "For each step in order:",
+    "  1. Research: Use Context7 MCP (library docs) + Brave Search (best practices)",
+    "  2. Write research doc: docs/research/phase{X}-step{Y}-research.md",
+    "  3. Create branch: git checkout -b phase{X}-step-{Y}-{kebab-title}",
+    "  4. Implement step-by-step following implementation details",
+    "  5. Run all tests: npm run test:all (or equivalent)",
+    "  6. Fix any failures before proceeding",
+    "  7. Commit with conventional commit: feat(phase{}): step Y - title",
+    "  8. Push to remote",
+    "  9. Update this phase{}.json with completion data",
+    "  10. Write report: reports/phase{X}-step-{Y}-report.md",
+    "  11. Mark step as completed in JSON",
+    "  12. Create Pull Request, get review, merge",
+    "  13. Move to next step"
+  ],
+  "steps": [
+    {
+      "id": 1,
+      "title": "Enable PostgreSQL RLS on All Tenant Tables",
+      "riskLevel": "CRITICAL",
+      "estimatedHours": 4,
+      "objective": "Complete implementation of Enable PostgreSQL RLS on All Tenant Tables with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['enable', 'postgresql', 'rls']",
+          "Enable PostgreSQL RLS on All Tenant Tables implementation examples",
+          "Next.js/PostgreSQL/Redis ['enable', 'postgresql'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['enable', 'postgresql']?",
+          "How to test ['enable', 'postgresql'] effectively?",
+          "What are common pitfalls in ['enable', 'postgresql'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Research PostgreSQL RLS and verify database setup",
+          "tasks": [
+            "Connect to PostgreSQL: docker exec nextmavens-research-db psql -U flow -d nextmavens_research",
+            "Verify PostgreSQL version >= 9.5 (RLS introduced)",
+            "Check existing tables to understand current schema",
+            "Research RLS policies: USING vs WITH CHECK clauses",
+            "Document findings in docs/research/phase1-step1-research.md"
+          ],
+          "duration": "30 minutes",
+          "status": "COMPLETED",
+          "completedAt": "2025-03-12T12:00:00Z"
+        },
+        "step2": {
+          "description": "Install Prisma and initialize schema",
+          "tasks": [
+            "cd backend",
+            "npm install (installs prisma, @prisma/client, fastify, etc.)",
+            "npx prisma init (creates prisma/schema.prisma)",
+            "Copy the provided schema.prisma with all tenant models",
+            "Review schema: ensure all org_id columns are present on tenant tables",
+            "Verify relationship mapping (org -> instances -> messages, etc.)"
+          ],
+          "files": [
+            "backend/prisma/schema.prisma"
+          ],
+          "duration": "1 hour",
+          "status": "COMPLETED",
+          "completedAt": "2025-03-12T12:00:00Z"
+        },
+        "step3": {
+          "description": "Create RLS migration SQL",
+          "tasks": [
+            "Create migration directory: prisma/migrations/20250311_add_rls_policies/",
+            "Write migration.sql with:",
+            "  - ALTER TABLE ... ENABLE ROW LEVEL SECURITY for 15 tables",
+            "  - CREATE POLICY admin_bypass for SUPER_ADMIN (USING true)",
+            "  - CREATE POLICY tenant_isolation (USING org_id = current_setting('app.current_org')::uuid)",
+            "  - CREATE POLICY tenant_insert (WITH CHECK org_id = ...)",
+            "  - Document rollback procedure in comments",
+            "Validate SQL syntax with psql"
+          ],
+          "files": [
+            "backend/prisma/migrations/20250311_add_rls_policies/migration.sql"
+          ],
+          "duration": "1 hour",
+          "status": "COMPLETED",
+          "completedAt": "2025-03-12T12:00:00Z"
+        },
+        "step4": {
+          "description": "Implement Fastify orgGuard middleware",
+          "tasks": [
+            "Create backend/src/middleware/orgGuard.ts",
+            "Implement orgGuard function:",
+            "  - Extract user from JWT (req.user)",
+            "  - SUPER_ADMIN bypass: SET app.current_org = NULL",
+            "  - Verify membership via prisma.member.findFirst",
+            "  - SET app.current_org = orgId for regular users",
+            "  - Throw 403 if user not in org",
+            "Export helper: getCurrentOrgId(), isSuperAdmin()"
+          ],
+          "files": [
+            "backend/src/middleware/orgGuard.ts"
+          ],
+          "duration": "1 hour",
+          "status": "COMPLETED",
+          "completedAt": "2025-03-12T12:00:00Z"
+        },
+        "step5": {
+          "description": "Create Prisma client singleton and database utilities",
+          "tasks": [
+            "Create backend/src/lib/prisma.ts",
+            "Export shared prisma instance (singleton pattern)",
+            "Add verifyDatabaseSetup() to check RLS on startup",
+            "Ensure NODE_ENV handling for production"
+          ],
+          "files": [
+            "backend/src/lib/prisma.ts"
+          ],
+          "duration": "30 minutes",
+          "status": "COMPLETED",
+          "completedAt": "2025-03-12T12:00:00Z"
+        },
+        "step6": {
+          "description": "Write comprehensive RLS integration tests",
+          "tasks": [
+            "Create backend/src/test/rls.integration.test.ts",
+            "Test cases:",
+            "  - RLS enabled on all 15 tables",
+            "  - Policies exist (admin_bypass + tenant_isolation)",
+            "  - Context filtering works (org 1 sees only org 1 data)",
+            "  - Cross-org access blocked",
+            "  - SUPER_ADMIN sees all data",
+            "  - INSERT with wrong org_id fails",
+            "  - INSERT with correct org_id succeeds",
+            "  - No context leakage between sessions",
+            "Include cleanup() function for test isolation"
+          ],
+          "files": [
+            "backend/src/test/rls.integration.test.ts"
+          ],
+          "duration": "1.5 hours",
+          "status": "COMPLETED",
+          "completedAt": "2025-03-12T12:00:00Z"
+        },
+        "step7": {
+          "description": "Run full setup and validate",
+          "tasks": [
+            "cd backend",
+            "cp .env.example .env (edit if needed)",
+            "npm install",
+            "npx prisma generate",
+            "npx prisma migrate dev --name init (creates tables)",
+            "npx prisma db push (applies RLS migration)",
+            "npm run test:rls (run integration tests)",
+            "All tests MUST pass before marking complete"
+          ],
+          "commands": [
+            "cd backend && npm install",
+            "npx prisma generate",
+            "npx prisma migrate dev --name init",
+            "npx prisma db push",
+            "npm run test:rls"
+          ],
+          "duration": "2 hours",
+          "status": "COMPLETED",
+          "completedAt": "2025-03-12T12:00:00Z"
+        },
+        "step8": {
+          "description": "Write completion report",
+          "tasks": [
+            "Create reports/phase1-step-1-report.md",
+            "Include:",
+            "  - Summary of what was implemented",
+            "  - Database schema overview (15 tables)",
+            "  - RLS policies created (count: 2 per table = 30 policies)",
+            "  - Test results (all passed)",
+            "  - Decisions: Why RLS, superseding application-level checks",
+            "  - Challenges: Any issues with policies, session variables",
+            "  - Metrics: filesCreated, filesModified, testsAdded, timeSpentHours"
+          ],
+          "file": "reports/phase1-step-1-report.md",
+          "status": "COMPLETED",
+          "completedAt": "2025-03-12T12:00:00Z"
+        }
+      },
+      "validation": {
+        "tests": [
+          "npm run test:rls passes (all integration tests)",
+          "Manual verification: \n  - Set app.current_org = 'org-uuid'\n  - SELECT * FROM whatsapp_messages\n  - Confirm only org's rows return"
+        ],
+        "manuallyVerify": [
+          "Connect to database: docker exec nextmavens-research-db psql -U flow -d nextmavens_research",
+          "Run: SELECT relname, relrowsecurity FROM pg_class WHERE relname = 'whatsapp_messages'",
+          "Should show rls_enabled = true",
+          "Run: \\dp whatsapp_messages to list policies",
+          "Should show admin_bypass and tenant_isolation policies"
+        ],
+        "acceptanceCriteria": [
+          "All 15 tenant tables have RLS enabled",
+          "30 policies created (2 per table: admin bypass + tenant isolation)",
+          "Integration tests pass (cross-org isolation verified)",
+          "Fastify middleware implements orgGuard",
+          "Prisma client singleton configured",
+          "Documentation complete (research doc, report)"
+        ]
+      },
+      "deliverables": [
+        "backend/prisma/schema.prisma (complete schema with all models)",
+        "backend/prisma/migrations/20250311_add_rls_policies/migration.sql",
+        "backend/src/middleware/orgGuard.ts (RLS context middleware)",
+        "backend/src/lib/prisma.ts (Prisma client singleton)",
+        "backend/src/test/rls.integration.test.ts (comprehensive tests)",
+        "backend/.env (configured with DATABASE_URL)",
+        "docs/research/phase1-step1-research.md (research document)",
+        "reports/phase1-step-1-report.md (completion report)",
+        "All tests passing: npm run test:rls"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Enable PostgreSQL RLS on All Tenant Tables",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 6,
+          "filesModified": 1,
+          "testsAdded": 1,
+          "testsPassing": "All RLS tests (8 test cases)",
+          "timeSpentHours": 4
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Implement BullMQ Message Queue System",
+      "riskLevel": "CRITICAL",
+      "estimatedHours": 8,
+      "objective": "Complete implementation of Implement BullMQ Message Queue System with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['implement', 'bullmq', 'message']",
+          "Implement BullMQ Message Queue System implementation examples",
+          "Next.js/PostgreSQL/Redis ['implement', 'bullmq'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['implement', 'bullmq']?",
+          "How to test ['implement', 'bullmq'] effectively?",
+          "What are common pitfalls in ['implement', 'bullmq'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Set up BullMQ queue workers and job processing system",
+          "file": "src/lib/implement-bullmq-message-queue-system/index.ts",
+          "code": "// Implementation of Implement BullMQ Message Queue System\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ],
+          "status": "COMPLETED",
+          "completedAt": "2025-03-12T12:00:00Z"
+        },
+        "step2": {
+          "description": "Complete Implement BullMQ Message Queue System implementation with validation and error handling",
+          "file": "src/app/api/implement-bullmq-message-queue-system/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ],
+          "status": "COMPLETED",
+          "completedAt": "2025-03-12T12:00:00Z"
+        },
+        "step3": {
+          "description": "Test and validate Implement BullMQ Message Queue System thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ],
+          "status": "COMPLETED",
+          "completedAt": "2025-03-12T12:00:00Z"
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Implement BullMQ Message Queue System",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/implement-bullmq-message-queue-system/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase1-step2-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Implement BullMQ Message Queue System",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 8
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Implement Rate Limiting with Redis",
+      "riskLevel": "CRITICAL",
+      "estimatedHours": 6,
+      "objective": "Complete implementation of Implement Rate Limiting with Redis with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['implement', 'rate', 'limiting']",
+          "Implement Rate Limiting with Redis implementation examples",
+          "Next.js/PostgreSQL/Redis ['implement', 'rate'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['implement', 'rate']?",
+          "How to test ['implement', 'rate'] effectively?",
+          "What are common pitfalls in ['implement', 'rate'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Implement Redis-based rate limiting with configurable limits",
+          "file": "src/lib/implement-rate-limiting-with-redis/index.ts",
+          "code": "// Implementation of Implement Rate Limiting with Redis\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Implement Rate Limiting with Redis implementation with validation and error handling",
+          "file": "src/app/api/implement-rate-limiting-with-redis/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Implement Rate Limiting with Redis thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Implement Rate Limiting with Redis",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/implement-rate-limiting-with-redis/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase1-step3-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Implement Rate Limiting with Redis",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 6
+        }
+      },
+      "status": "MOVED",
+      "movedToPhase2": true,
+      "movedReason": "Step restructured and functionality implemented in Phase 2 (steps 3, 6, 7, 8, 12, etc.)"
+    },
+    {
+      "id": 4,
+      "title": "Implement Idempotency-Key System",
+      "riskLevel": "CRITICAL",
+      "estimatedHours": 4,
+      "objective": "Complete implementation of Implement Idempotency-Key System with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['implement', 'idempotency-key', 'system']",
+          "Implement Idempotency-Key System implementation examples",
+          "Next.js/PostgreSQL/Redis ['implement', 'idempotency-key'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['implement', 'idempotency-key']?",
+          "How to test ['implement', 'idempotency-key'] effectively?",
+          "What are common pitfalls in ['implement', 'idempotency-key'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Implement Idempotency-Key System system",
+          "file": "src/lib/implement-idempotency-key-system/index.ts",
+          "code": "// Implementation of Implement Idempotency-Key System\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Implement Idempotency-Key System implementation with validation and error handling",
+          "file": "src/app/api/implement-idempotency-key-system/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Implement Idempotency-Key System thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Implement Idempotency-Key System",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/implement-idempotency-key-system/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase1-step4-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Implement Idempotency-Key System",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 4
+        }
+      },
+      "status": "MOVED",
+      "movedToPhase2": true,
+      "movedReason": "Step restructured and functionality implemented in Phase 2 (steps 3, 6, 7, 8, 12, etc.)"
+    },
+    {
+      "id": 5,
+      "title": "Build Webhook Dead Letter Queue (DLQ) System",
+      "riskLevel": "CRITICAL",
+      "estimatedHours": 6,
+      "objective": "Complete implementation of Build Webhook Dead Letter Queue (DLQ) System with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['build', 'webhook', 'dead']",
+          "Build Webhook Dead Letter Queue (DLQ) System implementation examples",
+          "Next.js/PostgreSQL/Redis ['build', 'webhook'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['build', 'webhook']?",
+          "How to test ['build', 'webhook'] effectively?",
+          "What are common pitfalls in ['build', 'webhook'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Build Webhook Dead Letter Queue (DLQ) System system",
+          "file": "src/lib/build-webhook-dead-letter-queue-(dlq)-system/index.ts",
+          "code": "// Implementation of Build Webhook Dead Letter Queue (DLQ) System\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Build Webhook Dead Letter Queue (DLQ) System implementation with validation and error handling",
+          "file": "src/app/api/build-webhook-dead-letter-queue-(dlq)-system/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Build Webhook Dead Letter Queue (DLQ) System thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Build Webhook Dead Letter Queue (DLQ) System",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/build-webhook-dead-letter-queue-(dlq)-system/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase1-step5-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Build Webhook Dead Letter Queue (DLQ) System",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 6
+        }
+      },
+      "status": "MOVED",
+      "movedToPhase2": true,
+      "movedReason": "Step restructured and functionality implemented in Phase 2 (steps 3, 6, 7, 8, 12, etc.)"
+    },
+    {
+      "id": 6,
+      "title": "Implement Quota Enforcement Middleware",
+      "riskLevel": "CRITICAL",
+      "estimatedHours": 5,
+      "objective": "Complete implementation of Implement Quota Enforcement Middleware with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['implement', 'quota', 'enforcement']",
+          "Implement Quota Enforcement Middleware implementation examples",
+          "Next.js/PostgreSQL/Redis ['implement', 'quota'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['implement', 'quota']?",
+          "How to test ['implement', 'quota'] effectively?",
+          "What are common pitfalls in ['implement', 'quota'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Implement Quota Enforcement Middleware system",
+          "file": "src/lib/implement-quota-enforcement-middleware/index.ts",
+          "code": "// Implementation of Implement Quota Enforcement Middleware\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Implement Quota Enforcement Middleware implementation with validation and error handling",
+          "file": "src/app/api/implement-quota-enforcement-middleware/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Implement Quota Enforcement Middleware thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Implement Quota Enforcement Middleware",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/implement-quota-enforcement-middleware/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase1-step6-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Implement Quota Enforcement Middleware",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 5
+        }
+      },
+      "status": "MOVED",
+      "movedToPhase2": true,
+      "movedReason": "Step restructured and functionality implemented in Phase 2 (steps 3, 6, 7, 8, 12, etc.)"
+    },
+    {
+      "id": 7,
+      "title": "Add WhatsApp Message Throttling",
+      "riskLevel": "CRITICAL",
+      "estimatedHours": 4,
+      "objective": "Complete implementation of Add WhatsApp Message Throttling with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['add', 'whatsapp', 'message']",
+          "Add WhatsApp Message Throttling implementation examples",
+          "Next.js/PostgreSQL/Redis ['add', 'whatsapp'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['add', 'whatsapp']?",
+          "How to test ['add', 'whatsapp'] effectively?",
+          "What are common pitfalls in ['add', 'whatsapp'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Add WhatsApp Message Throttling system",
+          "file": "src/lib/add-whatsapp-message-throttling/index.ts",
+          "code": "// Implementation of Add WhatsApp Message Throttling\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Add WhatsApp Message Throttling implementation with validation and error handling",
+          "file": "src/app/api/add-whatsapp-message-throttling/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Add WhatsApp Message Throttling thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Add WhatsApp Message Throttling",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/add-whatsapp-message-throttling/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase1-step7-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Add WhatsApp Message Throttling",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 4
+        }
+      },
+      "status": "MOVED",
+      "movedToPhase2": true,
+      "movedReason": "Step restructured and functionality implemented in Phase 2 (steps 3, 6, 7, 8, 12, etc.)"
+    },
+    {
+      "id": 8,
+      "title": "Create Comprehensive Health Check Endpoint",
+      "riskLevel": "HIGH",
+      "estimatedHours": 3,
+      "objective": "Complete implementation of Create Comprehensive Health Check Endpoint with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['create', 'comprehensive', 'health']",
+          "Create Comprehensive Health Check Endpoint implementation examples",
+          "Next.js/PostgreSQL/Redis ['create', 'comprehensive'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['create', 'comprehensive']?",
+          "How to test ['create', 'comprehensive'] effectively?",
+          "What are common pitfalls in ['create', 'comprehensive'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Create Comprehensive Health Check Endpoint system",
+          "file": "src/lib/create-comprehensive-health-check-endpoint/index.ts",
+          "code": "// Implementation of Create Comprehensive Health Check Endpoint\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Create Comprehensive Health Check Endpoint implementation with validation and error handling",
+          "file": "src/app/api/create-comprehensive-health-check-endpoint/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Create Comprehensive Health Check Endpoint thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Create Comprehensive Health Check Endpoint",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/create-comprehensive-health-check-endpoint/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase1-step8-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Create Comprehensive Health Check Endpoint",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 3
+        }
+      },
+      "status": "MOVED",
+      "movedToPhase2": true,
+      "movedReason": "Step restructured and functionality implemented in Phase 2 (steps 3, 6, 7, 8, 12, etc.)"
+    },
+    {
+      "id": 9,
+      "title": "Build Immutable Audit Logging System",
+      "riskLevel": "CRITICAL",
+      "estimatedHours": 6,
+      "objective": "Complete implementation of Build Immutable Audit Logging System with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['build', 'immutable', 'audit']",
+          "Build Immutable Audit Logging System implementation examples",
+          "Next.js/PostgreSQL/Redis ['build', 'immutable'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['build', 'immutable']?",
+          "How to test ['build', 'immutable'] effectively?",
+          "What are common pitfalls in ['build', 'immutable'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Build Immutable Audit Logging System system",
+          "file": "src/lib/build-immutable-audit-logging-system/index.ts",
+          "code": "// Implementation of Build Immutable Audit Logging System\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Build Immutable Audit Logging System implementation with validation and error handling",
+          "file": "src/app/api/build-immutable-audit-logging-system/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Build Immutable Audit Logging System thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Build Immutable Audit Logging System",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/build-immutable-audit-logging-system/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase1-step9-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Build Immutable Audit Logging System",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 6
+        }
+      },
+      "status": "MOVED",
+      "movedToPhase2": true,
+      "movedReason": "Step restructured and functionality implemented in Phase 2 (steps 3, 6, 7, 8, 12, etc.)"
+    },
+    {
+      "id": 10,
+      "title": "Enforce 2FA for Privileged Roles",
+      "riskLevel": "CRITICAL",
+      "estimatedHours": 5,
+      "objective": "Complete implementation of Enforce 2FA for Privileged Roles with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['enforce', '2fa', 'for']",
+          "Enforce 2FA for Privileged Roles implementation examples",
+          "Next.js/PostgreSQL/Redis ['enforce', '2fa'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['enforce', '2fa']?",
+          "How to test ['enforce', '2fa'] effectively?",
+          "What are common pitfalls in ['enforce', '2fa'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Enforce 2FA for Privileged Roles system",
+          "file": "src/lib/enforce-2fa-for-privileged-roles/index.ts",
+          "code": "// Implementation of Enforce 2FA for Privileged Roles\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Enforce 2FA for Privileged Roles implementation with validation and error handling",
+          "file": "src/app/api/enforce-2fa-for-privileged-roles/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Enforce 2FA for Privileged Roles thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Enforce 2FA for Privileged Roles",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/enforce-2fa-for-privileged-roles/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase1-step10-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Enforce 2FA for Privileged Roles",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 5
+        }
+      },
+      "status": "MOVED",
+      "movedToPhase2": true,
+      "movedReason": "Step restructured and functionality implemented in Phase 2 (steps 3, 6, 7, 8, 12, etc.)"
+    },
+    {
+      "id": 11,
+      "title": "Phone Number Normalization to E.164",
+      "riskLevel": "HIGH",
+      "estimatedHours": 4,
+      "objective": "Complete implementation of Phone Number Normalization to E.164 with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['phone', 'number', 'normalization']",
+          "Phone Number Normalization to E.164 implementation examples",
+          "Next.js/PostgreSQL/Redis ['phone', 'number'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['phone', 'number']?",
+          "How to test ['phone', 'number'] effectively?",
+          "What are common pitfalls in ['phone', 'number'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Phone Number Normalization to E.164 system",
+          "file": "src/lib/phone-number-normalization-to-e.164/index.ts",
+          "code": "// Implementation of Phone Number Normalization to E.164\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Phone Number Normalization to E.164 implementation with validation and error handling",
+          "file": "src/app/api/phone-number-normalization-to-e.164/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Phone Number Normalization to E.164 thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Phone Number Normalization to E.164",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/phone-number-normalization-to-e.164/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase1-step11-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Phone Number Normalization to E.164",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 4
+        }
+      },
+      "status": "MOVED",
+      "movedToPhase2": true,
+      "movedReason": "Step restructured and functionality implemented in Phase 2 (steps 3, 6, 7, 8, 12, etc.)"
+    },
+    {
+      "id": 12,
+      "title": "Implement Message Status Tracking System",
+      "riskLevel": "HIGH",
+      "estimatedHours": 5,
+      "objective": "Complete implementation of Implement Message Status Tracking System with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['implement', 'message', 'status']",
+          "Implement Message Status Tracking System implementation examples",
+          "Next.js/PostgreSQL/Redis ['implement', 'message'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['implement', 'message']?",
+          "How to test ['implement', 'message'] effectively?",
+          "What are common pitfalls in ['implement', 'message'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Implement Message Status Tracking System system",
+          "file": "src/lib/implement-message-status-tracking-system/index.ts",
+          "code": "// Implementation of Implement Message Status Tracking System\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Implement Message Status Tracking System implementation with validation and error handling",
+          "file": "src/app/api/implement-message-status-tracking-system/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Implement Message Status Tracking System thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Implement Message Status Tracking System",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/implement-message-status-tracking-system/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase1-step12-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Implement Message Status Tracking System",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 5
+        }
+      },
+      "status": "MOVED",
+      "movedToPhase2": true,
+      "movedReason": "Step restructured and functionality implemented in Phase 2 (steps 3, 6, 7, 8, 12, etc.)"
+    },
+    {
+      "id": 13,
+      "title": "Add Chat Pagination (Cursor-based)",
+      "riskLevel": "HIGH",
+      "estimatedHours": 4,
+      "objective": "Complete implementation of Add Chat Pagination (Cursor-based) with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['add', 'chat', 'pagination']",
+          "Add Chat Pagination (Cursor-based) implementation examples",
+          "Next.js/PostgreSQL/Redis ['add', 'chat'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['add', 'chat']?",
+          "How to test ['add', 'chat'] effectively?",
+          "What are common pitfalls in ['add', 'chat'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Add Chat Pagination (Cursor-based) system",
+          "file": "src/lib/add-chat-pagination-(cursor-based)/index.ts",
+          "code": "// Implementation of Add Chat Pagination (Cursor-based)\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Add Chat Pagination (Cursor-based) implementation with validation and error handling",
+          "file": "src/app/api/add-chat-pagination-(cursor-based)/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Add Chat Pagination (Cursor-based) thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Add Chat Pagination (Cursor-based)",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/add-chat-pagination-(cursor-based)/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase1-step13-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Add Chat Pagination (Cursor-based)",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 4
+        }
+      },
+      "status": "MOVED",
+      "movedToPhase2": true,
+      "movedReason": "Step restructured and functionality implemented in Phase 2 (steps 3, 6, 7, 8, 12, etc.)"
+    },
+    {
+      "id": 14,
+      "title": "Implement Instance Heartbeat Monitoring",
+      "riskLevel": "HIGH",
+      "estimatedHours": 4,
+      "objective": "Complete implementation of Implement Instance Heartbeat Monitoring with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['implement', 'instance', 'heartbeat']",
+          "Implement Instance Heartbeat Monitoring implementation examples",
+          "Next.js/PostgreSQL/Redis ['implement', 'instance'] patterns"
+        ],
+        "questions": [
+          "What are the security considerations for ['implement', 'instance']?",
+          "How to test ['implement', 'instance'] effectively?",
+          "What are common pitfalls in ['implement', 'instance'] implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Implement Instance Heartbeat Monitoring system",
+          "file": "src/lib/implement-instance-heartbeat-monitoring/index.ts",
+          "code": "// Implementation of Implement Instance Heartbeat Monitoring\n// Follow modular architecture, max 250 lines per file\n// Write comprehensive tests\n// Ensure no emojis anywhere",
+          "details": [
+            "Follow shared rules: no emojis, max 250 lines/file, primary colors only",
+            "Write unit tests first (TDD approach recommended)",
+            "Ensure all code is type-safe with TypeScript",
+            "Add proper error handling and logging",
+            "Document API with OpenAPI spec if applicable"
+          ]
+        },
+        "step2": {
+          "description": "Complete Implement Instance Heartbeat Monitoring implementation with validation and error handling",
+          "file": "src/app/api/implement-instance-heartbeat-monitoring/route.ts",
+          "details": [
+            "Implement full CRUD operations if applicable",
+            "Add input validation with Zod schemas",
+            "Write integration tests",
+            "Add proper HTTP status codes and error messages"
+          ]
+        },
+        "step3": {
+          "description": "Test and validate Implement Instance Heartbeat Monitoring thoroughly",
+          "details": [
+            "Run all tests: npm run test:all",
+            "Check code coverage > 90% for critical paths",
+            "Perform manual testing of all scenarios",
+            "Verify no console errors or warnings",
+            "Test security implications"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass",
+          "Integration tests for critical paths pass",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature works as expected in development environment",
+          "Security controls are effective (RLS, rate limiting, etc.)",
+          "UI follows design system (primary colors only)"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Implement Instance Heartbeat Monitoring",
+          "All tests passing",
+          "Documentation updated",
+          "Code reviewed and approved"
+        ]
+      },
+      "deliverables": [
+        "Implementation code in src/implement-instance-heartbeat-monitoring/",
+        "Unit tests with >90% coverage",
+        "Integration tests",
+        "Documentation in docs/",
+        "Updated OpenAPI spec if API changes",
+        "Report: reports/phase1-step14-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Implement Instance Heartbeat Monitoring",
+        "decisions": [
+          "Key architectural decisions made",
+          "Why certain libraries/approaches were chosen"
+        ],
+        "challenges": [
+          "Any blockers encountered and how they were resolved"
+        ],
+        "metrics": {
+          "filesCreated": 0,
+          "filesModified": 0,
+          "testsAdded": 0,
+          "testsPassing": 0,
+          "timeSpentHours": 4
+        }
+      },
+      "status": "MOVED",
+      "movedToPhase2": true,
+      "movedReason": "Step restructured and functionality implemented in Phase 2 (steps 3, 6, 7, 8, 12, etc.)"
+    }
+  ]
+}

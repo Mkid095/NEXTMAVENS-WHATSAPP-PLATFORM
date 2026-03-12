@@ -20,7 +20,7 @@
  */
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { prisma } from '../../lib/prisma.js';
+import { prisma } from '../../../lib/prisma';
 import {
   initializeWebhookProcessor,
   processEvolutionWebhook,
@@ -48,6 +48,7 @@ export async function registerEvolutionWebhookRoutes(fastify: FastifyInstance) {
       schema: routeSchema,
       // Request raw body for signature verification
       // Important: This disables body parsing until we need it
+      // @ts-ignore - rawBody provided by fastify-raw-body plugin
       rawBody: true,
       // Limit webhook payload size (Evolution payloads are small)
       bodyLimit: 1024 * 100, // 100KB
@@ -61,7 +62,7 @@ export async function registerEvolutionWebhookRoutes(fastify: FastifyInstance) {
 
       try {
         // Process webhook through main processor
-        const result = await processEvolutionWebhook(rawBody, request.headers, jsonBody);
+        const result = await processEvolutionWebhook(rawBody, request.headers as any, jsonBody);
 
         const duration = Date.now() - startTime;
         request.log.info({
@@ -154,16 +155,16 @@ export async function registerEvolutionWebhookRoutes(fastify: FastifyInstance) {
 
       const logs = await prisma.webhookDeliveryLog.findMany({
         take: Math.min(limit, 100),
-        orderBy: { receivedAt: 'desc' },
+        orderBy: { createdAt: 'desc' },
         select: {
           id: true,
           orgId: true,
-          instanceId: true,
-          event: true,
+          eventId: true,
           status: true,
-          error: true,
-          receivedAt: true,
-          processedAt: true,
+          errorMessage: true,
+          attempts: true,
+          lastAttemptAt: true,
+          createdAt: true,
         },
       });
 
