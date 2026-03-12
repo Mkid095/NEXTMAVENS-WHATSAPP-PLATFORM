@@ -212,6 +212,11 @@ async function buildServer() {
   // @ts-ignore
   await app.register(quotaRoutes.default || quotaRoutes);
 
+  // Register Queue Priority System Admin API routes (Phase 2 Step 3 - Admin API)
+  const queueAdminRoutes = await import('./app/api/implement-message-queue-priority-system/route.js');
+  // @ts-ignore
+  await app.register(queueAdminRoutes.default || queueAdminRoutes);
+
   // Error handler
   app.setErrorHandler((error, request, reply) => {
     app.log.error(error);
