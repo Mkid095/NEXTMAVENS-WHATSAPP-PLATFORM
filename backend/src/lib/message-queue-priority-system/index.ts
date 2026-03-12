@@ -6,7 +6,7 @@
 import { Queue } from 'bullmq';
 import { MessagePriority, MessageType, getPriorityForType } from './types';
 
-export { getPriorityForType };
+export { getPriorityForType, MessageType };
 
 // Redis configuration
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost';

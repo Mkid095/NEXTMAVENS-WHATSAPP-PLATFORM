@@ -250,6 +250,13 @@ export interface WebhookProcessorConfig {
   requireIpWhitelist?: boolean;
   /** Allowed IP ranges (CIDR) */
   allowedIps?: string[];
+  /** Retry policy configuration for failed webhooks */
+  retryPolicy?: {
+    maxAttempts: number;
+    initialDelayMs: number;
+    backoffFactor: number;
+    maxDelayMs: number;
+  };
 }
 
 // ============================================================================

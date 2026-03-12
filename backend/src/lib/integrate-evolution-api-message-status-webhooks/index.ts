@@ -27,6 +27,8 @@ import {
 } from './signature';
 import { parseWebhookPayload } from './parsers';
 import { dispatchWebhookHandler } from './handlers';
+import { executeWithRetry, RetryPolicy } from '../build-retry-logic-with-progressive-backoff';
+import { captureDeadLetter } from '../build-webhook-dead-letter-queue-system';
 
 // Re-export types for consumers
 export * from './types';
@@ -42,6 +44,18 @@ export { dispatchWebhookHandler } from './handlers';
  * Configuration singleton (set via environment)
  */
 let config: WebhookProcessorConfig | null = null;
+
+/**
+ * Default retry policy for webhook processing
+ */
+const DEFAULT_RETRY_POLICY: RetryPolicy = {
+  id: 'webhook-default',
+  name: 'Webhook Default',
+  maxAttempts: 3,
+  initialDelayMs: 1000,
+  backoffFactor: 2,
+  maxDelayMs: 10000,
+};
 
 /**
  * Initialize the webhook processor with configuration
@@ -80,6 +94,23 @@ function ensureInitialized(): void {
       'Webhook processor not initialized. Call initializeWebhookProcessor() first.'
     );
   }
+}
+
+/**
+ * Get the retry policy from configuration or use default
+ */
+function getRetryPolicy(): RetryPolicy {
+  if (config?.retryPolicy) {
+    return {
+      id: 'webhook-configured',
+      name: 'Webhook Configured',
+      maxAttempts: config.retryPolicy.maxAttempts,
+      initialDelayMs: config.retryPolicy.initialDelayMs,
+      backoffFactor: config.retryPolicy.backoffFactor,
+      maxDelayMs: config.retryPolicy.maxDelayMs,
+    };
+  }
+  return DEFAULT_RETRY_POLICY;
 }
 
 // ============================================================================
@@ -151,21 +182,73 @@ export async function processEvolutionWebhook(
     const parsedEvent = parseWebhookPayload(jsonBody);
     parsedEvent.orgId = instanceInfo.orgId;
 
-    // 5. Dispatch to appropriate handler
-    const result = await dispatchWebhookHandler(parsedEvent, instanceInfo.orgId);
+    // 5. Dispatch to appropriate handler WITH RETRY + DLQ
+    const policy = getRetryPolicy();
 
-    // Log to console (full audit logging can be added later)
-    console.log(`[Webhook] ${instanceInfo.id} ${jsonBody.event} → ${result.success}`);
+    try {
+      const result = await executeWithRetry(
+        async () => {
+          const handlerResult = await dispatchWebhookHandler(parsedEvent, instanceInfo.orgId);
+          // If handler returned failure, convert to error to trigger retry/DLQ
+          if (!handlerResult.success) {
+            const error = new Error(handlerResult.error || 'Webhook handler failed');
+            (error as any).code = 'HANDLER_FAILURE';
+            (error as any).isPermanent = handlerResult.error?.toLowerCase().includes('validation') ||
+                                         handlerResult.error?.toLowerCase().includes('missing required');
+            throw error;
+          }
+          return handlerResult;
+        },
+        policy,
+        (error: Error) => {
+          // Decide if this error should be retried
+          const isPermanent = (error as any).isPermanent === true;
+          if (isPermanent) {
+            return false;
+          }
+          // Retry on transient errors (database issues, network, etc.)
+          const message = error.message.toLowerCase();
+          const isRetryable = !message.includes('validation') &&
+                             !message.includes('invalid') &&
+                             !message.includes('p2002') && // duplicate key - idempotent
+                             !message.includes('p2025');   // not found - probably permanent
+          return isRetryable;
+        }
+      );
+      // Successful result from retry wrapper
+      const handlerResult = result.value;
+      return {
+        success: handlerResult.success,
+        event: jsonBody.event,
+        instanceId: jsonBody.instanceId,
+        orgId: instanceInfo.orgId,
+        messageId: handlerResult.result,
+        processedAt: new Date(),
+        error: handlerResult.error,
+      };
+    } catch (error: any) {
+      // All retries exhausted or permanent error - capture to DLQ
+      console.error(`❌ Webhook ${jsonBody.event} failed:`, error);
 
-    return {
-      success: result.success,
-      event: jsonBody.event,
-      instanceId: jsonBody.instanceId,
-      orgId: instanceInfo.orgId,
-      messageId: result.result,
-      processedAt: new Date(),
-      error: result.error,
-    };
+      // Capture dead letter for later analysis/retry
+      await captureDeadLetter(
+        instanceInfo.orgId,
+        instanceInfo.id,
+        jsonBody.event,
+        jsonBody as Record<string, any>,
+        error.message,
+        policy.maxAttempts,
+        new Date()
+      );
+
+      console.log(`💀 Captured dead letter for event ${jsonBody.event} (org: ${instanceInfo.orgId})`);
+
+      // Mark error so route handler returns 200 (don't trigger Evolution retry)
+      (error as any).capturedToDlq = true;
+
+      // Throw to let route handler know processing failed (but we've captured it)
+      throw error;
+    }
   } catch (error: any) {
     console.error(`Failed to process webhook ${jsonBody.event}:`, error);
     throw error;
@@ -246,7 +329,15 @@ export function getConfig(): WebhookProcessorConfig | null {
 
 // Auto-initialize from environment if not explicitly called
 if (process.env.EVOLUTION_WEBHOOK_SECRET && !config) {
+  const retryPolicy = {
+    maxAttempts: parseInt(process.env.WEBHOOK_RETRY_MAX_ATTEMPTS || '3', 10),
+    initialDelayMs: parseInt(process.env.WEBHOOK_RETRY_INITIAL_DELAY_MS || '1000', 10),
+    backoffFactor: parseFloat(process.env.WEBHOOK_RETRY_BACKOFF_FACTOR || '2'),
+    maxDelayMs: parseInt(process.env.WEBHOOK_RETRY_MAX_DELAY_MS || '10000', 10),
+  };
+
   initializeWebhookProcessor({
     webhookSecret: process.env.EVOLUTION_WEBHOOK_SECRET,
+    retryPolicy,
   });
 }

@@ -217,6 +217,11 @@ async function buildServer() {
   // @ts-ignore
   await app.register(queueAdminRoutes.default || queueAdminRoutes);
 
+  // Register Webhook Dead Letter Queue Admin API routes (Phase 1 Step 5)
+  const dlqAdminRoutes = await import('./app/api/build-webhook-dead-letter-queue-(dlq)-system/route.js');
+  // @ts-ignore
+  await app.register(dlqAdminRoutes.default || dlqAdminRoutes);
+
   // Error handler
   app.setErrorHandler((error, request, reply) => {
     app.log.error(error);

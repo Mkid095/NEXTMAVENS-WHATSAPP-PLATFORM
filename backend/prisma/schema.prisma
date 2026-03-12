@@ -33,6 +33,7 @@ model Organization {
   invoices     Invoice[]
   payments     Payment[]
   auditLogs    AuditLog[]  // Audit logs for this org
+  deadLetters  DeadLetterQueue[]  // DLQ entries for this org
 
   @@map("organizations")
   @@index([slug])
@@ -121,6 +122,7 @@ model WhatsAppInstance {
   agents     WhatsAppAgent[]  // Agents that can use this instance
   assignments WhatsAppAssignment[]  // Assignments for chats on this instance
   webhooks   WebhookSubscription[]
+  deadLetters DeadLetterQueue[]  // DLQ entries for this instance
 
   @@map("whatsapp_instances")
   @@index([orgId])
@@ -391,6 +393,32 @@ enum WebhookDeliveryStatus {
   FAILED
   RETRYING
   DEAD
+}
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │ Dead Letter Queue (DLQ)                                     │
+// └─────────────────────────────────────────────────────────────┘
+
+model DeadLetterQueue {
+  id            String   @id @default(cuid())
+  orgId         String
+  instanceId    String
+  event         String   // Webhook event type (e.g., "message.sent")
+  payload       Json     // Original webhook payload
+  error         String   // Error message that caused failure
+  retryCount    Int      @default(0)  // Number of retry attempts before death
+  lastAttempted DateTime? // Timestamp of last retry attempt
+  createdAt     DateTime @default(now())
+
+  // Relations
+  org      Organization    @relation(fields: [orgId], references: [id])
+  instance WhatsAppInstance @relation(fields: [instanceId], references: [id])
+
+  @@map("dead_letter_queues")
+  @@index([orgId])
+  @@index([instanceId])
+  @@index([createdAt])
+  @@index([orgId, createdAt])
 }
 
 // ┌─────────────────────────────────────────────────────────────┐
