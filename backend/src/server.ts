@@ -74,6 +74,11 @@ async function buildServer() {
   // @ts-ignore
   await app.register(receiptRoutes.default || receiptRoutes);
 
+  // Register Rate Limiting System API routes (Phase 1 Step 3)
+  const rateLimitRoutes = await import('./app/api/rate-limiting-with-redis/route.js');
+  // @ts-ignore
+  await app.register(rateLimitRoutes.default || rateLimitRoutes);
+
   // Error handler
   app.setErrorHandler((error, request, reply) => {
     app.log.error(error);

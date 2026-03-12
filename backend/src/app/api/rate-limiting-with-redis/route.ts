@@ -1,0 +1,385 @@
+/**
+ * Rate Limiting System API Routes
+ * Admin endpoints for managing rate limit rules and viewing metrics
+ *
+ * Base path: /admin/rate-limiting
+ * Endpoints:
+ * - GET    /rules                    - List all rate limit rules
+ * - POST   /rules                    - Create new rule
+ * - GET    /rules/:id                - Get rule by ID
+ * - PUT    /rules/:id                - Update rule
+ * - DELETE /rules/:id                - Delete rule
+ * - GET    /metrics                  - Get rate limit metrics
+ * - POST   /metrics/reset            - Reset metrics
+ * - GET    /status                   - Get current status for identifier
+ * - POST   /reset                    - Reset rate limit for identifier
+ */
+
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { z } from 'zod';
+import { getRateLimiter, initializeRateLimiter } from '../../../lib/rate-limiting-with-redis';
+import type { RateLimitRule } from '../../../lib/rate-limiting-with-redis/types';
+
+// ============================================================================
+// Zod Schemas
+// ============================================================================
+
+const createRuleSchema = z.object({
+  ruleId: z.string().min(1),
+  orgId: z.string().uuid().optional().nullable(),
+  instanceId: z.string().optional().nullable(),
+  endpoint: z.string().min(1),
+  maxRequests: z.number().int().positive(),
+  windowMs: z.number().int().positive(),
+  trackMetrics: z.boolean().optional().default(true)
+});
+
+const updateRuleSchema = z.object({
+  orgId: z.string().uuid().optional().nullable(),
+  instanceId: z.string().optional().nullable(),
+  endpoint: z.string().min(1),
+  maxRequests: z.number().int().positive().optional(),
+  windowMs: z.number().int().positive().optional(),
+  trackMetrics: z.boolean().optional()
+});
+
+const statusQuerySchema = z.object({
+  identifier: z.string().min(1),
+  ruleId: z.string().optional()
+});
+
+const resetSchema = z.object({
+  identifier: z.string().min(1),
+  ruleId: z.string().optional()
+});
+
+// ============================================================================
+// Plugin Registration
+// ============================================================================
+
+export default async function (fastify: FastifyInstance) {
+  // Ensure rate limiter is initialized
+  await initializeRateLimiter();
+
+  // ------------------------------------------------------------------------
+  // GET /rules - List all rate limit rules
+  // ------------------------------------------------------------------------
+  fastify.get(
+    '/rules',
+    { schema: { querystring: z.object({}) } },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const limiter = getRateLimiter();
+      if (!limiter) {
+        reply.code(503);
+        return { error: 'Rate limiter not initialized' };
+      }
+
+      // Return both default rule and custom rules
+      return {
+        defaultRule: limiter.config.defaultRule,
+        rules: limiter.config.rules,
+        totalRules: limiter.config.rules.length,
+        enabled: limiter.config.enabled
+      };
+    }
+  );
+
+  // ------------------------------------------------------------------------
+  // POST /rules - Create new rate limit rule
+  // ------------------------------------------------------------------------
+  fastify.post(
+    '/rules',
+    { schema: { body: createRuleSchema } },
+    async (request: FastifyRequest<{ Body: z.infer<typeof createRuleSchema> }>, reply: FastifyReply) => {
+      const limiter = getRateLimiter();
+      if (!limiter) {
+        reply.code(503);
+        return { error: 'Rate limiter not initialized' };
+      }
+
+      const { ruleId, ...ruleData } = request.body;
+
+      // Check if rule ID already exists
+      const exists = limiter.config.rules.some(r => r.id === ruleId);
+      if (exists) {
+        reply.code(409);
+        return { error: `Rule with id '${ruleId}' already exists` };
+      }
+
+      const newRule: RateLimitRule = {
+        id: ruleId,
+        ...ruleData
+      };
+
+      limiter.config.rules.push(newRule);
+
+      reply.code(201);
+      return {
+        success: true,
+        message: 'Rate limit rule created',
+        rule: newRule
+      };
+    }
+  );
+
+  // ------------------------------------------------------------------------
+  // GET /rules/:id - Get specific rule
+  // ------------------------------------------------------------------------
+  fastify.get(
+    '/rules/:id',
+    { schema: { params: z.object({ id: z.string() }) } },
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const limiter = getRateLimiter();
+      if (!limiter) {
+        reply.code(503);
+        return { error: 'Rate limiter not initialized' };
+      }
+
+      const { id } = request.params;
+
+      // Check default rule first
+      if (id === limiter.config.defaultRule.id) {
+        return { rule: limiter.config.defaultRule };
+      }
+
+      // Search custom rules
+      const rule = limiter.config.rules.find(r => r.id === id);
+      if (!rule) {
+        reply.code(404);
+        return { error: `Rule '${id}' not found` };
+      }
+
+      return { rule };
+    }
+  );
+
+  // ------------------------------------------------------------------------
+  // PUT /rules/:id - Update rule
+  // ------------------------------------------------------------------------
+  fastify.put(
+    '/rules/:id',
+    { schema: { params: z.object({ id: z.string() }), body: updateRuleSchema } },
+    async (
+      request: FastifyRequest<{ Params: { id: string }; Body: z.infer<typeof updateRuleSchema> }>,
+      reply: FastifyReply
+    ) => {
+      const limiter = getRateLimiter();
+      if (!limiter) {
+        reply.code(503);
+        return { error: 'Rate limiter not initialized' };
+      }
+
+      const { id } = request.params;
+      const updates = request.body;
+
+      // Find rule
+      const ruleIndex = limiter.config.rules.findIndex(r => r.id === id);
+      if (ruleIndex === -1) {
+        reply.code(404);
+        return { error: `Rule '${id}' not found` };
+      }
+
+      // Update rule fields
+      const rule = limiter.config.rules[ruleIndex];
+      if (updates.maxRequests !== undefined) rule.maxRequests = updates.maxRequests;
+      if (updates.windowMs !== undefined) rule.windowMs = updates.windowMs;
+      if (updates.orgId !== undefined) rule.orgId = updates.orgId;
+      if (updates.instanceId !== undefined) rule.instanceId = updates.instanceId;
+      if (updates.endpoint !== undefined) rule.endpoint = updates.endpoint;
+      if (updates.trackMetrics !== undefined) rule.trackMetrics = updates.trackMetrics;
+
+      return {
+        success: true,
+        message: 'Rate limit rule updated',
+        rule
+      };
+    }
+  );
+
+  // ------------------------------------------------------------------------
+  // DELETE /rules/:id - Delete rule
+  // ------------------------------------------------------------------------
+  fastify.delete(
+    '/rules/:id',
+    { schema: { params: z.object({ id: z.string() }) } },
+    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      const limiter = getRateLimiter();
+      if (!limiter) {
+        reply.code(503);
+        return { error: 'Rate limiter not initialized' };
+      }
+
+      const { id } = request.params;
+
+      // Cannot delete default rule
+      if (id === limiter.config.defaultRule.id) {
+        reply.code(400);
+        return { error: 'Cannot delete default rule' };
+      }
+
+      const initialLength = limiter.config.rules.length;
+      limiter.config.rules = limiter.config.rules.filter(r => r.id !== id);
+
+      if (limiter.config.rules.length === initialLength) {
+        reply.code(404);
+        return { error: `Rule '${id}' not found` };
+      }
+
+      return {
+        success: true,
+        message: `Rule '${id}' deleted`
+      };
+    }
+  );
+
+  // ------------------------------------------------------------------------
+  // GET /metrics - Get rate limit metrics
+  // ------------------------------------------------------------------------
+  fastify.get(
+    '/metrics',
+    { schema: { querystring: z.object({}) } },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const limiter = getRateLimiter();
+      if (!limiter) {
+        reply.code(503);
+        return { error: 'Rate limiter not initialized' };
+      }
+
+      const metrics = limiter.getMetrics();
+
+      // Calculate derived metrics
+      const total = metrics.totalRequests;
+      const allowed = metrics.allowedRequests;
+      const blocked = metrics.blockedRequests;
+      const blockRate = total > 0 ? ((blocked / total) * 100).toFixed(2) + '%' : '0%';
+
+      return {
+        metrics: {
+          ...metrics,
+          totalRequests: total,
+          allowedRequests: allowed,
+          blockedRequests: blocked,
+          blockRate,
+          lastCleanup: metrics.lastCleanup.toISOString()
+        }
+      };
+    }
+  );
+
+  // ------------------------------------------------------------------------
+  // POST /metrics/reset - Reset metrics counters
+  // ------------------------------------------------------------------------
+  fastify.post(
+    '/metrics/reset',
+    { schema: { body: z.object({}) } },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const limiter = getRateLimiter();
+      if (!limiter) {
+        reply.code(503);
+        return { error: 'Rate limiter not initialized' };
+      }
+
+      limiter.resetMetrics();
+
+      return {
+        success: true,
+        message: 'Metrics reset'
+      };
+    }
+  );
+
+  // ------------------------------------------------------------------------
+  // GET /status - Get current status for identifier
+  // ------------------------------------------------------------------------
+  fastify.get(
+    '/status',
+    { schema: { querystring: statusQuerySchema } },
+    async (request: FastifyRequest<{ Querystring: z.infer<typeof statusQuerySchema> }>, reply: FastifyReply) => {
+      const limiter = getRateLimiter();
+      if (!limiter) {
+        reply.code(503);
+        return { error: 'Rate limiter not initialized' };
+      }
+
+      const { identifier, ruleId } = request.query;
+
+      // Determine which rule to use
+      let rule: RateLimitRule;
+      if (ruleId) {
+        const found = limiter.config.rules.find(r => r.id === ruleId) || limiter.config.defaultRule;
+        if (found.id !== ruleId) {
+          reply.code(404);
+          return { error: `Rule '${ruleId}' not found` };
+        }
+        rule = found;
+      } else {
+        // Use default rule if none specified
+        rule = limiter.config.defaultRule;
+      }
+
+      const status = await limiter.getStatus(identifier, rule);
+
+      return {
+        identifier,
+        rule: { id: rule.id, maxRequests: rule.maxRequests, windowMs: rule.windowMs },
+        ...status
+      };
+    }
+  );
+
+  // ------------------------------------------------------------------------
+  // POST /reset - Reset rate limit for identifier
+  // ------------------------------------------------------------------------
+  fastify.post(
+    '/reset',
+    { schema: { body: resetSchema } },
+    async (request: FastifyRequest<{ Body: z.infer<typeof resetSchema> }>, reply: FastifyReply) => {
+      const limiter = getRateLimiter();
+      if (!limiter) {
+        reply.code(503);
+        return { error: 'Rate limiter not initialized' };
+      }
+
+      const { identifier, ruleId } = request.body;
+
+      // Determine which rule
+      const rule = ruleId
+        ? (limiter.config.rules.find(r => r.id === ruleId) || limiter.config.defaultRule)
+        : limiter.config.defaultRule;
+
+      const success = await limiter.reset(identifier, rule);
+
+      return {
+        success,
+        message: success ? 'Rate limit reset' : 'No rate limit found for identifier',
+        identifier,
+        ruleId: rule.id
+      };
+    }
+  );
+
+  // ------------------------------------------------------------------------
+  // GET /health - Health check
+  // ------------------------------------------------------------------------
+  fastify.get('/health', async (request, reply) => {
+    const limiter = getRateLimiter();
+    if (!limiter) {
+      return {
+        status: 'degraded',
+        timestamp: new Date().toISOString(),
+        error: 'Rate limiter not initialized'
+      };
+    }
+
+    const metrics = limiter.getMetrics();
+
+    return {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      enabled: limiter.config.enabled,
+      rulesCount: limiter.config.rules.length,
+      totalRequests: metrics.totalRequests,
+      uptime: process.uptime()
+    };
+  });
+}
