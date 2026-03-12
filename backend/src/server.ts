@@ -17,6 +17,12 @@ import rawBody from 'fastify-raw-body';
 // Import Prisma to ensure it's initialized
 import { prisma, verifyDatabaseSetup } from './lib/prisma.js';
 
+// Import middleware for global pipeline
+import { authMiddleware } from './middleware/auth.ts';
+import { orgGuard } from './middleware/orgGuard.ts';
+import { getRateLimiter, generateIdentifier } from './lib/rate-limiting-with-redis/index.ts';
+import { getQuotaLimiter, QuotaMetric } from './lib/implement-quota-enforcement-middleware/index.ts';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function buildServer() {
@@ -24,6 +30,128 @@ async function buildServer() {
     logger: {
       level: process.env.LOG_LEVEL || 'info',
     },
+  });
+
+  // ============================================================================
+  // GLOBAL PREHANDLER MIDDLEWARE PIPELINE
+  // Order: auth -> orgGuard (RLS) -> rateLimit
+  // ============================================================================
+  app.addHook('preHandler', async (request, reply) => {
+    // ------------------------------------------------------------------------
+    // 1. Health check - bypass everything
+    // ------------------------------------------------------------------------
+    if (request.url === '/health') {
+      return;
+    }
+
+    // ------------------------------------------------------------------------
+    // 2. Evolution API webhooks - bypass auth & orgGuard (signature check in route)
+    // ------------------------------------------------------------------------
+    if (request.url?.startsWith('/api/webhooks/evolution')) {
+      // Webhooks have their own signature verification in the route handler
+      // Light rate limiting could be added here separately if needed
+      return;
+    }
+
+    // ------------------------------------------------------------------------
+    // 3. Authentication (JWT verification)
+    // ------------------------------------------------------------------------
+    try {
+      await new Promise<void>((resolve, reject) => {
+        authMiddleware(request, reply, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+    } catch (error: any) {
+      return reply.code(401).send({ error: 'Unauthorized', message: error.message });
+    }
+
+    // ------------------------------------------------------------------------
+    // 4. Organization Guard (RLS context)
+    // ------------------------------------------------------------------------
+    try {
+      await new Promise<void>((resolve, reject) => {
+        orgGuard(request, reply, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+    } catch (error: any) {
+      return reply.code(403).send({ error: 'Forbidden', message: error.message });
+    }
+
+    // ------------------------------------------------------------------------
+    // 5. Rate Limiting (skip admin endpoints)
+    // ------------------------------------------------------------------------
+    // Admin endpoints should not be rate-limited to prevent lockout
+    if (request.url?.startsWith('/admin/rate-limiting') || request.url?.startsWith('/admin/quotas')) {
+      return;
+    }
+
+    const limiter = getRateLimiter();
+    if (limiter && limiter.config.enabled) {
+      // Get endpoint pattern for rule matching
+      const endpoint = (request.routerPath as string) || request.url;
+      const orgId = (request as any).currentOrgId;
+      const instanceId = (request as any).headers['x-instance-id']; // Optional: from header
+
+      const rule = limiter.findRule(endpoint, orgId, instanceId);
+      const identifier = generateIdentifier(request, orgId, instanceId);
+      const result = await limiter.check(identifier, rule);
+
+      // Add rate limit headers
+      reply.header('X-RateLimit-Limit', rule.maxRequests.toString());
+      reply.header('X-RateLimit-Remaining', result.remaining.toString());
+      reply.header('X-RateLimit-Reset', Math.ceil(Date.now() / 1000 + result.resetAfterMs / 1000).toString());
+
+      if (!result.allowed) {
+        return reply.code(429)
+          .header('Retry-After', Math.ceil(result.resetAfterMs / 1000).toString())
+          .send({
+            error: 'Too many requests',
+            message: `Rate limit exceeded. Try again in ${Math.ceil(result.resetAfterMs / 1000)} seconds`,
+            retryAfter: Math.ceil(result.resetAfterMs / 1000),
+            limit: rule.maxRequests,
+            windowMs: rule.windowMs
+          });
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // 6. Quota Enforcement (global API calls quota)
+    // ------------------------------------------------------------------------
+    // Skip health, webhooks, and admin endpoints
+    if (!request.url?.startsWith('/admin') && request.url !== '/health' && !request.url?.startsWith('/api/webhooks/evolution')) {
+      try {
+        const quotaLimiter = getQuotaLimiter();
+        const orgId = (request as any).currentOrgId;
+        if (orgId && quotaLimiter) {
+          // Check API calls quota (1 per request)
+          const result = await quotaLimiter.check(orgId, QuotaMetric.API_CALLS, 1);
+          reply.header('X-Quota-Limit', result.limit.toString());
+          reply.header('X-Quota-Remaining', result.remaining.toString());
+          if (!result.allowed) {
+            return reply.code(429)
+              .header('Retry-After', Math.ceil((result.resetAt.getTime() - Date.now()) / 1000).toString())
+              .send({
+                error: 'Quota exceeded',
+                message: `API quota limit exceeded. Reset at ${result.resetAt.toISOString()}`,
+                quota: {
+                  metric: 'api_calls',
+                  current: result.current,
+                  limit: result.limit,
+                  remaining: result.remaining,
+                  resetAt: result.resetAt.toISOString()
+                }
+              });
+          }
+        }
+      } catch (err) {
+        console.error('Quota middleware error:', err);
+        // Fail open: allow request
+      }
+    }
   });
 
   // Security middleware
@@ -73,6 +201,16 @@ async function buildServer() {
   const receiptRoutes = await import('./app/api/build-message-delivery-receipts-system/route.js');
   // @ts-ignore
   await app.register(receiptRoutes.default || receiptRoutes);
+
+  // Register Rate Limiting System API routes (Phase 1 Step 3)
+  const rateLimitRoutes = await import('./app/api/rate-limiting-with-redis/route.js');
+  // @ts-ignore
+  await app.register(rateLimitRoutes.default || rateLimitRoutes);
+
+  // Register Quota Enforcement System API routes (Phase 1 Step 6)
+  const quotaRoutes = await import('./app/api/implement-quota-enforcement-middleware/route.js');
+  // @ts-ignore
+  await app.register(quotaRoutes.default || quotaRoutes);
 
   // Error handler
   app.setErrorHandler((error, request, reply) => {
