@@ -17,6 +17,11 @@ import rawBody from 'fastify-raw-body';
 // Import Prisma to ensure it's initialized
 import { prisma, verifyDatabaseSetup } from './lib/prisma.js';
 
+// Import middleware for global pipeline
+import { authMiddleware } from './middleware/auth.ts';
+import { orgGuard } from './middleware/orgGuard.ts';
+import { getRateLimiter, generateIdentifier } from './lib/rate-limiting-with-redis/index.ts';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function buildServer() {
@@ -24,6 +29,93 @@ async function buildServer() {
     logger: {
       level: process.env.LOG_LEVEL || 'info',
     },
+  });
+
+  // ============================================================================
+  // GLOBAL PREHANDLER MIDDLEWARE PIPELINE
+  // Order: auth -> orgGuard (RLS) -> rateLimit
+  // ============================================================================
+  app.addHook('preHandler', async (request, reply) => {
+    // ------------------------------------------------------------------------
+    // 1. Health check - bypass everything
+    // ------------------------------------------------------------------------
+    if (request.url === '/health') {
+      return;
+    }
+
+    // ------------------------------------------------------------------------
+    // 2. Evolution API webhooks - bypass auth & orgGuard (signature check in route)
+    // ------------------------------------------------------------------------
+    if (request.url?.startsWith('/api/webhooks/evolution')) {
+      // Webhooks have their own signature verification in the route handler
+      // Light rate limiting could be added here separately if needed
+      return;
+    }
+
+    // ------------------------------------------------------------------------
+    // 3. Authentication (JWT verification)
+    // ------------------------------------------------------------------------
+    try {
+      await new Promise<void>((resolve, reject) => {
+        authMiddleware(request, reply, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+    } catch (error: any) {
+      return reply.code(401).send({ error: 'Unauthorized', message: error.message });
+    }
+
+    // ------------------------------------------------------------------------
+    // 4. Organization Guard (RLS context)
+    // ------------------------------------------------------------------------
+    try {
+      await new Promise<void>((resolve, reject) => {
+        orgGuard(request, reply, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+    } catch (error: any) {
+      return reply.code(403).send({ error: 'Forbidden', message: error.message });
+    }
+
+    // ------------------------------------------------------------------------
+    // 5. Rate Limiting (skip admin endpoints)
+    // ------------------------------------------------------------------------
+    // Admin rate limiting management endpoints should not be rate-limited
+    if (request.url?.startsWith('/admin/rate-limiting')) {
+      return;
+    }
+
+    const limiter = getRateLimiter();
+    if (limiter && limiter.config.enabled) {
+      // Get endpoint pattern for rule matching
+      const endpoint = (request.routerPath as string) || request.url;
+      const orgId = (request as any).currentOrgId;
+      const instanceId = (request as any).headers['x-instance-id']; // Optional: from header
+
+      const rule = limiter.findRule(endpoint, orgId, instanceId);
+      const identifier = generateIdentifier(request, orgId, instanceId);
+      const result = await limiter.check(identifier, rule);
+
+      // Add rate limit headers
+      reply.header('X-RateLimit-Limit', rule.maxRequests.toString());
+      reply.header('X-RateLimit-Remaining', result.remaining.toString());
+      reply.header('X-RateLimit-Reset', Math.ceil(Date.now() / 1000 + result.resetAfterMs / 1000).toString());
+
+      if (!result.allowed) {
+        return reply.code(429)
+          .header('Retry-After', Math.ceil(result.resetAfterMs / 1000).toString())
+          .send({
+            error: 'Too many requests',
+            message: `Rate limit exceeded. Try again in ${Math.ceil(result.resetAfterMs / 1000)} seconds`,
+            retryAfter: Math.ceil(result.resetAfterMs / 1000),
+            limit: rule.maxRequests,
+            windowMs: rule.windowMs
+          });
+      }
+    }
   });
 
   // Security middleware

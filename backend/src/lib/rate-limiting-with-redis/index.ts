@@ -259,9 +259,9 @@ export function rateLimitMiddleware(options: RateLimitMiddlewareOptions): any {
 
 /**
  * Generate rate limit identifier
- * Format: org:{orgId}:ip:{ip} or org:{orgId}:instance:{instanceId} or ip:{ip}
+ * Format: org:{orgId}:ip:{ip} or org:{orgId}:instance:{instanceId} or instance:{instanceId}:ip:{ip} or ip:{ip}
  */
-function generateIdentifier(req: any, orgId?: string, instanceId?: string): string {
+export function generateIdentifier(req: any, orgId?: string, instanceId?: string): string {
   const ip = req.ip || req.connection?.remoteAddress || 'unknown';
 
   if (orgId) {
