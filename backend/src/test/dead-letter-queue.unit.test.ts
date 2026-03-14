@@ -43,9 +43,17 @@ describe('Build Webhook Dead Letter Queue (DLQ) System - Unit Tests', () => {
   const mockedTransaction = (prisma as any).$transaction;
   const mockedAddJob = (require('../lib/message-queue-priority-system/index') as any).addJob as jest.Mock;
 
+  // Use fake timers to make Date comparisons deterministic
+  const FIXED_TIMESTAMP = new Date('2026-03-14T12:00:00.000Z').getTime();
+
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useFakeTimers({ now: FIXED_TIMESTAMP });
     mockedTransaction.mockImplementation(async (cb: any) => await cb(prisma));
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   describe('captureDeadLetter', () => {
