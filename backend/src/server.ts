@@ -82,6 +82,43 @@ async function buildServer() {
     }
 
     // ------------------------------------------------------------------------
+    // 4b. 2FA Enforcement for Privileged Roles
+    // ------------------------------------------------------------------------
+    // Privileged users (SUPER_ADMIN, ORG_ADMIN) must have 2FA enabled
+    // Skip 2FA management endpoints themselves to allow setup
+    const user = (request as any).user;
+    if (user && (user.role === 'SUPER_ADMIN' || user.role === 'ORG_ADMIN')) {
+      // Check if this is a 2FA management endpoint (allow bypass)
+      const is2FAManagementEndpoint = request.url?.startsWith('/admin/2fa');
+
+      if (!is2FAManagementEndpoint) {
+        // Verify 2FA is enabled in database (use cached if available)
+        const mfaEnabled = (request as any).user?.mfaEnabled;
+
+        if (!mfaEnabled) {
+          // Double-check from database in case JWT is stale
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { mfaEnabled: true },
+          });
+
+          if (!dbUser?.mfaEnabled) {
+            console.warn(
+              `[2FA Enforcement] Privileged user ${user.id} (${user.role}) blocked from ${request.method} ${request.url}`
+            );
+            return reply.code(403).send({
+              error: 'Two-factor authentication required',
+              message:
+                'Users with privileged roles (SUPER_ADMIN, ORG_ADMIN) must enable 2FA to access this resource.',
+              code: 'MFA_REQUIRED',
+              action: 'Please enable 2FA in your profile settings at /admin/2fa/setup',
+            });
+          }
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------------
     // 5. Rate Limiting (skip admin endpoints)
     // ------------------------------------------------------------------------
     // Admin endpoints should not be rate-limited to prevent lockout
@@ -215,6 +252,16 @@ async function buildServer() {
   const dlqAdminRoutes = await import('./app/api/webhook-dlq/route.js');
   // @ts-ignore
   await app.register(dlqAdminRoutes.default || dlqAdminRoutes);
+
+  // Register Immutable Audit Logging API routes (Phase 1 Step 9)
+  const auditLogRoutes = await import('./app/api/build-immutable-audit-logging-system/route.js');
+  // @ts-ignore
+  await app.register(auditLogRoutes.default || auditLogRoutes, { prefix: '/admin/audit-logs' });
+
+  // Register 2FA Enforcement API routes (Phase 1 Step 10)
+  const twoFARoutes = await import('./app/api/enforce-2fa-for-privileged-roles/route.js');
+  // @ts-ignore
+  await app.register(twoFARoutes.default || twoFARoutes, { prefix: '/admin/2fa' });
 
   // Error handler
   app.setErrorHandler((error, request, reply) => {
