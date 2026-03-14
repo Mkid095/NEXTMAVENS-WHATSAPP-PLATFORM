@@ -65,12 +65,4 @@ export default async function (fastify: FastifyInstance) {
       }
     }
   );
-
-  // ------------------------------------------------------------------------
-  // Health check for this plugin
-  // ------------------------------------------------------------------------
-
-  fastify.get('/health', async () => {
-    return { status: 'ok', plugin: 'add-advanced-phone-number-validation' };
-  });
 }

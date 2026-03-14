@@ -166,16 +166,10 @@ async function buildServer() {
   // Raw body plugin for webhook signature verification
   await app.register(rawBody, { global: false }); // per-route usage
 
-  // Health check
-  app.get('/health', async (request, reply) => {
-    const dbOk = await verifyDatabaseSetup();
-    return {
-      status: dbOk.ok ? 'healthy' : 'degraded',
-      timestamp: new Date().toISOString(),
-      database: dbOk.ok ? 'connected' : 'error',
-      errors: dbOk.errors,
-    };
-  });
+  // Register Comprehensive Health Check Endpoint (Phase 1 Step 8)
+  const healthRoutes = await import('./app/api/create-comprehensive-health-check-endpoint/route.js');
+  // @ts-ignore
+  await app.register(healthRoutes.default || healthRoutes);
 
   // Register Evolution API webhook routes
   const evolutionRoutes = await import('./app/api/integrate-evolution-api-message-status-webhooks/route.js');
@@ -195,7 +189,7 @@ async function buildServer() {
   // Register Message Deduplication System API routes (Step 6)
   const dedupRoutes = await import('./app/api/implement-message-deduplication-system/route.js');
   // @ts-ignore
-  await app.register(dedupRoutes.default || dedupRoutes);
+  await app.register(dedupRoutes.default || dedupRoutes, { prefix: '/api/deduplication' });
 
   // Register Message Delivery Receipts System API routes (Step 7)
   const receiptRoutes = await import('./app/api/build-message-delivery-receipts-system/route.js');
@@ -205,12 +199,12 @@ async function buildServer() {
   // Register Rate Limiting System API routes (Phase 1 Step 3)
   const rateLimitRoutes = await import('./app/api/rate-limiting-with-redis/route.js');
   // @ts-ignore
-  await app.register(rateLimitRoutes.default || rateLimitRoutes);
+  await app.register(rateLimitRoutes.default || rateLimitRoutes, { prefix: '/admin/rate-limiting' });
 
   // Register Quota Enforcement System API routes (Phase 1 Step 6)
   const quotaRoutes = await import('./app/api/implement-quota-enforcement-middleware/route.js');
   // @ts-ignore
-  await app.register(quotaRoutes.default || quotaRoutes);
+  await app.register(quotaRoutes.default || quotaRoutes, { prefix: '/admin/quotas' });
 
   // Register Queue Priority System Admin API routes (Phase 2 Step 3 - Admin API)
   const queueAdminRoutes = await import('./app/api/implement-message-queue-priority-system/route.js');

@@ -211,26 +211,4 @@ export default async function (fastify: FastifyInstance) {
       }
     }
   );
-
-  // ------------------------------------------------------------------------
-  // GET /health - Health check
-  // ------------------------------------------------------------------------
-  fastify.get('/health', async (request, reply) => {
-    // Simple health check - if we can query, we're healthy
-    try {
-      const orgId = request.headers['x-org-id'] as string || 'system-check';
-      const pending = await receiptLib.getPendingCount('health-check', orgId);
-      return {
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        pendingCheck: 'ok'
-      };
-    } catch (error) {
-      return {
-        status: 'degraded',
-        timestamp: new Date().toISOString(),
-        error: 'Unable to query receipts'
-      };
-    }
-  });
 }
