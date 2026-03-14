@@ -8,7 +8,7 @@
 
 /// <reference types="jest" />
 
-import { registerDeadLetterQueueAdminRoutes } from '../app/api/build-webhook-dead-letter-queue-(dlq)-system/route.js';
+import { registerDeadLetterQueueAdminRoutes } from '../app/api/webhook-dlq/route.js';
 
 // Mock the DLQ library to prevent database dependencies during module load
 jest.mock('../lib/build-webhook-dead-letter-queue-system', () => ({
