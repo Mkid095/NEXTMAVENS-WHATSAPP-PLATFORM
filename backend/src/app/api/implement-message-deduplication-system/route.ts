@@ -153,15 +153,4 @@ export default async function (fastify: FastifyInstance) {
       };
     }
   );
-
-  // ------------------------------------------------------------------------
-  // GET /health - Health check
-  // ------------------------------------------------------------------------
-  fastify.get('/health', async (request, reply) => {
-    return {
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      enabled: Object.values(currentConfig).some(c => c.enabled)
-    };
-  });
 }

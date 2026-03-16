@@ -82,6 +82,43 @@ async function buildServer() {
     }
 
     // ------------------------------------------------------------------------
+    // 4b. 2FA Enforcement for Privileged Roles
+    // ------------------------------------------------------------------------
+    // Privileged users (SUPER_ADMIN, ORG_ADMIN) must have 2FA enabled
+    // Skip 2FA management endpoints themselves to allow setup
+    const user = (request as any).user;
+    if (user && (user.role === 'SUPER_ADMIN' || user.role === 'ORG_ADMIN')) {
+      // Check if this is a 2FA management endpoint (allow bypass)
+      const is2FAManagementEndpoint = request.url?.startsWith('/admin/2fa');
+
+      if (!is2FAManagementEndpoint) {
+        // Verify 2FA is enabled in database (use cached if available)
+        const mfaEnabled = (request as any).user?.mfaEnabled;
+
+        if (!mfaEnabled) {
+          // Double-check from database in case JWT is stale
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { mfaEnabled: true },
+          });
+
+          if (!dbUser?.mfaEnabled) {
+            console.warn(
+              `[2FA Enforcement] Privileged user ${user.id} (${user.role}) blocked from ${request.method} ${request.url}`
+            );
+            return reply.code(403).send({
+              error: 'Two-factor authentication required',
+              message:
+                'Users with privileged roles (SUPER_ADMIN, ORG_ADMIN) must enable 2FA to access this resource.',
+              code: 'MFA_REQUIRED',
+              action: 'Please enable 2FA in your profile settings at /admin/2fa/setup',
+            });
+          }
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------------
     // 5. Rate Limiting (skip admin endpoints)
     // ------------------------------------------------------------------------
     // Admin endpoints should not be rate-limited to prevent lockout
@@ -166,16 +203,10 @@ async function buildServer() {
   // Raw body plugin for webhook signature verification
   await app.register(rawBody, { global: false }); // per-route usage
 
-  // Health check
-  app.get('/health', async (request, reply) => {
-    const dbOk = await verifyDatabaseSetup();
-    return {
-      status: dbOk.ok ? 'healthy' : 'degraded',
-      timestamp: new Date().toISOString(),
-      database: dbOk.ok ? 'connected' : 'error',
-      errors: dbOk.errors,
-    };
-  });
+  // Register Comprehensive Health Check Endpoint (Phase 1 Step 8)
+  const healthRoutes = await import('./app/api/create-comprehensive-health-check-endpoint/route.js');
+  // @ts-ignore
+  await app.register(healthRoutes.default || healthRoutes);
 
   // Register Evolution API webhook routes
   const evolutionRoutes = await import('./app/api/integrate-evolution-api-message-status-webhooks/route.js');
@@ -195,7 +226,7 @@ async function buildServer() {
   // Register Message Deduplication System API routes (Step 6)
   const dedupRoutes = await import('./app/api/implement-message-deduplication-system/route.js');
   // @ts-ignore
-  await app.register(dedupRoutes.default || dedupRoutes);
+  await app.register(dedupRoutes.default || dedupRoutes, { prefix: '/api/deduplication' });
 
   // Register Message Delivery Receipts System API routes (Step 7)
   const receiptRoutes = await import('./app/api/build-message-delivery-receipts-system/route.js');
@@ -205,12 +236,12 @@ async function buildServer() {
   // Register Rate Limiting System API routes (Phase 1 Step 3)
   const rateLimitRoutes = await import('./app/api/rate-limiting-with-redis/route.js');
   // @ts-ignore
-  await app.register(rateLimitRoutes.default || rateLimitRoutes);
+  await app.register(rateLimitRoutes.default || rateLimitRoutes, { prefix: '/admin/rate-limiting' });
 
   // Register Quota Enforcement System API routes (Phase 1 Step 6)
   const quotaRoutes = await import('./app/api/implement-quota-enforcement-middleware/route.js');
   // @ts-ignore
-  await app.register(quotaRoutes.default || quotaRoutes);
+  await app.register(quotaRoutes.default || quotaRoutes, { prefix: '/admin/quotas' });
 
   // Register Queue Priority System Admin API routes (Phase 2 Step 3 - Admin API)
   const queueAdminRoutes = await import('./app/api/implement-message-queue-priority-system/route.js');
@@ -218,9 +249,19 @@ async function buildServer() {
   await app.register(queueAdminRoutes.default || queueAdminRoutes);
 
   // Register Webhook Dead Letter Queue Admin API routes (Phase 1 Step 5)
-  const dlqAdminRoutes = await import('./app/api/build-webhook-dead-letter-queue-(dlq)-system/route.js');
+  const dlqAdminRoutes = await import('./app/api/webhook-dlq/route.js');
   // @ts-ignore
   await app.register(dlqAdminRoutes.default || dlqAdminRoutes);
+
+  // Register Immutable Audit Logging API routes (Phase 1 Step 9)
+  const auditLogRoutes = await import('./app/api/build-immutable-audit-logging-system/route.js');
+  // @ts-ignore
+  await app.register(auditLogRoutes.default || auditLogRoutes, { prefix: '/admin/audit-logs' });
+
+  // Register 2FA Enforcement API routes (Phase 1 Step 10)
+  const twoFARoutes = await import('./app/api/enforce-2fa-for-privileged-roles/route.js');
+  // @ts-ignore
+  await app.register(twoFARoutes.default || twoFARoutes, { prefix: '/admin/2fa' });
 
   // Error handler
   app.setErrorHandler((error, request, reply) => {
