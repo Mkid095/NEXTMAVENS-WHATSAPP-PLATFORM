@@ -35,6 +35,7 @@ export async function authMiddleware(
     const payload = jwt.verify(token, JWT_SECRET) as JwtPayload;
 
     // Fetch user from database with essential data
+    console.log(`[Auth] Looking up user ${payload.userId}`);
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
       select: {
@@ -43,8 +44,10 @@ export async function authMiddleware(
         name: true,
         role: true,
         isActive: true,
+        mfaEnabled: true, // Required for 2FA enforcement
       },
     });
+    console.log(`[Auth] User lookup result:`, user ? 'found' : 'not found');
 
     if (!user) {
       done(new Error('User not found') as any);
@@ -56,9 +59,15 @@ export async function authMiddleware(
       return;
     }
 
+    // Attach orgId from JWT payload if present (used by orgGuard)
+    if (payload.orgId) {
+      (user as any).orgId = payload.orgId;
+    }
+
     // Attach user to request object for downstream middleware/handlers
     (request as any).user = user;
 
+    console.log('[Auth] Success, attaching user and calling done');
     done();
   } catch (error: any) {
     // Handle specific JWT errors
@@ -136,5 +145,5 @@ export interface AuthenticatedUser {
 
 interface JwtPayload {
   userId: string;
-  // Additional custom fields can be added
+  orgId?: string; // Optional orgId for org-scoped routes
 }

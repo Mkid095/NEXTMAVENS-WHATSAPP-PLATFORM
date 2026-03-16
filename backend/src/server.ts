@@ -6,6 +6,9 @@
  * Start: npm run dev
  */
 
+// Load environment variables from .env file
+import 'dotenv/config';
+
 import Fastify from 'fastify';
 import * as http from 'http';
 import { join } from 'path';
@@ -20,8 +23,24 @@ import { prisma, verifyDatabaseSetup } from './lib/prisma.js';
 // Import middleware for global pipeline
 import { authMiddleware } from './middleware/auth.ts';
 import { orgGuard } from './middleware/orgGuard.ts';
-import { getRateLimiter, generateIdentifier } from './lib/rate-limiting-with-redis/index.ts';
-import { getQuotaLimiter, QuotaMetric } from './lib/implement-quota-enforcement-middleware/index.ts';
+import { getRateLimiter, generateIdentifier, initializeRateLimiter } from './lib/rate-limiting-with-redis/index.ts';
+import { initializeQuotaLimiter, QuotaMetric } from './lib/implement-quota-enforcement-middleware/index.ts';
+import { prisma } from './lib/prisma.js';
+
+// Wrapper middleware functions
+import { rateLimitCheck } from './middleware/rateLimit.ts';
+import { quotaCheck } from './middleware/quota.ts';
+import { throttleCheck } from './middleware/throttle.ts';
+
+// 2FA
+import { require2FA } from './lib/enforce-2fa-for-privileged-roles/index.js';
+
+// Idempotency
+import {
+  initializeIdempotency,
+  checkIdempotencyCache,
+  registerOnSendHook
+} from './lib/implement-idempotency-key-system/index.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -32,164 +51,198 @@ async function buildServer() {
     },
   });
 
+  console.log('[SERVER] Starting buildServer...');
+
+  // ============================================================================
+  // INITIALIZE CORE SYSTEMS
+  // ============================================================================
+  console.log('[SERVER] Initializing rate limiter...');
+  await initializeRateLimiter();
+  console.log('[SERVER] Rate limiter initialized');
+
+  console.log('[SERVER] Initializing quota limiter with shared Prisma client...');
+  initializeQuotaLimiter({ prisma });
+  console.log('[SERVER] Quota limiter initialized');
+
+  console.log('[SERVER] Initializing idempotency...');
+  await initializeIdempotency();
+  console.log('[SERVER] Idempotency initialized');
+
+  console.log('[SERVER] Registering onSend hook...');
+  registerOnSendHook(app); // Register onSend hook for idempotency response caching
+  console.log('[SERVER] onSend hook registered');
+
   // ============================================================================
   // GLOBAL PREHANDLER MIDDLEWARE PIPELINE
-  // Order: auth -> orgGuard (RLS) -> rateLimit
   // ============================================================================
   app.addHook('preHandler', async (request, reply) => {
-    // ------------------------------------------------------------------------
-    // 1. Health check - bypass everything
-    // ------------------------------------------------------------------------
+    console.log(`[PREHANDLER] START ${request.method} ${request.url}`);
+
+    // Early exit: if another preHandler has already responded, skip
+    if (reply.raw?.headersSent) {
+      return;
+    }
+
+    // Health check - immediate response (public)
     if (request.url === '/health') {
-      return;
-    }
-
-    // ------------------------------------------------------------------------
-    // 2. Evolution API webhooks - bypass auth & orgGuard (signature check in route)
-    // ------------------------------------------------------------------------
-    if (request.url?.startsWith('/api/webhooks/evolution')) {
-      // Webhooks have their own signature verification in the route handler
-      // Light rate limiting could be added here separately if needed
-      return;
-    }
-
-    // ------------------------------------------------------------------------
-    // 3. Authentication (JWT verification)
-    // ------------------------------------------------------------------------
-    try {
-      await new Promise<void>((resolve, reject) => {
-        authMiddleware(request, reply, (err) => {
-          if (err) reject(err);
-          else resolve();
-        });
+      return reply.send({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
       });
-    } catch (error: any) {
-      return reply.code(401).send({ error: 'Unauthorized', message: error.message });
     }
 
-    // ------------------------------------------------------------------------
-    // 4. Organization Guard (RLS context)
-    // ------------------------------------------------------------------------
+    // Public endpoints that don't require authentication
+    const publicPaths = [
+      '/ping',
+      '/api/webhooks/evolution', // Evolution API webhook receiver (signature verified in route)
+      '/api/instances/', // Instance heartbeat endpoint (uses instance token for auth)
+    ];
+    if (publicPaths.some(p => request.url?.startsWith(p))) {
+      console.log(`[PREHANDLER] ${request.method} ${request.url} - public, exiting`);
+      return; // Allow public routes to proceed without auth
+    }
+
+    // ┌─────────────────────────────────────────────────────────────┐
+    // │ Step 1: Authentication (JWT validation)                    │
+    // └─────────────────────────────────────────────────────────────┘
     try {
-      await new Promise<void>((resolve, reject) => {
-        orgGuard(request, reply, (err) => {
-          if (err) reject(err);
-          else resolve();
-        });
-      });
-    } catch (error: any) {
-      return reply.code(403).send({ error: 'Forbidden', message: error.message });
-    }
-
-    // ------------------------------------------------------------------------
-    // 4b. 2FA Enforcement for Privileged Roles
-    // ------------------------------------------------------------------------
-    // Privileged users (SUPER_ADMIN, ORG_ADMIN) must have 2FA enabled
-    // Skip 2FA management endpoints themselves to allow setup
-    const user = (request as any).user;
-    if (user && (user.role === 'SUPER_ADMIN' || user.role === 'ORG_ADMIN')) {
-      // Check if this is a 2FA management endpoint (allow bypass)
-      const is2FAManagementEndpoint = request.url?.startsWith('/admin/2fa');
-
-      if (!is2FAManagementEndpoint) {
-        // Verify 2FA is enabled in database (use cached if available)
-        const mfaEnabled = (request as any).user?.mfaEnabled;
-
-        if (!mfaEnabled) {
-          // Double-check from database in case JWT is stale
-          const dbUser = await prisma.user.findUnique({
-            where: { id: user.id },
-            select: { mfaEnabled: true },
-          });
-
-          if (!dbUser?.mfaEnabled) {
-            console.warn(
-              `[2FA Enforcement] Privileged user ${user.id} (${user.role}) blocked from ${request.method} ${request.url}`
-            );
-            return reply.code(403).send({
-              error: 'Two-factor authentication required',
-              message:
-                'Users with privileged roles (SUPER_ADMIN, ORG_ADMIN) must enable 2FA to access this resource.',
-              code: 'MFA_REQUIRED',
-              action: 'Please enable 2FA in your profile settings at /admin/2fa/setup',
-            });
-          }
+      await authMiddleware(request, reply, (err) => {
+        if (err) {
+          reply.code(401).send({ error: 'Unauthorized', message: err.message });
         }
+      });
+      // If auth set a response code, stop processing
+      if (reply.raw?.headersSent) {
+        return;
       }
-    }
-
-    // ------------------------------------------------------------------------
-    // 5. Rate Limiting (skip admin endpoints)
-    // ------------------------------------------------------------------------
-    // Admin endpoints should not be rate-limited to prevent lockout
-    if (request.url?.startsWith('/admin/rate-limiting') || request.url?.startsWith('/admin/quotas')) {
+    } catch (error) {
+      console.error('[Auth Middleware] Error:', error);
+      reply.code(500).send({ error: 'Internal Server Error' });
       return;
     }
 
-    const limiter = getRateLimiter();
-    if (limiter && limiter.config.enabled) {
-      // Get endpoint pattern for rule matching
-      const endpoint = (request.routerPath as string) || request.url;
-      const orgId = (request as any).currentOrgId;
-      const instanceId = (request as any).headers['x-instance-id']; // Optional: from header
-
-      const rule = limiter.findRule(endpoint, orgId, instanceId);
-      const identifier = generateIdentifier(request, orgId, instanceId);
-      const result = await limiter.check(identifier, rule);
-
-      // Add rate limit headers
-      reply.header('X-RateLimit-Limit', rule.maxRequests.toString());
-      reply.header('X-RateLimit-Remaining', result.remaining.toString());
-      reply.header('X-RateLimit-Reset', Math.ceil(Date.now() / 1000 + result.resetAfterMs / 1000).toString());
-
-      if (!result.allowed) {
-        return reply.code(429)
-          .header('Retry-After', Math.ceil(result.resetAfterMs / 1000).toString())
-          .send({
-            error: 'Too many requests',
-            message: `Rate limit exceeded. Try again in ${Math.ceil(result.resetAfterMs / 1000)} seconds`,
-            retryAfter: Math.ceil(result.resetAfterMs / 1000),
-            limit: rule.maxRequests,
-            windowMs: rule.windowMs
-          });
-      }
-    }
-
-    // ------------------------------------------------------------------------
-    // 6. Quota Enforcement (global API calls quota)
-    // ------------------------------------------------------------------------
-    // Skip health, webhooks, and admin endpoints
-    if (!request.url?.startsWith('/admin') && request.url !== '/health' && !request.url?.startsWith('/api/webhooks/evolution')) {
-      try {
-        const quotaLimiter = getQuotaLimiter();
-        const orgId = (request as any).currentOrgId;
-        if (orgId && quotaLimiter) {
-          // Check API calls quota (1 per request)
-          const result = await quotaLimiter.check(orgId, QuotaMetric.API_CALLS, 1);
-          reply.header('X-Quota-Limit', result.limit.toString());
-          reply.header('X-Quota-Remaining', result.remaining.toString());
-          if (!result.allowed) {
-            return reply.code(429)
-              .header('Retry-After', Math.ceil((result.resetAt.getTime() - Date.now()) / 1000).toString())
-              .send({
-                error: 'Quota exceeded',
-                message: `API quota limit exceeded. Reset at ${result.resetAt.toISOString()}`,
-                quota: {
-                  metric: 'api_calls',
-                  current: result.current,
-                  limit: result.limit,
-                  remaining: result.remaining,
-                  resetAt: result.resetAt.toISOString()
-                }
-              });
-          }
+    // ┌─────────────────────────────────────────────────────────────┐
+    // │ Step 2: Organization Guard (RLS context + membership)     │
+    // └─────────────────────────────────────────────────────────────┘
+    try {
+      await orgGuard(request, reply, (err) => {
+        if (err) {
+          reply.code(403).send({ error: 'Access denied', message: err.message });
         }
-      } catch (err) {
-        console.error('Quota middleware error:', err);
-        // Fail open: allow request
+      });
+      if (reply.raw?.headersSent) {
+        return;
       }
+    } catch (error) {
+      console.error('[OrgGuard Middleware] Error:', error);
+      reply.code(500).send({ error: 'Internal Server Error' });
+      return;
     }
+
+    // ┌─────────────────────────────────────────────────────────────┐
+    // │ Step 3: 2FA Enforcement (privileged roles)                 │
+    // └─────────────────────────────────────────────────────────────┘
+    try {
+      await require2FA().onRequest(request, reply, (err) => {
+        if (err) {
+          reply.code(403).send({ error: '2FA required', message: err.message });
+        }
+      });
+      if (reply.raw?.headersSent) {
+        return;
+      }
+    } catch (error) {
+      console.error('[2FA] Error:', error);
+      reply.code(500).send({ error: '2FA check failed' });
+      return;
+    }
+
+    // ┌─────────────────────────────────────────────────────────────┐
+    // │ Step 4: Rate Limiting                                       │
+    // └─────────────────────────────────────────────────────────────┘
+    try {
+      await rateLimitCheck(request, reply, (err) => {
+        if (err) {
+          reply.code(500).send({
+            error: 'Rate limit service error',
+            message: err.message,
+          });
+        }
+      });
+      if (reply.raw?.headersSent) {
+        return;
+      }
+    } catch (error) {
+      console.error('[RateLimit] Error:', error);
+      reply.code(500).send({ error: 'Rate limit check failed' });
+      return;
+    }
+
+    // ┌─────────────────────────────────────────────────────────────┐
+    // │ Step 5: Quota Enforcement                                   │
+    // └─────────────────────────────────────────────────────────────┘
+    try {
+      await quotaCheck(request, reply, (err) => {
+        if (err) {
+          reply.code(500).send({
+            error: 'Quota service error',
+            message: err.message,
+          });
+        }
+      });
+      if (reply.raw?.headersSent) {
+        return;
+      }
+    } catch (error) {
+      console.error('[Quota] Error:', error);
+      reply.code(500).send({ error: 'Quota check failed' });
+      return;
+    }
+
+    // ┌─────────────────────────────────────────────────────────────┐
+    // │ Step 6: WhatsApp Message Throttling                         │
+    // └─────────────────────────────────────────────────────────────┘
+    try {
+      await throttleCheck(request, reply, (err) => {
+        if (err) {
+          reply.code(500).send({
+            error: 'Throttle service error',
+            message: err.message,
+          });
+        }
+      });
+      if (reply.raw?.headersSent) {
+        return;
+      }
+    } catch (error) {
+      console.error('[Throttle] Error:', error);
+      reply.code(500).send({ error: 'Throttle check failed' });
+      return;
+    }
+
+    // ┌─────────────────────────────────────────────────────────────┐
+    // │ Step 7: Idempotency (HTTP cache)                           │
+    // └─────────────────────────────────────────────────────────────┘
+    try {
+      const cached = await checkIdempotencyCache(request, reply);
+      if (cached) {
+        // Response served from cache, stop further processing
+        return;
+      }
+      // Continue if not cached (will be cached on response send via onSend hook)
+    } catch (error) {
+      console.error('[Idempotency] Error:', error);
+      // Fail open: continue processing if idempotency fails
+    }
+
+    // All middleware passed, continue to route handler
+    console.log(`[PREHANDLER] ${request.method} ${request.url} - pipeline complete`);
+    return;
   });
+
+  console.log('[SERVER] PreHandler hook ENABLED with: auth, orgGuard, rateLimit, quota, throttle, idempotency');
 
   // Security middleware
   await app.register(helmet);
@@ -203,65 +256,108 @@ async function buildServer() {
   // Raw body plugin for webhook signature verification
   await app.register(rawBody, { global: false }); // per-route usage
 
+  // DIAGNOSTIC: Add a simple synchronous test route first
+  app.get('/ping', (request, reply) => {
+    console.log('[TEST ROUTE] /ping handler invoked');
+    return { ok: true, timestamp: Date.now() };
+  });
+
+  console.log('[SERVER] Test route /ping registered');
+
+  // ============================================================================
+  // ROUTE REGISTRATIONS - ALL RESTORED
+  // ============================================================================
+
   // Register Comprehensive Health Check Endpoint (Phase 1 Step 8)
   const healthRoutes = await import('./app/api/create-comprehensive-health-check-endpoint/route.js');
   // @ts-ignore
   await app.register(healthRoutes.default || healthRoutes);
+  console.log('[SERVER] Health routes registered');
 
   // Register Evolution API webhook routes
   const evolutionRoutes = await import('./app/api/integrate-evolution-api-message-status-webhooks/route.js');
   // @ts-ignore - dynamic import type mismatch
-  app.register(evolutionRoutes.default || evolutionRoutes);
+  await app.register(evolutionRoutes.default || evolutionRoutes);
+  console.log('[SERVER] Evolution webhook routes registered');
 
   // Register Retry Logic API routes (Step 4)
   const retryLogicRoutes = await import('./app/api/build-retry-logic-with-progressive-backoff/route.js');
   // @ts-ignore
   await app.register(retryLogicRoutes.default || retryLogicRoutes);
+  console.log('[SERVER] Retry logic routes registered');
 
   // Register Advanced Phone Number Validation routes (Step 5)
   const phoneValidationRoutes = await import('./app/api/add-advanced-phone-number-validation/route.js');
   // @ts-ignore
   await app.register(phoneValidationRoutes.default || phoneValidationRoutes);
+  console.log('[SERVER] Phone validation routes registered');
 
   // Register Message Deduplication System API routes (Step 6)
   const dedupRoutes = await import('./app/api/implement-message-deduplication-system/route.js');
   // @ts-ignore
   await app.register(dedupRoutes.default || dedupRoutes, { prefix: '/api/deduplication' });
+  console.log('[SERVER] Deduplication routes registered');
 
   // Register Message Delivery Receipts System API routes (Step 7)
   const receiptRoutes = await import('./app/api/build-message-delivery-receipts-system/route.js');
   // @ts-ignore
   await app.register(receiptRoutes.default || receiptRoutes);
+  console.log('[SERVER] Receipt routes registered');
+
+  // Register Chat Pagination API routes (Phase 1 Step 13 - NEW)
+  const chatPaginationRoutes = await import('./app/api/chat-pagination/route.js');
+  // @ts-ignore
+  await app.register(chatPaginationRoutes.default || chatPaginationRoutes);
+  console.log('[SERVER] Chat pagination routes registered');
 
   // Register Rate Limiting System API routes (Phase 1 Step 3)
   const rateLimitRoutes = await import('./app/api/rate-limiting-with-redis/route.js');
   // @ts-ignore
   await app.register(rateLimitRoutes.default || rateLimitRoutes, { prefix: '/admin/rate-limiting' });
+  console.log('[SERVER] Rate limit admin routes registered');
 
   // Register Quota Enforcement System API routes (Phase 1 Step 6)
   const quotaRoutes = await import('./app/api/implement-quota-enforcement-middleware/route.js');
   // @ts-ignore
   await app.register(quotaRoutes.default || quotaRoutes, { prefix: '/admin/quotas' });
+  console.log('[SERVER] Quota admin routes registered');
 
   // Register Queue Priority System Admin API routes (Phase 2 Step 3 - Admin API)
   const queueAdminRoutes = await import('./app/api/implement-message-queue-priority-system/route.js');
   // @ts-ignore
   await app.register(queueAdminRoutes.default || queueAdminRoutes);
+  console.log('[SERVER] Queue priority admin routes registered');
 
   // Register Webhook Dead Letter Queue Admin API routes (Phase 1 Step 5)
   const dlqAdminRoutes = await import('./app/api/webhook-dlq/route.js');
   // @ts-ignore
   await app.register(dlqAdminRoutes.default || dlqAdminRoutes);
+  console.log('[SERVER] DLQ admin routes registered');
 
   // Register Immutable Audit Logging API routes (Phase 1 Step 9)
   const auditLogRoutes = await import('./app/api/build-immutable-audit-logging-system/route.js');
   // @ts-ignore
   await app.register(auditLogRoutes.default || auditLogRoutes, { prefix: '/admin/audit-logs' });
+  console.log('[SERVER] Audit log routes registered');
 
   // Register 2FA Enforcement API routes (Phase 1 Step 10)
   const twoFARoutes = await import('./app/api/enforce-2fa-for-privileged-roles/route.js');
   // @ts-ignore
   await app.register(twoFARoutes.default || twoFARoutes, { prefix: '/admin/2fa' });
+  console.log('[SERVER] 2FA admin routes registered');
+
+  // Register Instance Heartbeat Monitoring API routes (Phase 1 Step 14)
+  // @ts-ignore
+  const heartbeatInstanceRoutes = await import('./app/api/implement-instance-heartbeat-monitoring/instance.route.js');
+  // @ts-ignore
+  await app.register(heartbeatInstanceRoutes.default || heartbeatInstanceRoutes, { prefix: '/api/instances' });
+  console.log('[SERVER] Instance heartbeat API routes registered');
+
+  // @ts-ignore
+  const heartbeatAdminRoutes = await import('./app/api/implement-instance-heartbeat-monitoring/admin.route.js');
+  // @ts-ignore
+  await app.register(heartbeatAdminRoutes.default || heartbeatAdminRoutes, { prefix: '/admin/instances' });
+  console.log('[SERVER] Instance heartbeat admin routes registered');
 
   // Error handler
   app.setErrorHandler((error, request, reply) => {
@@ -277,6 +373,11 @@ async function buildServer() {
     reply.status(404).send({ error: 'Not Found' });
   });
 
+  console.log('[SERVER] Finalizing Fastify boot sequence (calling app.ready())...');
+  // Finalize Fastify boot sequence - must be after all routes/hooks are registered
+  await app.ready();
+  console.log('[SERVER] Fastify boot sequence completed');
+
   return app;
 }
 
@@ -291,31 +392,41 @@ const start = async () => {
     const app = await buildServer();
     const port = parseInt(process.env.PORT || '3000', 10);
 
-    // Create HTTP server and attach Socket.IO
-    // @ts-ignore - Fastify instance compatible with http.ServerRequestListener
-    const server = http.createServer(app);
+    // Use Fastify's built-in HTTP server creation via listen()
+    // This ensures proper setup of request handling and event listeners
+    await app.listen({ port, host: '0.0.0.0' });
 
-    // Initialize Socket.IO with Redis adapter
+    // After listen, the underlying http.Server is available as app.server
+    const server = app.server;
+    if (!server) throw new Error('Server not available');
+
+    console.log(`🚀 WhatsApp Platform Backend running on port ${port}`);
+    console.log(`📡 Webhook endpoint: POST /api/webhooks/evolution`);
+    console.log(`🔌 WebSocket endpoint: ws://localhost:${port}/socket.io/`);
+    console.log(`🔐 Health check: GET /health`);
+
+    // DIAGNOSTIC: Add raw HTTP listener after server is listening
+    server.on('request', (req, res) => {
+      console.log(`[RAW HTTP] ${req.method} ${req.url}`);
+    });
+
+    // DIAGNOSTIC: Temporarily disable Socket.IO
+    /*
     try {
       const { initializeSocket } = await import('./lib/build-real-time-messaging-with-socket.io/index.js');
       await initializeSocket(server);
       console.log("🔌 Socket.IO initialized");
     } catch (err) {
       console.error("⚠️ Failed to initialize Socket.IO:", err);
-      // Continue without Socket.IO - logging only
     }
+    */
+    console.log("⚠️ Socket.IO SKIPPED for diagnostics");
 
-    // @ts-ignore - listen options acceptable
-    server.listen({ port, host: '0.0.0.0' }, (err, address) => {
-      if (err) {
-        app.log.error(err);
-        process.exit(1);
-      }
-      app.log.info(`Server listening on ${address}`);
-      console.log(`🚀 WhatsApp Platform Backend running on port ${port}`);
-      console.log(`📡 Webhook endpoint: POST /api/webhooks/evolution`);
-      console.log(`🔌 WebSocket endpoint: ws://${address}/socket.io/`);
-      console.log(`🔐 Health check: GET /health`);
+    // Graceful shutdown
+    process.on('SIGINT', async () => {
+      console.log('Shutting down...');
+      await app.close();
+      process.exit(0);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

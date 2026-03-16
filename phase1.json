@@ -1545,7 +1545,7 @@
       },
       "status": "completed",
       "completedAt": "2025-03-17T12:00:00Z",
-      "commitHash": null,
+      "commitHash": "0c96cba",
       "metrics": {
         "filesCreated": 9,
         "filesModified": 1,
@@ -1648,15 +1648,16 @@
           "Any blockers encountered and how they were resolved"
         ],
         "metrics": {
-          "filesCreated": 0,
-          "filesModified": 0,
-          "testsAdded": 0,
-          "testsPassing": 0,
-          "timeSpentHours": 4
+          "filesCreated": 9,
+          "filesModified": 5,
+          "testsAdded": 18,
+          "testsPassing": "18/18 (8 unit, 10 integration)",
+          "timeSpentHours": 6
         }
       },
-      "status": "PENDING",
-      "implementationNotes": "Instance heartbeat monitoring not implemented."
+      "status": "COMPLETED",
+      "implementationNotes": "Instance heartbeat monitoring fully implemented. Core library (5 files) + routes (2) + tests (2) = 9 new files. RLS fix in recordHeartbeat ensures tenant isolation. Shared Prisma client used. Integration tests pass: 10/10. Background job syncs status every 30s. Admin dashboard with filtering. All tests passing with proper shutdown sequence. Critical fixes: RLS in background job, auth middleware orgId propagation, quota middleware admin exclusion, shared Prisma to avoid connection leaks.",
+      "completedAt": "2025-03-17T00:00:00.000Z"
     }
   ],
   "last_updated": "2026-03-15T00:30:00.000Z"

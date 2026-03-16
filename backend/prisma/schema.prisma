@@ -113,6 +113,7 @@ model WhatsAppInstance {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   lastSeen    DateTime?
+  heartbeatStatus HeartbeatStatus? @default(UNKNOWN)
 
   // Relations
   org        Organization    @relation(fields: [orgId], references: [id])
@@ -128,6 +129,7 @@ model WhatsAppInstance {
   @@index([orgId])
   @@index([phoneNumber])
   @@index([status])
+  @@index([heartbeatStatus])
 }
 
 enum InstanceStatus {
@@ -136,6 +138,12 @@ enum InstanceStatus {
   CONNECTED
   RECONNECTING
   ERROR
+}
+
+enum HeartbeatStatus {
+  UNKNOWN
+  ONLINE
+  OFFLINE
 }
 
 // ┌─────────────────────────────────────────────────────────────┐
