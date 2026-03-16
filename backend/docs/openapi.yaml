@@ -1,0 +1,1246 @@
+openapi: 3.1.0
+info:
+  title: NEXTMAVENS WhatsApp Platform API
+  version: 1.0.0
+  description: |
+    Enterprise-grade WhatsApp Business API platform with multi-tenancy, rate limiting,
+    audit logging, and 2FA security. This API provides comprehensive messaging capabilities
+    backed by the WhatsApp Evolution API.
+
+    **Base URL**: `http://localhost:3000` (development)
+
+    **Authentication**: Bearer JWT tokens obtained via your authentication provider.
+
+    **Format**: All requests/responses use JSON. Dates are ISO 8601 strings.
+
+    **Pagination**: List endpoints support `page` (default 1) and `limit` (default 20, max 100) query parameters.
+    Responses include `data` array and `hasMore` boolean.
+
+    **Error Handling**: Errors return appropriate HTTP status codes with JSON body:
+    ```json
+    {
+      "error": "Error Code",
+      "message": "Human-readable description"
+    }
+    ```
+  contact:
+    name: NEXTMAVENS Support
+    email: support@nextmavens.com
+  license:
+    name: Proprietary
+    url: https://nextmavens.com/legal
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Webhooks
+    description: Evolution API webhook receivers
+  - name: Phone
+    description: Phone number utilities
+  - name: Deduplication
+    description: Message deduplication configuration
+  - name: Receipts
+    description: Delivery receipt tracking
+  - name: Rate Limiting
+    description: Admin rate limit rule management
+  - name: Quotas
+    description: Plan quota configuration
+  - name: Queue
+    description: Message queue administration
+  - name: DLQ
+    description: Dead letter queue management
+  - name: Audit
+    description: Immutable audit logs
+  - name: 2FA
+    description: Two-factor authentication management
+
+paths:
+  # ============================================================================
+  # Health Check
+  # ============================================================================
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check endpoint
+      description: Returns overall system health including database and Redis connectivity.
+      security: [] # Public
+      responses:
+        '200':
+          description: System healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+                  uptime:
+                    type: number
+                    description: Server uptime in seconds
+                  database:
+                    type: boolean
+                    description: Database connectivity status
+                  redis:
+                    type: boolean
+                    description: Redis connectivity status
+                  memory:
+                    type: object
+                    properties:
+                      rss:
+                        type: number
+                      heapTotal:
+                        type: number
+                      heapUsed:
+                        type: number
+                      external:
+                        type: number
+              example:
+                status: ok
+                timestamp: "2025-03-14T10:30:00.000Z"
+                uptime: 3600
+                database: true
+                redis: true
+                memory:
+                  rss: 50000000
+                  heapTotal: 30000000
+                  heapUsed: 20000000
+                  external: 5000000
+
+  # ============================================================================
+  # Evolution API Webhooks
+  # ============================================================================
+  /api/webhooks/evolution/{instance}/{event}:
+    post:
+      tags: [Webhooks]
+      summary: Receive Evolution API webhook events
+      description: |
+        Webhook endpoint for receiving message status updates from Evolution API.
+        Signature verification is performed using the `X-Api-Key` and HMAC signature.
+      security: [] # Public - signature verified in handler
+      parameters:
+        - name: instance
+          in: path
+          required: true
+          schema:
+            type: string
+            description: WhatsApp instance identifier
+        - name: event
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [messages.upsert, messages.update, connection.update]
+            description: Event type
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              description: Event payload (structure varies by event type)
+      responses:
+        '200':
+          description: Webhook received and queued for processing
+        '400':
+          description: Invalid signature or payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+
+  # ============================================================================
+  # Phone Validation
+  # ============================================================================
+  /api/phone/validate:
+    post:
+      tags: [Phone]
+      summary: Validate and normalize phone number
+      description: |
+        Parse and validate a phone number using libphonenumber-js.
+        Returns E.164 format if valid, or validation errors.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties:
+                phone:
+                  type: string
+                  description: Phone number in any format
+                  example: "+1 (555) 123-4567"
+                countryCode:
+                  type: string
+                  description: Optional default country code (e.g., "US")
+                  example: "US"
+      responses:
+        '200':
+          description: Phone number is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  phone:
+                    type: string
+                    description: Normalized E.164 format
+                    example: "+15551234567"
+                  country:
+                    type: string
+                    description: Detected country code
+                  example:
+                    valid: true
+                    phone: "+15551234567"
+                    country: "US"
+        '400':
+          description: Invalid phone number
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation error (missing required fields)
+
+  # ============================================================================
+  # Message Deduplication
+  # ============================================================================
+  /api/deduplication/config:
+    get:
+      tags: [Deduplication]
+      summary: Get deduplication configuration
+      description: Retrieve current deduplication window settings for all message types.
+      security: []
+      responses:
+        '200':
+          description: Configuration fetched
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    additionalProperties:
+                      type: number
+                      description: Deduplication window in seconds
+                  example:
+                    success: true
+                    data:
+                      text: 86400
+                      image: 86400
+                      document: 86400
+    put:
+      tags: [Deduplication]
+      summary: Update deduplication configuration
+      description: Configure deduplication windows per message type. Values in seconds.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: number
+              example:
+                text: 86400
+                image: 86400
+      responses:
+        '200':
+          description: Configuration updated
+        '400':
+          description: Invalid configuration
+
+  /api/deduplication/clear:
+    post:
+      tags: [Deduplication]
+      summary: Clear deduplication cache
+      description: Manually flush the deduplication cache (for testing or emergency).
+      security: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                messageType:
+                  type: string
+                  description: Optional: clear only specific message type
+      responses:
+        '200':
+          description: Cache cleared
+
+  # ============================================================================
+  # Delivery Receipts
+  # ============================================================================
+  /api/receipts/{messageId}:
+    get:
+      tags: [Receipts]
+      summary: Get delivery receipt for a message
+      description: Retrieve the delivery status (sent, delivered, read, failed) for a message.
+      security: []
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Unique message ID from WhatsApp
+      responses:
+        '200':
+          description: Receipt found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messageId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [sent, delivered, read, failed]
+                    description: Delivery status
+                  timestamp:
+                    type: string
+                    format: date-time
+                  error:
+                    type: string
+                    description: Error message if status=failed
+                  example:
+                    messageId: "abcdef123456"
+                    status: "delivered"
+                    timestamp: "2025-03-14T10:25:00.000Z"
+        '404':
+          description: Receipt not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ============================================================================
+  # Rate Limiting Admin
+  # ============================================================================
+  /admin/rate-limiting/rules:
+    get:
+      tags: [Rate Limiting]
+      summary: List all rate limit rules
+      description: Retrieve all configured rate limit rules (default + overrides).
+      responses:
+        '200':
+          description: Rules list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RateLimitRule'
+                  example:
+                    success: true
+                    data:
+                      - id: "global"
+                        maxRequests: 100
+                        windowMs: 60000
+                        priority: 1
+    post:
+      tags: [Rate Limiting]
+      summary: Create a new rate limit rule
+      description: Create a rule to override default rate limits for specific org/instance/endpoint combinations.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRateLimitRule'
+      responses:
+        '200':
+          description: Rule created
+
+  /admin/rate-limiting/rules/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [Rate Limiting]
+      summary: Get rate limit rule by ID
+      responses:
+        '200':
+          description: Rule details
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/RateLimitRule'
+                  - type: null
+        '404':
+          description: Rule not found
+    put:
+      tags: [Rate Limiting]
+      summary: Update rate limit rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRateLimitRule'
+      responses:
+        '200':
+          description: Rule updated
+        '404':
+          description: Rule not found
+    delete:
+      tags: [Rate Limiting]
+      summary: Delete rate limit rule
+      responses:
+        '200':
+          description: Rule deleted
+        '404':
+          description: Rule not found
+
+  /admin/rate-limiting/metrics:
+    get:
+      tags: [Rate Limiting]
+      summary: Get rate limiting metrics
+      description: View current rate limit usage and blocked request counts.
+      responses:
+        '200':
+          description: Metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      totalRequests:
+                        type: number
+                      blockedRequests:
+                        type: number
+                      currentUsage:
+                        type: object
+                        additionalProperties:
+                          type: number
+                  example:
+                    success: true
+                    data:
+                      totalRequests: 12500
+                      blockedRequests: 34
+                      currentUsage:
+                        "org:123:instance:456": 42
+                        "global": 15
+
+  /admin/rate-limiting/metrics/reset:
+    post:
+      tags: [Rate Limiting]
+      summary: Reset rate limiting metrics
+      description: Clear all metrics counters and usage trackers.
+      responses:
+        '200':
+          description: Metrics reset
+
+  /admin/rate-limiting/status/{identifier}:
+    get:
+      tags: [Rate Limiting]
+      summary: Get rate limit status for identifier
+      description: Check current usage and reset time for a specific request identifier.
+      parameters:
+        - name: identifier
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  allowed:
+                    type: boolean
+                  remaining:
+                    type: number
+                  resetAfterMs:
+                    type: number
+                  resetAt:
+                    type: string
+                    format: date-time
+
+  /admin/rate-limiting/reset/{identifier}:
+    post:
+      tags: [Rate Limiting]
+      summary: Reset rate limit for identifier
+      description: Manually reset the rate limit counter for a specific identifier (bypass until next window).
+      parameters:
+        - name: identifier
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Rate limit reset
+
+  # ============================================================================
+  # Quota Administration
+  # ============================================================================
+  /admin/quotas:
+    get:
+      tags: [Quotas]
+      summary: List all quota configurations
+      description: Retrieve quota limits for all plans (FREE, PRO, ENTERPRISE).
+      responses:
+        '200':
+          description: Quota configurations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/QuotaConfigs'
+    put:
+      tags: [Quotas]
+      summary: Update quota configuration
+      description: Modify the quota limits for specific metrics and periods.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateQuotaConfig'
+      responses:
+        '200':
+          description: Quota configuration updated
+
+  /admin/quotas/usage:
+    get:
+      tags: [Quotas]
+      summary: Get current quota usage for org
+      description: View current consumption for the authenticated org across all quota metrics.
+      responses:
+        '200':
+          description: Usage data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/QuotaUsage'
+                  example:
+                    success: true
+                    data:
+                      messages:
+                        hourly:
+                          current: 450
+                          limit: 1000
+                          remaining: 550
+                          resetAt: "2025-03-14T11:00:00.000Z"
+                        daily:
+                          current: 5000
+                          limit: 10000
+                          remaining: 5000
+                          resetAt: "2025-03-14T23:59:59.000Z"
+
+  # ============================================================================
+  # Message Queue Priority Admin
+  # ============================================================================
+  /admin/queue/priority:
+    get:
+      tags: [Queue]
+      summary: Get queue priority metrics
+      description: View message counts per priority level across all queues.
+      responses:
+        '200':
+          description: Priority metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      high:
+                        type: number
+                      normal:
+                        type: number
+                      low:
+                        type: number
+                  example:
+                    success: true
+                    data:
+                      high: 15
+                      normal: 234
+                      low: 89
+
+  /admin/queue/priority/move:
+    post:
+      tags: [Queue]
+      summary: Move message between queues
+      description: Change the priority of a queued message.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [messageId, newPriority]
+              properties:
+                messageId:
+                  type: string
+                newPriority:
+                  type: string
+                  enum: [high, normal, low]
+      responses:
+        '200':
+          description: Message priority updated
+        '404':
+          description: Message not found in queue
+
+  # ============================================================================
+  # Dead Letter Queue (DLQ) Admin
+  # ============================================================================
+  /admin/dlq:
+    get:
+      tags: [DLQ]
+      summary: List dead letter queue contents
+      description: Retrieve failed webhook deliveries that are awaiting retry or manual intervention.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: number
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: number
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: DLQ messages
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DLQMessage'
+                  hasMore:
+                    type: boolean
+    post:
+      tags: [DLQ]
+      summary: Retry a dead letter message
+      description: Re-queue a failed webhook for immediate reprocessing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: string
+                  description: DLQ message ID
+      responses:
+        '200':
+          description: Message re-queued
+        '404':
+          description: DLQ message not found
+
+  /admin/dlq/{id}:
+    delete:
+      tags: [DLQ]
+      summary: Delete a dead letter message
+      description: Permanently remove a failed webhook from the DLQ (use with caution).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Message deleted
+        '404':
+          description: Message not found
+
+  # ============================================================================
+  # Audit Logs Admin
+  # ============================================================================
+  /admin/audit-logs:
+    get:
+      tags: [Audit]
+      summary: List audit logs
+      description: |
+        Query immutable audit logs with optional filters.
+        Supports pagination and date range queries.
+      parameters:
+        - name: orgId
+          in: query
+          schema:
+            type: string
+          description: Filter by organization ID (SUPER_ADMIN only)
+        - name: userId
+          in: query
+          schema:
+            type: string
+          description: Filter by user ID
+        - name: action
+          in: query
+          schema:
+            type: string
+          description: Filter by action type (e.g., "user.created", "mfa.enabled")
+        - name: resource
+          in: query
+          schema:
+            type: string
+          description: Filter by resource type (e.g., "user", "org", "whatsapp_instance")
+        - name: resourceId
+          in: query
+          schema:
+            type: string
+          description: Filter by specific resource ID
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter logs after this timestamp
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Filter logs before this timestamp
+        - name: page
+          in: query
+          schema:
+            type: number
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: number
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Audit log list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditLog'
+                  hasMore:
+                    type: boolean
+                  total:
+                    type: number
+                    description: Total matching records (if requested)
+    get:
+      tags: [Audit]
+      summary: Get audit log by ID
+      description: Retrieve a single audit log entry by its unique ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: cidr
+      responses:
+        '200':
+          description: Audit log found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLog'
+        '404':
+          description: Audit log not found
+
+  # ============================================================================
+  # Two-Factor Authentication Admin
+  # ============================================================================
+  /admin/2fa/setup:
+    post:
+      tags: [2FA]
+      summary: Generate 2FA setup credentials
+      description: |
+        Generate a new TOTP secret and QR code for 2FA enrollment.
+        User must already be authenticated.
+        The secret is stored temporarily in the user's record.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+      responses:
+        '200':
+          description: Setup data generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/TwoFactorSetup'
+                  message:
+                    type: string
+        '400':
+              description: 2FA already enabled
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/Error'
+
+  /admin/2fa/verify:
+    post:
+      tags: [2FA]
+      summary: Verify TOTP token and enable 2FA
+      description: |
+        Submit a 6-digit code from the authenticator app to complete 2FA setup.
+        Must be called within a reasonable time after `/setup`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+                  pattern: '^\d{6}$'
+                  description: 6-digit TOTP code
+      responses:
+        '200':
+          description: 2FA enabled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '400':
+          description: Invalid token format
+        '401':
+          description: Token verification failed or no pending setup
+        '500':
+          description: Verification failed
+
+  /admin/2fa/disable:
+    post:
+      tags: [2FA]
+      summary: Disable 2FA for user
+      description: |
+        Disable two-factor authentication. Requires the current valid 2FA token
+        as confirmation to prevent malicious deactivation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+                  pattern: '^\d{6}$'
+      responses:
+        '200':
+          description: 2FA disabled
+        '401':
+          description: Token verification failed
+        '500':
+          description: Disable failed
+
+  /admin/2fa/status:
+    get:
+      tags: [2FA]
+      summary: Get 2FA status for user
+      description: |
+        Check whether 2FA is enabled and required for the authenticated user.
+        SUPER_ADMIN can check other users by providing `userId` query parameter.
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: string
+          description: Optional: check another user's status (SUPER_ADMIN only)
+      responses:
+        '200':
+          description: Status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/TwoFactorStatus'
+        '403':
+          description: Non-SUPER_ADMIN attempting to check another user
+        '404':
+          description: User not found
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtained from authentication endpoint.
+        Token must be included in `Authorization: Bearer <token>` header.
+
+  schemas:
+    Error:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code
+        message:
+          type: string
+          description: Human-readable explanation
+      example:
+        error: "MFA_REQUIRED"
+        message: "Two-factor authentication required"
+
+    RateLimitRule:
+      type: object
+      required: [id, maxRequests, windowMs]
+      properties:
+        id:
+          type: string
+          description: Unique rule identifier
+        maxRequests:
+          type: number
+          description: Maximum requests in window
+        windowMs:
+          type: number
+          description: Time window in milliseconds
+        orgId:
+          type: string
+          nullable: true
+          description: Organization-specific override (null = global)
+        instanceId:
+          type: string
+          nullable: true
+          description: Instance-specific override
+        endpoint:
+          type: string
+          nullable: true
+          description: Specific endpoint pattern (null = all endpoints)
+        priority:
+          type: number
+          description: Rule priority (lower = higher)
+      example:
+        id: "org:123:all"
+        maxRequests: 1000
+        windowMs: 3600000
+        orgId: "org_123"
+        instanceId: null
+        endpoint: null
+        priority: 10
+
+    CreateRateLimitRule:
+      type: object
+      required: [maxRequests, windowMs]
+      properties:
+        ruleId:
+          type: string
+        maxRequests:
+          type: number
+        windowMs:
+          type: number
+        orgId:
+          type: string
+          nullable: true
+        instanceId:
+          type: string
+          nullable: true
+        endpoint:
+          type: string
+          nullable: true
+
+    UpdateRateLimitRule:
+      type: object
+      properties:
+        maxRequests:
+          type: number
+        windowMs:
+          type: number
+        orgId:
+          type: string
+          nullable: true
+        instanceId:
+          type: string
+          nullable: true
+        endpoint:
+          type: string
+          nullable: true
+        priority:
+          type: number
+
+    QuotaConfigs:
+      type: object
+      additionalProperties:
+        type: object
+        properties:
+          messages:
+            type: number
+          instances:
+            type: number
+          apiCalls:
+            type: object
+            properties:
+              hourly:
+                type: number
+              daily:
+                type: number
+              monthly:
+                type: number
+
+    UpdateQuotaConfig:
+      type: object
+      properties:
+        plan:
+          type: string
+          enum: [FREE, PRO, ENTERPRISE]
+        quotas:
+          $ref: '#/components/schemas/QuotaConfigs'
+
+    QuotaUsage:
+      type: object
+      additionalProperties:
+        type: object
+        properties:
+          current:
+            type: number
+          limit:
+            type: number
+          remaining:
+            type: number
+          resetAt:
+            type: string
+            format: date-time
+
+    DLQMessage:
+      type: object
+      properties:
+        id:
+          type: string
+        event:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+        attempts:
+          type: number
+        lastError:
+          type: string
+        nextRetryAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    AuditLog:
+      type: object
+      required: [id, userId, action, createdAt]
+      properties:
+        id:
+          type: string
+        orgId:
+          type: string
+          nullable: true
+          description: NULL for SUPER_ADMIN actions
+        userId:
+          type: string
+        action:
+          type: string
+          description: Action performed (e.g., "user.created", "mfa.enabled")
+        resource:
+          type: string
+        resourceId:
+          type: string
+          nullable: true
+        changes:
+          type: object
+          additionalProperties: true
+          description: JSON snapshot of before/after changes
+        ipAddress:
+          type: string
+          nullable: true
+        userAgent:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    TwoFactorSetup:
+      type: object
+      required: [secret, qrCode, manualEntry, issuer, label]
+      properties:
+        secret:
+          type: string
+          description: Base32-encoded TOTP secret (for manual entry)
+        qrCode:
+          type: string
+          description: Data URL containing QR code image
+        manualEntry:
+          type: string
+          sameAs: secret
+        issuer:
+          type: string
+          description: Application name (NEXTMAVENS WhatsApp Platform)
+        label:
+          type: string
+          description: User identifier (email)
+
+    TwoFactorStatus:
+      type: object
+      required: [enabled, isPrivileged, requires2FA]
+      properties:
+        enabled:
+          type: boolean
+          description: Whether 2FA is currently enabled
+        isPrivileged:
+          type: boolean
+          description: Whether user has a privileged role (SUPER_ADMIN, ORG_ADMIN)
+        requires2FA:
+          type: boolean
+          description: Whether 2FA is mandatory for this user (true for privileged roles)
+
+    MessageReceipt:
+      type: object
+      required: [messageId, status, timestamp]
+      properties:
+        messageId:
+          type: string
+        status:
+          type: string
+          enum: [sent, delivered, read, failed]
+        timestamp:
+          type: string
+          format: date-time
+        error:
+          type: string
+          nullable: true
+
+    PhoneValidationResult:
+      type: object
+      required: [valid, phone]
+      properties:
+        valid:
+          type: boolean
+        phone:
+          type: string
+          description: Normalized E.164 format
+        country:
+          type: string
+          description: Detected country code
+
+    DedupConfig:
+      type: object
+      additionalProperties:
+        type: number
+        description: Deduplication window in seconds
+      example:
+        text: 86400
+        image: 86400
+        document: 86400
+
+    HealthStatus:
+      type: object
+      required: [status, timestamp, database, redis]
+      properties:
+        status:
+          type: string
+          enum: [ok, error]
+        timestamp:
+          type: string
+          format: date-time
+        uptime:
+          type: number
+        database:
+          type: boolean
+        redis:
+          type: boolean
+        memory:
+          type: object
+          properties:
+            rss: { type: number }
+            heapTotal: { type: number }
+            heapUsed: { type: number }
+            external: { type: number }
+
+EOF
