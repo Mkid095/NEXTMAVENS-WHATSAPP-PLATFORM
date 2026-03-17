@@ -294,7 +294,8 @@ export async function getDeliveryMetrics(query: ReceiptQuery): Promise<DeliveryM
     DELIVERED: 0,
     READ: 0,
     FAILED: 0,
-    REJECTED: 0
+    REJECTED: 0,
+    CANCELLED: 0
   };
 
   for (const group of messages) {

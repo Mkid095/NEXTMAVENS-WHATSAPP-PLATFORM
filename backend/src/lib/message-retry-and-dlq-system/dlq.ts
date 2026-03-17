@@ -22,7 +22,7 @@ const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
 const REDIS_PORT = parseInt(process.env.REDIS_PORT || '6379', 10);
 const REDIS_PASSWORD = process.env.REDIS_PASSWORD;
 
-export const redisConnectionOptions: Redis.RedisOptions = {
+export const redisConnectionOptions: any = {
   host: REDIS_HOST,
   port: REDIS_PORT,
   password: REDIS_PASSWORD,
@@ -137,14 +137,19 @@ export async function getDlqEntry(streamKey: string, entryId: string): Promise<D
     entryId,
     'COUNT',
     1
-  );
+  ) as [string, string[]][] | null;
 
   if (!result || result.length === 0) {
     return null;
   }
 
-  const [id, fields] = result[0];
-  const dataField = fields.find((f: [string, string]) => f[0] === 'data');
+  const [id, fieldsFlat] = result[0];
+  // Convert flat array [k1, v1, k2, v2] to pairs [[k1, v1], [k2, v2]]
+  const fields: [string, string][] = [];
+  for (let i = 0; i < fieldsFlat.length; i += 2) {
+    fields.push([fieldsFlat[i], fieldsFlat[i + 1]]);
+  }
+  const dataField = fields.find((f) => f[0] === 'data');
   const data = dataField ? JSON.parse(dataField[1]) : null;
 
   return {
@@ -180,48 +185,49 @@ export async function listDlqEntries(options: DlqQueryOptions): Promise<{
   // Get total count (approximate using XLEN)
   const total = await client.xlen(streamKey);
 
-  // Query stream with direction
-  const direction = newestFirst ? 'REV' : '';
-  const xrangeCmd = direction === 'REV' ? 'xrevrange' : 'xrange';
-
-  // Build arguments
-  const args: string[] = [streamKey];
-  if (offset && newestFirst) {
-    // For reverse order, use offset as the starting point (exclusive)
-    args.push('(', offset); // Open paren means exclusive
-    args.push('+');
-  } else if (offset && !newestFirst) {
-    args.push(offset, '+');
-  } else if (newestFirst) {
-    args.push('+', '-'); // Get from newest to oldest
+  let result: any;
+  if (newestFirst) {
+    if (offset) {
+      result = await client.xrevrange(streamKey, `(${offset}`, '+', 'COUNT', limit);
+    } else {
+      result = await client.xrevrange(streamKey, '+', '-', 'COUNT', limit);
+    }
   } else {
-    args.push('-', '+'); // Get from oldest to newest
+    if (offset) {
+      result = await client.xrange(streamKey, offset, '+', 'COUNT', limit);
+    } else {
+      result = await client.xrange(streamKey, '-', '+', 'COUNT', limit);
+    }
   }
-  args.push('LIMIT', '0', limit.toString());
-
-  const result = await client.sendCommand([xrangeCmd, ...args]);
 
   let entries: DlqEntry[] = [];
   let nextOffset: string | null = null;
 
   if (result && Array.isArray(result)) {
-    const parsedEntries = result.map((item: [string, [string, string][]]) => {
-      const [id, fields] = item;
-      const dataField = fields.find((f: [string, string]) => f[0] === 'data');
+    const parsedEntries: DlqEntry[] = [];
+
+    for (const item of result) {
+      const [id, fieldsFlat] = item;
+      // Convert flat array [k1, v1, k2, v2] to pairs
+      const fields: [string, string][] = [];
+      for (let i = 0; i < fieldsFlat.length; i += 2) {
+        fields.push([fieldsFlat[i], fieldsFlat[i + 1]]);
+      }
+      const dataField = fields.find((f) => f[0] === 'data');
       const data = dataField ? JSON.parse(dataField[1]) : null;
 
       // Apply filters
       if (data) {
         if (errorCategory && data.errorCategory !== errorCategory) {
-          return null;
+          continue;
         }
         if (minRetries && data.retryCount < minRetries) {
-          return null;
+          continue;
         }
       }
 
-      return { id, data } as DlqEntry;
-    }).filter(Boolean) as DlqEntry[];
+      parsedEntries.push({ id, data });
+    }
 
     entries = parsedEntries;
     if (parsedEntries.length === limit) {
@@ -284,10 +290,15 @@ export async function getDlqMetrics(): Promise<DlqMetrics> {
 
     // For category and retry count, we need to sample entries
     // In production, you might maintain separate counters
-    const sampleEntries = await client.xrevrange(key, '+', '-', 'COUNT', 10);
+    const sampleEntries = await client.xrevrange(key, '+', '-', 'COUNT', 10) as any;
     if (sampleEntries && Array.isArray(sampleEntries)) {
-      for (const [_, fields]] = sampleEntries) {
-        const dataField = fields.find((f: [string, string]) => f[0] === 'data');
+      for (const [_, fieldsFlat] of sampleEntries) {
+        // Convert flat array to pairs
+        const fields: [string, string][] = [];
+        for (let i = 0; i < fieldsFlat.length; i += 2) {
+          fields.push([fieldsFlat[i], fieldsFlat[i + 1]]);
+        }
+        const dataField = fields.find((f) => f[0] === 'data');
         if (dataField) {
           try {
             const data: DlqMetadata = JSON.parse(dataField[1]);
@@ -449,13 +460,18 @@ export async function cleanOldDlqEntries(): Promise<number> {
   for (const key of streamKeys) {
     try {
       // Get all entries (up to a reasonable limit)
-      const entries = await client.xrevrange(key, '+', '-', 'COUNT', 1000);
+      const entries = await client.xrevrange(key, '+', '-', 'COUNT', 1000) as any;
 
       if (entries && Array.isArray(entries)) {
         const toDelete: string[] = [];
 
-        for (const [id, fields] of entries) {
-          const timestampField = fields.find((f: [string, string]) => f[0] === 'timestamp');
+        for (const [id, fieldsFlat] of entries) {
+          // Convert flat array to pairs
+          const fields: [string, string][] = [];
+          for (let i = 0; i < fieldsFlat.length; i += 2) {
+            fields.push([fieldsFlat[i], fieldsFlat[i + 1]]);
+          }
+          const timestampField = fields.find((f) => f[0] === 'timestamp');
           if (timestampField) {
             const timestamp = new Date(timestampField[1]).getTime();
             if (timestamp < cutoffTime) {

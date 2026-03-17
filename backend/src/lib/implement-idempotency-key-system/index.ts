@@ -72,8 +72,8 @@ function getRedisClient() {
     // Try to get shared Redis from message queue system
     try {
       const { redisConnectionOptions } = require('../message-queue-priority-system');
-      const { createClient } = require('redis');
-      redisClient = createClient(redisConnectionOptions);
+      const Redis = require('ioredis');
+      redisClient = new Redis(redisConnectionOptions);
     } catch (e) {
       throw new Error('Redis client not available. Ensure message queue system is initialized or set Redis client via setRedisClient()');
     }

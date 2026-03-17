@@ -5,10 +5,10 @@
 
 import { Worker, Job, Queue } from 'bullmq';
 import {
-  redisConnectionOptions,
   DEFAULT_CONCURRENCY,
   QUEUE_NAME
-} from './index';
+} from '../message-queue-priority-system';
+import { redisConnectionOptions } from './dlq';
 import type { AnyQueueJob } from '../message-queue-priority-system/types';
 import {
   shouldRetry,
@@ -18,6 +18,7 @@ import {
   recordDlqMove,
   isRetryDlqEnabled
 } from './retry-policy';
+import { ErrorCategory } from './types';
 import {
   addToDlq,
   getRedisClient,
@@ -146,13 +147,13 @@ export function createEnhancedProcessor(originalProcessor: JobProcessor): JobPro
 }
 
 // Helper function for metric recording
-function classifyErrorCategory(error: unknown): string {
+function classifyErrorCategory(error: unknown): ErrorCategory {
   // Use the same classification from retry-policy
   try {
     const { classifyError } = require('./retry-policy');
     return classifyError(error);
   } catch {
-    return 'unknown';
+    return ErrorCategory.UNKNOWN;
   }
 }
 

@@ -243,3 +243,8 @@ export function getRetrySummary(
     nextDelay
   };
 }
+
+// Re-export isRetryDlqEnabled for consumers
+export { isRetryDlqEnabled } from './types';
+// Re-export DEFAULT_RETRY_POLICIES for consumers (e.g., message-queue-priority-system)
+export { DEFAULT_RETRY_POLICIES } from './types';

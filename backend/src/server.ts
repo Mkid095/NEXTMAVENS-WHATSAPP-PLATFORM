@@ -393,6 +393,12 @@ async function buildServer() {
   await app.register(poolAdminRoutes.default || poolAdminRoutes);
   console.log('[SERVER] Connection pool admin routes registered');
 
+  // Register Workflow Orchestration Admin API routes (Phase 3 Step 3)
+  const workflowRoutes = await import('./app/api/workflow-orchestration/route.js');
+  // @ts-ignore
+  await app.register(workflowRoutes.default || workflowRoutes, { prefix: '/admin/workflows' });
+  console.log('[SERVER] Workflow orchestration admin routes registered');
+
   // Error handler
   app.setErrorHandler((error, request, reply) => {
     app.log.error(error);
@@ -444,17 +450,32 @@ const start = async () => {
       console.log(`[RAW HTTP] ${req.method} ${req.url}`);
     });
 
-    // DIAGNOSTIC: Temporarily disable Socket.IO
-    /*
+    // Initialize Socket.IO for real-time messaging
     try {
-      const { initializeSocket } = await import('./lib/build-real-time-messaging-with-socket.io/index.js');
+      const { initializeSocket, getSocketService } = await import('./lib/build-real-time-messaging-with-socket.io/index.js');
       await initializeSocket(server);
       console.log("🔌 Socket.IO initialized");
+
+      // Inject socket service into status manager for WebSocket notifications
+      try {
+        const { setSocketService } = await import('./lib/message-status-tracking/status-manager.js');
+        setSocketService(getSocketService());
+        console.log("📡 Status tracking WebSocket integration enabled");
+      } catch (err) {
+        console.warn("⚠️ Status tracking WebSocket integration not available:", err.message);
+      }
     } catch (err) {
       console.error("⚠️ Failed to initialize Socket.IO:", err);
     }
-    */
-    console.log("⚠️ Socket.IO SKIPPED for diagnostics");
+
+    // Start Message Queue Worker (BullMQ)
+    try {
+      const { startWorker } = await import('./lib/message-queue-priority-system/consumer.js');
+      startWorker();
+      console.log('📨 Message queue worker started');
+    } catch (err) {
+      console.warn('⚠️ Message queue worker not available:', err.message);
+    }
 
     // Graceful shutdown
     process.on('SIGINT', async () => {

@@ -195,5 +195,3 @@ export async function shutdownConnectionPool(): Promise<void> {
   console.log('[ConnectionPool] Shutdown requested (Prisma disconnect handled elsewhere)');
 }
 
-export { runHealthCheckCycle };
-

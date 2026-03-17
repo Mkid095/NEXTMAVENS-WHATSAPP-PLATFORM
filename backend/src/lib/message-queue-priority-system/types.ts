@@ -28,7 +28,8 @@ export enum MessageType {
   ANALYTICS_EVENT = 'analytics_event',
   WEBHOOK_EVENT = 'webhook_event',
   DATABASE_CLEANUP = 'database_cleanup',
-  CACHE_REFRESH = 'cache_refresh'
+  CACHE_REFRESH = 'cache_refresh',
+  WORKFLOW_STEP = 'workflow_step'
 }
 
 // Priority mapping for each message type
@@ -41,7 +42,8 @@ export const PRIORITY_MAPPING: Record<MessageType, MessagePriority> = {
   [MessageType.ANALYTICS_EVENT]: MessagePriority.LOW,
   [MessageType.WEBHOOK_EVENT]: MessagePriority.LOW,
   [MessageType.DATABASE_CLEANUP]: MessagePriority.BACKGROUND,
-  [MessageType.CACHE_REFRESH]: MessagePriority.BACKGROUND
+  [MessageType.CACHE_REFRESH]: MessagePriority.BACKGROUND,
+  [MessageType.WORKFLOW_STEP]: MessagePriority.MEDIUM
 };
 
 export function getPriorityForType(type: MessageType): MessagePriority {

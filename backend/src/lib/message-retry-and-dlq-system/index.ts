@@ -81,12 +81,10 @@ export {
   replayDlqEntries
 } from './maintenance';
 
-import { worker } from './worker';
-import { dlq } from './dlq';
-
-// Re-export for convenience
-export const enhancedWorker = worker;
-export const dlqStorage = dlq;
+// Internal imports for use in this module
+import { getRedisClient, initializeDlqConsumerGroups } from './dlq';
+import { cleanup } from './worker';
+import { isRetryDlqEnabled } from './types';
 
 // ============================================================================
 // Initialization

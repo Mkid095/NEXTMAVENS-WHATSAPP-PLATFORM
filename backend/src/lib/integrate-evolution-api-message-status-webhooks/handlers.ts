@@ -7,6 +7,8 @@
 import { prisma } from '../prisma';
 import { ParsedWebhookEvent } from './parsers';
 import { getSocketService } from '../build-real-time-messaging-with-socket.io';
+import { updateMessageStatus, recordStatusChangeFromReceipt, createStatusHistoryEntry } from '../message-status-tracking/status-manager';
+import { StatusChangeReason } from '../message-status-tracking/types';
 
 // Helper: Broadcast event to instance room (if socket service is available)
 async function broadcastToInstance(instanceId: string, event: string, data: any): Promise<void> {
@@ -194,22 +196,26 @@ async function handleMessageUpdate(
   }
 
   try {
-    const updated = await prisma.whatsAppMessage.update({
-      where: { id: messageId },
-      data: { status: status as any },
-    });
+    // Use status manager to update status with history tracking and metrics
+    const response = await recordStatusChangeFromReceipt(
+      messageId,
+      orgId,
+      status as any,
+      event.timestamp ? new Date(event.timestamp) : undefined
+    );
 
-    // Broadcast status update
-    await broadcastToInstance(event.instanceId, 'whatsapp:message:update', {
-      id: updated.id,
-      chatId: updated.chatId,
-      status: updated.status,
+    // Broadcast status update (backward compatibility for existing frontend)
+    // The status manager already emits 'message:status:changed' via WebSocket
+    await broadcastToInstance(response.instanceId!, 'whatsapp:message:update', {
+      id: response.messageId,
+      chatId: response.chatId!,
+      status: response.newStatus,
       timestamp: Date.now(),
     });
 
-    return { success: true, result: `Message ${updated.id} status updated to ${status}` };
+    return { success: true, result: `Message ${response.messageId} status updated to ${status}` };
   } catch (error: any) {
-    if (error.code === 'P2025') {
+    if (error.code === 'P2025' || error.message.includes('not found')) {
       // Record not found - maybe message was deleted or never synced
       console.warn(`Message ${messageId} not found for status update`);
       return {
@@ -342,16 +348,24 @@ async function handleSendMessage(
   const { messageId, status } = event;
 
   try {
-    const updated = await prisma.whatsAppMessage.update({
-      where: { id: messageId },
-      data: { status: status === 'success' ? 'SENT' : 'FAILED' },
+    const newStatus = status === 'success' ? 'SENT' : 'FAILED';
+
+    // Use status manager to update status with history and metrics
+    const response = await updateMessageStatus(messageId, orgId, {
+      status: newStatus,
+      reason: StatusChangeReason.WEBHOOK_UPDATE,
+      changedBy: 'system',
+      metadata: {
+        eventType: 'SEND_MESSAGE',
+        source: 'evolution-api'
+      }
     });
 
-    // Broadcast status change (likely to SENT or FAILED)
-    await broadcastToInstance(updated.instanceId, 'whatsapp:message:update', {
-      id: updated.id,
-      chatId: updated.chatId,
-      status: updated.status,
+    // Broadcast status change (backward compatibility)
+    await broadcastToInstance(response.instanceId!, 'whatsapp:message:update', {
+      id: response.messageId,
+      chatId: response.chatId!,
+      status: response.newStatus,
       timestamp: Date.now(),
     });
 

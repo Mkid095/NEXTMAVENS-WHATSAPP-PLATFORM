@@ -118,6 +118,10 @@ export interface StatusUpdateResponse {
   newStatus: MessageStatus;
   historyEntryId: string;
   timestamp: Date;
+  // Additional fields for integration with other systems (broadcasting, etc.)
+  instanceId?: string;
+  chatId?: string;
+  orgId?: string;
 }
 
 // ============================================================================

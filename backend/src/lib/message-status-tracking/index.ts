@@ -11,8 +11,8 @@
  */
 
 export {
-  // Types
-  type StatusChangeReason,
+  // Types and enums
+  StatusChangeReason,
   type StatusHistoryEntry,
   type PaginatedStatusHistory,
   type StatusUpdateRequest,
@@ -34,11 +34,13 @@ export {
   updateMessageStatus,
   getStatusHistory,
   getLatestStatus,
+  getStatusMetrics,
   updateStatusMetrics,
   validateTransition,
   setSocketService,
   recordStatusChangeFromReceipt,
-  recordDlqTransfer
+  recordDlqTransfer,
+  createStatusHistoryEntry
 } from './status-manager';
 
 // Re-export types for convenience

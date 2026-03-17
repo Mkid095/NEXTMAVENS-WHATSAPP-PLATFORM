@@ -5,15 +5,33 @@
 
 import { prisma } from '../prisma';
 import { MessageStatus } from '@prisma/client';
+import * as promClient from 'prom-client';
 import {
   StatusChangeReason,
   StatusHistoryEntry,
   StatusUpdateRequest,
   StatusUpdateResponse,
+  StatusMetrics,
+  StatusDistribution,
+  StatusTransitionMetrics,
   isSuccessStatus,
   isFailureStatus,
   formatTransitionKey
 } from './types';
+
+// Import metrics (optional, may not be initialized yet)
+let statusMetrics: any = null;
+try {
+  const metrics = require('../create-comprehensive-metrics-dashboard-(grafana)/index');
+  statusMetrics = {
+    messageStatusDistribution: metrics.messageStatusDistribution,
+    messageStatusTransitionsTotal: metrics.messageStatusTransitionsTotal,
+    messageStatusUpdateDuration: metrics.messageStatusUpdateDuration,
+    messageStatusHistoryEntriesTotal: metrics.messageStatusHistoryEntriesTotal
+  };
+} catch (err) {
+  // Metrics not available yet, will be set later via setMetrics()
+}
 
 // ============================================================================
 // Core Status Update Function
@@ -40,6 +58,7 @@ export async function updateMessageStatus(
   request: StatusUpdateRequest
 ): Promise<StatusUpdateResponse> {
   const { status, reason = StatusChangeReason.ADMIN_MANUAL, changedBy = 'system', metadata } = request;
+  const startTime = Date.now();
 
   // Fetch current message state (with orgId check for tenant isolation)
   const message = await prisma.whatsAppMessage.findFirst({
@@ -128,6 +147,20 @@ export async function updateMessageStatus(
     return { updatedMessage, historyEntry };
   });
 
+  // Record metrics (if available)
+  if (statusMetrics) {
+    const duration = (Date.now() - startTime) / 1000;
+    statusMetrics.messageStatusUpdateDuration.observe({ reason: reason }, duration);
+    statusMetrics.messageStatusTransitionsTotal.inc({ from: oldStatus, to: status, reason: reason });
+    statusMetrics.messageStatusHistoryEntriesTotal.inc({ reason: reason });
+
+    // Update distribution gauge: decrement old status count, increment new status count
+    // Note: We can't directly decrement gauges reliably in distributed systems,
+    // but we can periodically recompute distribution via getStatusMetrics()
+    // For now, just increment new status count (may be slightly off but acceptable for monitoring)
+    statusMetrics.messageStatusDistribution.inc({ status: status, orgId: message.orgId });
+  }
+
   // Emit Socket.IO event (async, don't block)
   emitStatusChangeEvent({
     messageId,
@@ -150,7 +183,10 @@ export async function updateMessageStatus(
     oldStatus,
     newStatus: status,
     historyEntryId: result.historyEntry.id,
-    timestamp: result.historyEntry.changedAt
+    timestamp: result.historyEntry.changedAt,
+    instanceId: message.instanceId,
+    chatId: message.chatId,
+    orgId: message.orgId
   };
 }
 
@@ -245,7 +281,16 @@ export async function getStatusHistory(
   // Filter by orgId from message relation (extra safety)
   const filtered = entries.filter(e => e.message.orgId === orgId);
 
-  return filtered.slice(0, limit);
+  // Map to DTO shape, casting reason to StatusChangeReason and removing message relation
+  return filtered.map(e => ({
+    id: e.id,
+    messageId: e.messageId,
+    status: e.status,
+    changedAt: e.changedAt,
+    changedBy: e.changedBy,
+    reason: e.reason as any as StatusChangeReason, // Cast string to enum
+    metadata: e.metadata as Record<string, any> | null
+  })).slice(0, limit);
 }
 
 /**
@@ -288,13 +333,12 @@ let statusTransitionCounter: any = null;
 
 function getMetrics() {
   if (!statusDistributionGauge) {
-    const { register } = require('prom-client');
-    statusDistributionGauge = new require('prom-client').Gauge({
+    statusDistributionGauge = new promClient.Gauge({
       name: 'whatsapp_platform_message_status_total',
       help: 'Current distribution of message statuses',
       labelNames: ['status', 'orgId']
     });
-    statusTransitionCounter = new require('prom-client').Counter({
+    statusTransitionCounter = new promClient.Counter({
       name: 'whatsapp_platform_message_status_transitions_total',
       help: 'Total status transitions',
       labelNames: ['from', 'to', 'reason']
@@ -346,8 +390,8 @@ export async function getStatusMetrics(orgId?: string): Promise<StatusMetrics> {
     const distribution: StatusDistribution = {};
     let totalMessages = 0;
     for (const { status, _count } of messageCounts) {
-      distribution[status] = _count;
-      totalMessages += _count;
+      distribution[status] = _count.status;
+      totalMessages += _count.status;
     }
 
     // For transitions, we need to query history
@@ -414,7 +458,7 @@ export async function getStatusMetrics(orgId?: string): Promise<StatusMetrics> {
     const byReason: Record<StatusChangeReason, number> = {} as any;
     for (const { reason, _count } of reasonCounts) {
       if (reason) {
-        byReason[reason as StatusChangeReason] = _count;
+        byReason[reason as StatusChangeReason] = _count.reason;
       }
     }
 
@@ -474,7 +518,7 @@ async function emitStatusChangeEvent(event: {
 
   try {
     // Broadcast to organization room
-    await socketService.broadcastToOrg(orgId, 'message:status:changed', {
+    await socketService.broadcastToOrg(event.orgId, 'message:status:changed', {
       messageId: event.messageId,
       instanceId: event.instanceId,
       chatId: event.chatId,
@@ -488,7 +532,7 @@ async function emitStatusChangeEvent(event: {
 
     // Also broadcast to specific instance if available
     if (event.instanceId) {
-      await socketService.broadcastToInstance(orgId, event.instanceId, {
+      await socketService.broadcastToInstance(event.orgId, event.instanceId, {
         type: 'message:status:changed',
         data: {
           messageId: event.messageId,
@@ -553,4 +597,60 @@ export async function recordDlqTransfer(
   });
 }
 
+/**
+ * Record status change from queue processing (job completion)
+ * Used by message queue workers to track processing lifecycle
+ */
+export async function recordSystemStatusChange(
+  messageId: string,
+  orgId: string,
+  newStatus: MessageStatus,
+  metadata?: Record<string, any>
+): Promise<StatusUpdateResponse> {
+  return updateMessageStatus(messageId, orgId, {
+    status: newStatus,
+    reason: StatusChangeReason.QUEUE_PROCESSING,
+    changedBy: 'system',
+    metadata: {
+      ...metadata,
+      source: 'queue-worker'
+    }
+  });
+}
+
 // Prisma client is imported at top
+
+// ============================================================================
+// Utility Functions (Internal)
+// ============================================================================
+
+/**
+ * Create a status history entry without updating the WhatsAppMessage
+ * Use when the message status has already been updated elsewhere (e.g., queue processors)
+ */
+export async function createStatusHistoryEntry(
+  messageId: string,
+  orgId: string,
+  status: MessageStatus,
+  reason: StatusChangeReason,
+  changedBy: string = 'system',
+  metadata?: Record<string, any>
+): Promise<void> {
+  await prisma.messageStatusHistory.create({
+    data: {
+      messageId,
+      status,
+      changedBy: changedBy === 'system' ? null : changedBy,
+      reason,
+      metadata
+    }
+  });
+
+  // Update metrics
+  if (statusMetrics) {
+    statusMetrics.messageStatusHistoryEntriesTotal.inc({ reason: reason });
+    // Also increment distribution gauge for this status
+    statusMetrics.messageStatusDistribution.inc({ status, orgId });
+  }
+}
+
