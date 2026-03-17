@@ -2,6 +2,12 @@ import { Queue, Worker, Job } from 'bullmq';
 import { Redis } from 'ioredis';
 import { syncInstanceStatuses } from './storage';
 
+// Import metrics
+import {
+  instanceCurrentlyOnline,
+  instanceBackgroundSyncDuration
+} from '../create-comprehensive-metrics-dashboard-(grafana)/index';
+
 let heartbeatQueue: Queue | null = null;
 let worker: Worker | null = null;
 
@@ -57,14 +63,12 @@ export function startHeartbeatScheduler(): void {
     },
   });
 
-  // Add repeating job: every 30 seconds
+  // Add repeating job: every 30 seconds (using millisecond interval to avoid cron parsing issues)
   heartbeatQueue.add(
     'sync-status',
     {},
     {
-      repeat: {
-        cron: '*/30 * * * * *', // every 30 seconds
-      },
+      repeat: { every: 30000 } // 30 seconds in milliseconds
     }
   );
 

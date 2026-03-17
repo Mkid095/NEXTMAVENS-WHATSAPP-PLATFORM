@@ -17,15 +17,14 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rawBody from 'fastify-raw-body';
 
-// Import Prisma to ensure it's initialized
-import { prisma, verifyDatabaseSetup } from './lib/prisma.js';
+// Import Prisma singleton
+import { prisma } from './lib/prisma.ts';
 
 // Import middleware for global pipeline
 import { authMiddleware } from './middleware/auth.ts';
 import { orgGuard } from './middleware/orgGuard.ts';
 import { getRateLimiter, generateIdentifier, initializeRateLimiter } from './lib/rate-limiting-with-redis/index.ts';
 import { initializeQuotaLimiter, QuotaMetric } from './lib/implement-quota-enforcement-middleware/index.ts';
-import { prisma } from './lib/prisma.js';
 
 // Wrapper middleware functions
 import { rateLimitCheck } from './middleware/rateLimit.ts';
@@ -33,7 +32,7 @@ import { quotaCheck } from './middleware/quota.ts';
 import { throttleCheck } from './middleware/throttle.ts';
 
 // 2FA
-import { require2FA } from './lib/enforce-2fa-for-privileged-roles/index.js';
+import { require2FA } from './lib/enforce-2fa-for-privileged-roles/index.ts';
 
 // Idempotency
 import {
@@ -41,6 +40,9 @@ import {
   checkIdempotencyCache,
   registerOnSendHook
 } from './lib/implement-idempotency-key-system/index.ts';
+
+// Metrics (Phase 2 Step 8)
+import { setupMetrics } from './lib/create-comprehensive-metrics-dashboard-(grafana)/index.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -73,6 +75,25 @@ async function buildServer() {
   console.log('[SERVER] onSend hook registered');
 
   // ============================================================================
+  // METRICS COLLECTION (Phase 2 Step 8)
+  // ============================================================================
+  console.log('[METRICS] Setting up Prometheus metrics...');
+  await setupMetrics(app);
+  console.log('[METRICS] Metrics endpoint available at /metrics');
+
+  // ============================================================================
+  // RETRY & DLQ SYSTEM INITIALIZATION (Phase 3 Step 1)
+  // ============================================================================
+  try {
+    const { initializeRetryDlqSystem } = await import('./lib/message-retry-and-dlq-system');
+    await initializeRetryDlqSystem();
+    console.log('[RetryDLQ] System initialized successfully');
+  } catch (error) {
+    console.error('[RetryDLQ] Initialization failed:', error);
+    // Fail open - continue without retry/DLQ if it fails to initialize
+  }
+
+  // ============================================================================
   // GLOBAL PREHANDLER MIDDLEWARE PIPELINE
   // ============================================================================
   app.addHook('preHandler', async (request, reply) => {
@@ -96,6 +117,7 @@ async function buildServer() {
     // Public endpoints that don't require authentication
     const publicPaths = [
       '/ping',
+      '/metrics', // Prometheus metrics endpoint (public)
       '/api/webhooks/evolution', // Evolution API webhook receiver (signature verified in route)
       '/api/instances/', // Instance heartbeat endpoint (uses instance token for auth)
     ];
@@ -328,11 +350,17 @@ async function buildServer() {
   await app.register(queueAdminRoutes.default || queueAdminRoutes);
   console.log('[SERVER] Queue priority admin routes registered');
 
+  // Register Message Retry & DLQ Admin API routes (Phase 3 Step 1)
+  const retryDlqAdminRoutes = await import('./app/api/message-retry-and-dlq/route.js');
+  // @ts-ignore
+  await app.register(retryDlqAdminRoutes.default || retryDlqAdminRoutes, { prefix: '/admin/dlq' });
+  console.log('[SERVER] Message retry & DLQ admin routes registered');
+
   // Register Webhook Dead Letter Queue Admin API routes (Phase 1 Step 5)
   const dlqAdminRoutes = await import('./app/api/webhook-dlq/route.js');
   // @ts-ignore
   await app.register(dlqAdminRoutes.default || dlqAdminRoutes);
-  console.log('[SERVER] DLQ admin routes registered');
+  console.log('[SERVER] Webhook DLQ admin routes registered');
 
   // Register Immutable Audit Logging API routes (Phase 1 Step 9)
   const auditLogRoutes = await import('./app/api/build-immutable-audit-logging-system/route.js');
@@ -358,6 +386,12 @@ async function buildServer() {
   // @ts-ignore
   await app.register(heartbeatAdminRoutes.default || heartbeatAdminRoutes, { prefix: '/admin/instances' });
   console.log('[SERVER] Instance heartbeat admin routes registered');
+
+  // Register Connection Pool Optimization Admin API routes (Phase 2 Step 9)
+  const poolAdminRoutes = await import('./app/api/implement-connection-pool-optimization/route.js');
+  // @ts-ignore
+  await app.register(poolAdminRoutes.default || poolAdminRoutes);
+  console.log('[SERVER] Connection pool admin routes registered');
 
   // Error handler
   app.setErrorHandler((error, request, reply) => {
@@ -390,7 +424,7 @@ function dirname(path: string): string {
 const start = async () => {
   try {
     const app = await buildServer();
-    const port = parseInt(process.env.PORT || '3000', 10);
+    const port = parseInt(process.env.PORT || '9403', 10);
 
     // Use Fastify's built-in HTTP server creation via listen()
     // This ensures proper setup of request handling and event listeners

@@ -70,39 +70,47 @@ export default async function (fastify: FastifyInstance) {
   // ------------------------------------------------------------------------
   fastify.post(
     '/config',
-    { schema: { body: configUpdateSchema } },
-    async (request: FastifyRequest<{ Body: ConfigUpdateBody }>, reply: FastifyReply) => {
-      const { messageType, config: partialConfig } = request.body;
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const body = configUpdateSchema.parse(request.body);
+        const { messageType, config: partialConfig } = body;
 
-      // Merge with existing config
-      const existing = currentConfig[messageType];
-      if (!existing) {
-        reply.code(404);
-        return { error: `Unknown message type: ${messageType}` };
+        // Merge with existing config
+        const existing = currentConfig[messageType];
+        if (!existing) {
+          reply.code(404);
+          return { error: `Unknown message type: ${messageType}` };
+        }
+
+        // Convert strategy string to enum if provided
+        const strategyValue = partialConfig.strategy
+          ? (partialConfig.strategy as DeduplicationStrategy)
+          : undefined;
+
+        currentConfig[messageType] = {
+          ...existing,
+          ...partialConfig,
+          strategy: strategyValue ?? existing.strategy,
+          // Ensure these are boolean if provided
+          extend: partialConfig.extend ?? existing.extend,
+          replace: partialConfig.replace ?? existing.replace,
+        };
+
+        // Also update the dedupLib's default for future new instances
+        dedupLib.DEFAULT_DEDUPLICATION_CONFIG[messageType] = currentConfig[messageType];
+
+        return {
+          success: true,
+          messageType,
+          config: currentConfig[messageType]
+        };
+      } catch (error: any) {
+        if (error instanceof z.ZodError) {
+          reply.code(400).send({ error: 'Validation error', details: error.format() });
+          return;
+        }
+        throw error;
       }
-
-      // Convert strategy string to enum if provided
-      const strategyValue = partialConfig.strategy
-        ? (partialConfig.strategy as DeduplicationStrategy)
-        : undefined;
-
-      currentConfig[messageType] = {
-        ...existing,
-        ...partialConfig,
-        strategy: strategyValue ?? existing.strategy,
-        // Ensure these are boolean if provided
-        extend: partialConfig.extend ?? existing.extend,
-        replace: partialConfig.replace ?? existing.replace,
-      };
-
-      // Also update the dedupLib's default for future new instances
-      dedupLib.DEFAULT_DEDUPLICATION_CONFIG[messageType] = currentConfig[messageType];
-
-      return {
-        success: true,
-        messageType,
-        config: currentConfig[messageType]
-      };
     }
   );
 
@@ -127,30 +135,38 @@ export default async function (fastify: FastifyInstance) {
   // ------------------------------------------------------------------------
   fastify.post(
     '/check',
-    { schema: { body: checkSchema } },
-    async (request: FastifyRequest<{ Body: CheckBody }>, reply: FastifyReply) => {
-      const { messageType, payload } = request.body;
-      const config = currentConfig[messageType];
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const body = checkSchema.parse(request.body);
+        const { messageType, payload } = body;
+        const config = currentConfig[messageType];
 
-      if (!config || !config.enabled) {
+        if (!config || !config.enabled) {
+          return {
+            isDuplicate: false,
+            reason: 'deduplication_disabled' as const,
+            config
+          };
+        }
+
+        // Generate deduplication ID
+        const deduplicationId = dedupLib.generateDeduplicationId(messageType, payload);
+
+        // Note: We cannot know for sure without querying Redis
+        // This returns what *would* happen based on config
         return {
-          isDuplicate: false,
-          reason: 'deduplication_disabled' as const,
-          config
+          isDuplicate: false, // Cannot determine without locking check
+          deduplicationId,
+          config,
+          note: 'BullMQ will handle deduplication at job enqueue time based on Redis locks'
         };
+      } catch (error: any) {
+        if (error instanceof z.ZodError) {
+          reply.code(400).send({ error: 'Validation error', details: error.format() });
+          return;
+        }
+        throw error;
       }
-
-      // Generate deduplication ID
-      const deduplicationId = dedupLib.generateDeduplicationId(messageType, payload);
-
-      // Note: We cannot know for sure without querying Redis
-      // This returns what *would* happen based on config
-      return {
-        isDuplicate: false, // Cannot determine without locking check
-        deduplicationId,
-        config,
-        note: 'BullMQ will handle deduplication at job enqueue time based on Redis locks'
-      };
     }
   );
 }

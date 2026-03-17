@@ -33,7 +33,7 @@ export const webhookBodySchema = {
     },
     data: {
       type: 'object',
-      required: false,
+      required: [], // No required properties inside data object
       description: 'Event-specific payload data',
       additionalProperties: true, // Allow flexible structure based on event type
     },

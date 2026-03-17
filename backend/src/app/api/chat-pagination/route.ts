@@ -156,19 +156,11 @@ export async function getAllChatsHandler(request: FastifyRequest, reply: Fastify
 // ============================================================================
 
 export async function registerChatPaginationRoutes(fastify: any) {
-  fastify.get(
-    '/api/chats',
-    { schema: { hide: true } },
-    getChatsHandler
-  );
+  fastify.get('/api/chats', getChatsHandler);
 
   // Debug endpoint - only in non-production
   if (process.env.NODE_ENV !== 'production') {
-    fastify.get(
-      '/api/chats/debug/all',
-      { schema: { hide: true } },
-      getAllChatsHandler
-    );
+    fastify.get('/api/chats/debug/all', getAllChatsHandler);
   }
 
   console.log('[ChatPagination] Registered chat pagination routes');

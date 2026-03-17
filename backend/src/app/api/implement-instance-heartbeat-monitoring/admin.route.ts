@@ -21,7 +21,6 @@ delete (querySchema as any).$schema;
 export default async function (fastify: FastifyInstance) {
   fastify.get(
     '/heartbeat',
-    { schema: { querystring: querySchema } },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const { status, orgId } = queryZod.parse(request.query);

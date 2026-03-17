@@ -13,9 +13,26 @@
  */
 
 export * from './types';
-export * from './status';
-export * from './storage';
-export * from './scheduler';
+// Status exports (utility functions)
+export {
+  calculateInstanceStatus,
+  isInstanceOnline as checkInstanceOnline,
+} from './status';
+// Storage exports (excluding isInstanceOnline to avoid conflict with status.ts)
+export {
+  recordHeartbeat,
+  getAllInstancesWithStatus,
+  syncInstanceStatuses,
+  shutdownRedisClient,
+  setRedisClient,
+  getInstanceLastSeen
+} from './storage';
+// Scheduler exports
+export {
+  startHeartbeatScheduler,
+  stopHeartbeatScheduler,
+  triggerSync,
+} from './scheduler';
 
 import { recordHeartbeat, getAllInstancesWithStatus, shutdownRedisClient } from './storage';
 import { startHeartbeatScheduler, stopHeartbeatScheduler, triggerSync } from './scheduler';

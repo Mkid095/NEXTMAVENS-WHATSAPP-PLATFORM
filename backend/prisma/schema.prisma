@@ -193,6 +193,28 @@ model WhatsAppMessage {
   @@unique([orgId, messageId])
 }
 
+// ┌─────────────────────────────────────────────────────────────┐
+// │ Message Status History                                      │
+// └─────────────────────────────────────────────────────────────┘
+
+model MessageStatusHistory {
+  id          String   @id @default(cuid())
+  messageId   String
+  status      MessageStatus
+  changedAt   DateTime @default(now())
+  changedBy   String?   // user ID or "system" for automated changes
+  reason      String?   // "webhook", "admin", "queue", "dlq", "creation", etc.
+  metadata    Json?     // Additional context (error details, retry count, etc.)
+
+  // Relations
+  message WhatsAppMessage @relation(fields: [messageId], references: [id])
+
+  @@map("message_status_history")
+  @@index([messageId])
+  @@index([changedAt])
+  @@index([messageId, changedAt])
+}
+
 enum MessageType {
   text
   image
@@ -213,6 +235,7 @@ enum MessageStatus {
   READ
   FAILED
   REJECTED
+  CANCELLED
 }
 
 model WhatsAppChat {

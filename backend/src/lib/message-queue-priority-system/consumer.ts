@@ -9,8 +9,29 @@ import { getSocketService } from '../build-real-time-messaging-with-socket.io';
 import { redisConnectionOptions, QUEUE_NAME, DEFAULT_CONCURRENCY } from './index';
 import { MessageType } from './types';
 
+// Import metrics (Phase 2 Step 8)
+import {
+  queueJobsActive,
+  queueProcessingDuration,
+  queueJobsCompletedTotal,
+  queueJobsFailedTotal,
+  messageFailureReasonTotal,
+  queueJobsRetryTotal
+} from '../create-comprehensive-metrics-dashboard-(grafana)/index';
+
 // Type-only imports for Prisma enums (avoid runtime require)
 import type { MessageStatus as PrismaMessageStatus, InstanceStatus as PrismaInstanceStatus, MessageType as PrismaMessageType } from '@prisma/client';
+
+// Import retry and DLQ system (Phase 3 Step 1)
+import {
+  shouldRetry,
+  shouldMoveToDlq,
+  calculateRetryDelay,
+  recordRetryAttempt,
+  recordDlqMove,
+  isRetryDlqEnabled
+} from '../message-retry-and-dlq-system/retry-policy';
+import { addToDlq, getRedisClient, initializeDlqConsumerGroups } from '../message-retry-and-dlq-system/dlq';
 
 // Simple type guards
 function isMessageUpsert(job: Job): boolean {
@@ -287,13 +308,17 @@ async function processCacheRefresh(job: Job): Promise<void> {
 }
 
 // ============================================================================
-// Main Processor
+// Main Processor (Enhanced with Retry & DLQ)
 // ============================================================================
 
 async function processJob(job: Job): Promise<void> {
-  console.log(`[QueueWorker] Processing job ${job.id} (name: ${job.name}, priority: ${job.opts?.priority})`);
+  const startTime = Date.now();
+  queueJobsActive.inc(); // Track currently processing jobs
+
+  console.log(`[QueueWorker] Processing job ${job.id} (name: ${job.name}, priority: ${job.opts?.priority}, attemptsMade: ${job.attemptsMade})`);
 
   try {
+    // Execute the actual job processor
     if (isMessageUpsert(job)) {
       await processMessageUpsert(job);
     } else if (isMessageStatusUpdate(job)) {
@@ -317,10 +342,87 @@ async function processJob(job: Job): Promise<void> {
       throw new Error(`Unsupported job type: ${job.name}`);
     }
 
-    console.log(`[QueueWorker] Job ${job.id} completed`);
+    const duration = (Date.now() - startTime) / 1000;
+    queueProcessingDuration.observe({ message_type: job.name as string }, duration);
+    queueJobsCompletedTotal.inc({ message_type: job.name as string });
+
+    console.log(`[QueueWorker] Job ${job.id} completed successfully (${duration.toFixed(2)}s)`);
   } catch (error) {
-    console.error(`[QueueWorker] Job ${job.id} failed:`, error);
+    const duration = (Date.now() - startTime) / 1000;
+    const attempts = job.attemptsMade + 1; // attemptsMade is number of previous attempts
+
+    queueProcessingDuration.observe({ message_type: job.name as string }, duration);
+
+    // Enhanced error handling with retry/DLQ (Phase 3 Step 1)
+    if (isRetryDlqEnabled()) {
+      const messageType = job.name as string;
+      const moveToDlq = shouldMoveToDlq(job as { name?: string }, attempts, error);
+
+      if (moveToDlq) {
+        // Job exceeded retry limit or is a permanent error - move to DLQ
+        console.error(`[QueueWorker] Job ${job.id} failed permanently after ${attempts} attempts:`, error);
+
+        try {
+          await addToDlq(job as any, error, attempts);
+          queueJobsFailedTotal.inc({ failure_type: 'dlq' });
+
+          const errorCategory = (require('../message-retry-and-dlq-system/retry-policy').classifyError || classifyErrorDefault)(error) as string;
+          if (messageFailureReasonTotal) {
+            messageFailureReasonTotal.inc({
+              message_type: messageType,
+              error_category: errorCategory,
+              reason: extractErrorReason(error)
+            });
+          }
+          recordDlqMove(messageType, errorCategory);
+
+          console.log(`[QueueWorker] Job ${job.id} moved to DLQ with category: ${errorCategory}`);
+        } catch (dlqError) {
+          console.error(`[QueueWorker] Failed to move job ${job.id} to DLQ:`, dlqError);
+          // Still throw the original error so BullMQ tracks it as failed
+        }
+      } else {
+        // Job should be retried by BullMQ (retry already configured on job)
+        const retryResult = calculateRetryDelay(job as any, attempts, error);
+        console.log(`[QueueWorker] Job ${job.id} will be retried with delay ${retryResult.delayMs}ms (attempt ${attempts}/${retryResult.maxAttempts})`);
+
+        recordRetryAttempt(messageType, attempts, retryResult.delayMs);
+      }
+    } else {
+      // Legacy behavior - just log and let BullMQ handle with default retry (if configured)
+      console.error(`[QueueWorker] Job ${job.id} failed (retry/DLQ disabled):`, error);
+    }
+
+    // Record failure metric (always)
+    queueJobsFailedTotal.inc({ failure_type: (error as Error).name || 'unknown' });
+
+    // Throw error so BullMQ tracks the failure and applies retry delay (if configured)
     throw error;
+  } finally {
+    queueJobsActive.dec();
+  }
+}
+
+// Helper to extract error reason for metrics
+function extractErrorReason(error: unknown): string {
+  if (!error) return 'unknown';
+  const err = error as Error;
+  const msg = err.message?.toLowerCase() || '';
+  if (msg.includes('timeout')) return 'timeout';
+  if (msg.includes('connection')) return 'connection_error';
+  if (msg.includes('validation')) return 'validation';
+  if (msg.includes('unauthorized')) return 'unauthorized';
+  if (msg.includes('not found')) return 'not_found';
+  if (msg.includes('duplicate')) return 'duplicate';
+  return 'other';
+}
+
+function classifyErrorDefault(error: unknown): string {
+  try {
+    const { classifyError } = require('../message-retry-and-dlq-system/retry-policy');
+    return classifyError(error);
+  } catch {
+    return 'unknown';
   }
 }
 

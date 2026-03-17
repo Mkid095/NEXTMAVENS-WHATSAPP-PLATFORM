@@ -58,8 +58,7 @@ export default async function (fastify: FastifyInstance) {
   // ------------------------------------------------------------------------
   fastify.get(
     '/usage',
-    { schema: { querystring: usageQuerySchema } },
-    async (request: FastifyRequest<{ Querystring: z.infer<typeof usageQuerySchema> }>, reply: FastifyReply) => {
+    async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const orgId = getAuthorizedOrgId(request);
         if (!orgId) {
@@ -67,7 +66,9 @@ export default async function (fastify: FastifyInstance) {
           return { error: 'Organization ID required' };
         }
 
-        const { metric, period } = request.query;
+        // Validate query parameters using Zod
+        const query = usageQuerySchema.parse(request.query || {});
+        const { metric, period = 'daily' } = query;
 
         // If metric provided, return single metric; else return all metrics
         if (metric) {
@@ -136,12 +137,14 @@ export default async function (fastify: FastifyInstance) {
   // ------------------------------------------------------------------------
   fastify.post(
     '/reset',
-    { schema: { body: resetSchema } },
-    async (request: FastifyRequest<{ Body: z.infer<typeof resetSchema> }>, reply: FastifyReply) => {
+    async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const user = (request as any).user;
         const currentOrgId = (request as any).currentOrgId;
-        const { orgId, metric, period } = request.body;
+
+        // Validate request body using Zod
+        const body = resetSchema.parse(request.body || {});
+        const { orgId, metric, period = 'daily' } = body;
 
         // Authorize orgId
         let targetOrgId = orgId;

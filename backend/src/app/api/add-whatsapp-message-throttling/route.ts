@@ -116,30 +116,18 @@ export default async function (fastify: FastifyInstance) {
   // ------------------------------------------------------------------------
   fastify.post(
     '/admin/throttle/config',
-    {
-      schema: { body: throttleConfigSchema },
-    },
-    async (request: FastifyRequest<{ Body: ThrottleConfigBody }>, reply) => {
-      const body = request.body;
-
-      // Validate
+    async (request: FastifyRequest, reply) => {
       try {
-        throttleConfigSchema.parse(body);
-      } catch (err) {
-        if (err instanceof ZodError) {
-          reply.code(400);
-          return { error: 'Validation failed', details: err.issues };
-        }
-      }
+        // Validate request body manually
+        const body = throttleConfigSchema.parse(request.body);
 
-      const config: ThrottleConfig = {
-        orgId: body.orgId ?? null,
-        instanceId: body.instanceId ?? null,
-        messagesPerMinute: body.messagesPerMinute,
-        messagesPerHour: body.messagesPerHour ?? 0,
-      };
+        const config: ThrottleConfig = {
+          orgId: body.orgId ?? null,
+          instanceId: body.instanceId ?? null,
+          messagesPerMinute: body.messagesPerMinute,
+          messagesPerHour: body.messagesPerHour ?? 0,
+        };
 
-      try {
         await whatsAppMessageThrottle.setConfig(config);
         return {
           success: true,
@@ -147,8 +135,12 @@ export default async function (fastify: FastifyInstance) {
           config,
         };
       } catch (error: any) {
+        if (error instanceof z.ZodError) {
+          reply.code(400);
+          return { error: 'Validation failed', details: error.format() };
+        }
         reply.code(500);
-        return { error: error.message };
+        return { error: error.message || 'Failed to save throttle config' };
       }
     }
   );
@@ -197,21 +189,24 @@ export default async function (fastify: FastifyInstance) {
   // ------------------------------------------------------------------------
   fastify.post(
     '/admin/throttle/reset',
-    {
-      schema: { body: throttleResetSchema },
-    },
-    async (request: FastifyRequest<{ Body: { orgId: string; instanceId?: string } }>, reply) => {
-      const { orgId, instanceId } = request.body;
-
+    async (request: FastifyRequest, reply) => {
       try {
+        // Validate request body manually
+        const body = throttleResetSchema.parse(request.body);
+        const { orgId, instanceId } = body;
+
         const result = await whatsAppMessageThrottle.reset(orgId, instanceId ?? 'all');
         if (!result) {
           return { success: false, message: 'No throttle counters found to reset' };
         }
         return { success: true, message: 'Throttle counters reset' };
       } catch (error: any) {
+        if (error instanceof z.ZodError) {
+          reply.code(400);
+          return { error: 'Validation failed', details: error.format() };
+        }
         reply.code(500);
-        return { error: error.message };
+        return { error: error.message || 'Failed to reset throttle counters' };
       }
     }
   );
