@@ -11,7 +11,7 @@ import type { WorkflowStepJobData } from './types';
 // Queue Constants
 // ============================================================================
 
-export const WORKFLOW_STEP_JOB_TYPE = 'WORKFLOW_STEP';
+export const WORKFLOW_STEP_JOB_TYPE = 'workflow_step'; // Match MessageType.WORKFLOW_STEP
 export const WORKFLOW_QUEUE_PRIORITY: 'low' | 'normal' | 'high' | 'critical' = 'normal';
 
 // ============================================================================

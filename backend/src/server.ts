@@ -468,6 +468,15 @@ const start = async () => {
       console.error("⚠️ Failed to initialize Socket.IO:", err);
     }
 
+    // Start Message Queue Worker (BullMQ)
+    try {
+      const { startWorker } = await import('./lib/message-queue-priority-system/consumer.js');
+      startWorker();
+      console.log('📨 Message queue worker started');
+    } catch (err) {
+      console.warn('⚠️ Message queue worker not available:', err.message);
+    }
+
     // Graceful shutdown
     process.on('SIGINT', async () => {
       console.log('Shutting down...');

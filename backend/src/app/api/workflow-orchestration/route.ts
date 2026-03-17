@@ -184,11 +184,12 @@ const cancelWorkflowSchema = z.object({
 export async function createWorkflowHandler(request: FastifyRequest, reply: FastifyReply) {
   try {
     const body = workflowDefinitionSchema.parse(request.body);
-    const userId = request.user?.id;
 
+    // Ensure user is authenticated (auth middleware should have set request.user)
+    const userId = (request as any).user?.id;
     if (!userId) {
       reply.code(401);
-      return { success: false, error: 'Unauthorized' };
+      return { success: false, error: 'Authentication required' };
     }
 
     const definition = await createWorkflowDefinition(
@@ -409,7 +410,9 @@ export async function startWorkflowInstanceHandler(request: FastifyRequest, repl
     console.error('[WorkflowAPI] Error starting workflow instance:', error);
     return reply.code(500).send({
       success: false,
-      error: 'Failed to start workflow instance'
+      error: 'Failed to start workflow instance',
+      details: error.message, // Include error for debugging
+      stack: error.stack
     });
   }
 }
@@ -582,19 +585,19 @@ export async function getWorkflowInstanceHealthHandler(request: FastifyRequest, 
 // ============================================================================
 
 export async function registerWorkflowRoutes(fastify: any) {
-  // Workflow definitions
-  fastify.post('/admin/workflows', createWorkflowHandler);
-  fastify.get('/admin/workflows', listWorkflowsHandler);
-  fastify.get('/admin/workflows/:id', getWorkflowHandler);
-  fastify.put('/admin/workflows/:id', updateWorkflowHandler);
-  fastify.delete('/admin/workflows/:id', deleteWorkflowHandler);
+  // Workflow definitions (prefix /admin/workflows will be added by server registration)
+  fastify.post('/', createWorkflowHandler);
+  fastify.get('/', listWorkflowsHandler);
+  fastify.get('/:id', getWorkflowHandler);
+  fastify.put('/:id', updateWorkflowHandler);
+  fastify.delete('/:id', deleteWorkflowHandler);
 
   // Workflow instances
-  fastify.post('/admin/workflows/instances', startWorkflowInstanceHandler);
-  fastify.get('/admin/workflows/instances', listWorkflowInstancesHandler);
-  fastify.get('/admin/workflows/instances/:instanceId', getWorkflowInstanceHandler);
-  fastify.post('/admin/workflows/instances/:instanceId/cancel', cancelWorkflowInstanceHandler);
-  fastify.get('/admin/workflows/instances/:instanceId/health', getWorkflowInstanceHealthHandler);
+  fastify.post('/instances', startWorkflowInstanceHandler);
+  fastify.get('/instances', listWorkflowInstancesHandler);
+  fastify.get('/instances/:instanceId', getWorkflowInstanceHandler);
+  fastify.post('/instances/:instanceId/cancel', cancelWorkflowInstanceHandler);
+  fastify.get('/instances/:instanceId/health', getWorkflowInstanceHealthHandler);
 
   console.log('[WorkflowAPI] Registered workflow orchestration admin routes under /admin/workflows');
 }

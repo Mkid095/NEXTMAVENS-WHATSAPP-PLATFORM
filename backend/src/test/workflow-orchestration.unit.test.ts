@@ -29,6 +29,7 @@ const mockPrisma = {
   workflowInstance: {
     create: jest.fn(),
     findUnique: jest.fn(),
+    findFirst: jest.fn(),
     findByInstanceId: jest.fn(),
     update: jest.fn(),
     updateMany: jest.fn(),
@@ -1418,9 +1419,19 @@ describe('Workflow Health Check', () => {
       instanceId: 'wf_inst_123',
       status: 'RUNNING',
       lastHeartbeatAt: new Date(),
+      startedAt: new Date(),
+      currentStep: 0,
+      definition: {
+        id: 'def_123',
+        workflowId: 'test',
+        name: 'Test',
+        stepsJson: [],
+        timeoutMs: 3600000,
+      } as any,
     };
 
-    mockPrisma.workflowInstance.findUnique.mockResolvedValue(mockInstance as any);
+    mockPrisma.workflowInstance.findFirst.mockResolvedValue(mockInstance as any);
+    mockPrisma.workflowStepHistory.findMany.mockResolvedValue([]);
 
     const health = await checkWorkflowHealth('wf_inst_123');
 
@@ -1434,9 +1445,19 @@ describe('Workflow Health Check', () => {
       instanceId: 'wf_inst_123',
       status: 'RUNNING',
       lastHeartbeatAt: new Date(Date.now() - 10 * 60 * 1000), // 10 minutes ago
+      startedAt: new Date(),
+      currentStep: 0,
+      definition: {
+        id: 'def_123',
+        workflowId: 'test',
+        name: 'Test',
+        stepsJson: [],
+        timeoutMs: 3600000,
+      } as any,
     };
 
-    mockPrisma.workflowInstance.findUnique.mockResolvedValue(mockInstance as any);
+    mockPrisma.workflowInstance.findFirst.mockResolvedValue(mockInstance as any);
+    mockPrisma.workflowStepHistory.findMany.mockResolvedValue([]);
 
     const health = await checkWorkflowHealth('wf_inst_123');
 
@@ -1445,7 +1466,7 @@ describe('Workflow Health Check', () => {
   });
 
   test('should report unhealthy if instance not found', async () => {
-    mockPrisma.workflowInstance.findUnique.mockResolvedValue(null);
+    mockPrisma.workflowInstance.findFirst.mockResolvedValue(null);
 
     const health = await checkWorkflowHealth('nonexistent');
 

@@ -6,9 +6,6 @@
 import { Queue } from 'bullmq';
 import { MessagePriority, MessageType, getPriorityForType } from './types';
 
-// QueueScheduler may not have types in some BullMQ versions; use any
-const QueueScheduler: any = require('bullmq').QueueScheduler || require('bullmq').default.QueueScheduler;
-
 // Import retry policies (lazy to avoid circular deps)
 let retryPolicies: any = null;
 async function loadRetryPolicies() {
@@ -31,6 +28,7 @@ import {
 export { getPriorityForType, MessageType };
 
 // Redis configuration
+// Using ioredis-compatible options (host, port, password, etc.)
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
 const REDIS_PORT = parseInt(process.env.REDIS_PORT || '6379', 10);
 const REDIS_PASSWORD = process.env.REDIS_PASSWORD;
@@ -39,13 +37,12 @@ export const redisConnectionOptions = {
   host: REDIS_HOST,
   port: REDIS_PORT,
   password: REDIS_PASSWORD,
-  maxRetriesPerRequest: null,
-  enableReadyCheck: false
+  maxRetriesPerRequest: null,  // Required by BullMQ
+  enableReadyCheck: false      // Optimize for cloud Redis
 };
 
 export const QUEUE_NAME = 'whatsapp-messages';
 export const DEFAULT_CONCURRENCY = parseInt(process.env.QUEUE_CONCURRENCY || '10', 10);
-
 
 // Retry configuration (Phase 3 Step 1)
 // Note: These are defaults; actual retry attempts per job type will be managed via job options
@@ -73,30 +70,9 @@ export const messageQueue = new Queue(QUEUE_NAME, {
   }
 });
 
-// QueueScheduler for managing delayed/retry jobs (required for backoff)
-export const queueScheduler = new QueueScheduler(QUEUE_NAME, {
-  connection: redisConnectionOptions,
-  // Run every 5 seconds to check for delayed jobs
-  interval: 5000,
-  // Optional: limit the number of delayed jobs to fetch per worker
-  limiter: { max: 1000 }
-});
-
-// Handle queue scheduler errors
-queueScheduler.on('error', (err: Error) => {
-  console.error('[QueueScheduler] Error:', err);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', async () => {
-  console.log('[QueueScheduler] Shutting down...');
-  await queueScheduler.close();
-});
-
-process.on('SIGINT', async () => {
-  console.log('[QueueScheduler] Shutting down...');
-  await queueScheduler.close();
-});
+// Note: In BullMQ v5, QueueScheduler is no longer needed.
+// Delayed and retry jobs are automatically handled by the Worker.
+// The Worker will process delayed jobs without requiring a separate scheduler.
 
 // ============================================================================
 // Retry Policy Helpers (Phase 3 Step 1)

@@ -54,7 +54,7 @@ class WorkflowEngine {
       data: {
         id: crypto.randomUUID(),
         instanceId,
-        definitionId,
+        definitionId: definition.id, // Use database ID of definition
         status: WorkflowStatusEnum.PENDING,
         currentStep: 0,
         contextJson: initialContext,
@@ -259,7 +259,7 @@ class WorkflowEngine {
   async checkWorkflowHealth(instanceId: string, timeoutMs?: number): Promise<any> {
     const instance = await this.loadInstance(instanceId);
     if (!instance) {
-      return { healthy: false, error: 'Instance not found' };
+      return { healthy: false, reason: 'not_found' };
     }
 
     const issues: string[] = [];
@@ -279,17 +279,17 @@ class WorkflowEngine {
     if (instance.lastHeartbeatAt) {
       const heartbeatAge = now.getTime() - instance.lastHeartbeatAt.getTime();
       if (heartbeatAge > 60000) { // 1 minute
-        issues.push(`No heartbeat for ${heartbeatAge}ms`);
+        issues.push(`stale`);
       }
     }
 
     return {
       instanceId: instance.instanceId,
-      isHealthy: issues.length === 0,
-      issues,
+      healthy: issues.length === 0,
+      reason: issues.length > 0 ? issues[0] : undefined,
       status: instance.status,
       currentStep: instance.currentStep,
-      lastUpdate: instance.lastHeartbeatAt
+      lastHeartbeatAt: instance.lastHeartbeatAt
     };
   }
 
@@ -317,7 +317,7 @@ class WorkflowEngine {
 
   private async loadInstance(instanceId: string): Promise<WorkflowInstance | null> {
     const instance = await prisma.workflowInstance.findFirst({
-      where: { id: instanceId },
+      where: { instanceId }, // Search by the unique instanceId string (not database PK)
       include: {
         definition: true
       },
@@ -508,6 +508,25 @@ function resolveStepType(action: { type: string; config: Record<string, unknown>
 
 function mapStepPriority(priority?: 'low' | 'normal' | 'high' | 'critical'): 'low' | 'normal' | 'high' | 'critical' {
   return priority ?? 'normal';
+}
+
+// ============================================================================
+// Health Check (exported for testing and standalone use)
+// ============================================================================
+
+/**
+ * Check health of a workflow instance
+ *
+ * @param instanceId - Workflow instance ID
+ * @param timeoutMs - Optional timeout threshold (default from definition)
+ * @returns Health status
+ */
+export async function checkWorkflowHealth(
+  instanceId: string,
+  timeoutMs?: number
+): Promise<any> {
+  const engine = getWorkflowEngine();
+  return engine.checkWorkflowHealth(instanceId, timeoutMs);
 }
 
 // ============================================================================

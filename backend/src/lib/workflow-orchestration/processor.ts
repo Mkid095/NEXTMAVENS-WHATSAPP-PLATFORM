@@ -179,7 +179,7 @@ export async function processWorkflowStep(job: Job): Promise<void> {
  * @param instance - Workflow instance
  * @returns Step execution result
  */
-async function executeStep(
+export async function executeStep(
   action: { type: string; config: Record<string, unknown> },
   context: StepExecutionContext,
   instance: any
@@ -220,7 +220,7 @@ async function executeStep(
 /**
  * Send a WhatsApp message (using existing message queue system)
  */
-async function executeMessageAction(
+export async function executeMessageAction(
   config: Record<string, unknown>,
   context: StepExecutionContext
 ): Promise<StepExecutionResult> {
@@ -260,7 +260,7 @@ async function executeMessageAction(
 /**
  * Make an HTTP API call
  */
-async function executeApiCallAction(
+export async function executeApiCallAction(
   config: Record<string, unknown>,
   context: StepExecutionContext
 ): Promise<StepExecutionResult> {
@@ -296,7 +296,7 @@ async function executeApiCallAction(
 /**
  * Add a job to the queue (generic)
  */
-async function executeQueueJobAction(
+export async function executeQueueJobAction(
   config: Record<string, unknown>,
   context: StepExecutionContext
 ): Promise<StepExecutionResult> {
@@ -329,7 +329,7 @@ async function executeQueueJobAction(
 /**
  * Delay execution (wait)
  */
-async function executeDelayAction(
+export async function executeDelayAction(
   config: Record<string, unknown>,
   context: StepExecutionContext
 ): Promise<StepExecutionResult> {
@@ -353,7 +353,7 @@ async function executeDelayAction(
  * Execute custom action
  * Placeholder for custom step handlers
  */
-async function executeCustomAction(
+export async function executeCustomAction(
   config: Record<string, unknown>,
   context: StepExecutionContext
 ): Promise<StepExecutionResult> {
