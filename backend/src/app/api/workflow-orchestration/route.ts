@@ -26,28 +26,125 @@ import {
 // Validation Schemas
 // ============================================================================
 
-const workflowDefinitionSchema = z.object({
-  workflowId: z.string().min(1).max(100),
+// ============================================================================
+// Step Action Schemas (for validation)
+// ============================================================================
+
+const messageActionSchema = z.object({
+  type: z.literal('message'),
+  config: z.object({
+    to: z.string().min(1),
+    message: z.any(), // Can be string or complex object depending on messageType
+    messageType: z.enum(['text', 'image', 'video', 'audio', 'document', 'template']).optional().default('text')
+  }).required()
+});
+
+const apiCallActionSchema = z.object({
+  type: z.literal('api-call'),
+  config: z.object({
+    url: z.string().url(),
+    method: z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']).optional().default('POST'),
+    headers: z.record(z.string(), z.string()).optional().default({}),
+    body: z.any().optional()
+  }).required()
+});
+
+const queueJobActionSchema = z.object({
+  type: z.literal('queue-job'),
+  config: z.object({
+    jobType: z.enum(['MESSAGE_UPSERT', 'MESSAGE_STATUS_UPDATE', 'INSTANCE_STATUS_UPDATE', 'ANALYTICS_EVENT']),
+    payload: z.record(z.string(), z.any())
+  }).required()
+});
+
+const delayActionSchema = z.object({
+  type: z.literal('delay'),
+  config: z.object({
+    delayMs: z.number().int().positive()
+  }).required()
+});
+
+const customActionSchema = z.object({
+  type: z.literal('custom'),
+  config: z.object({
+    handler: z.string().min(1),
+    params: z.record(z.string(), z.any()).optional().default({})
+  }).required()
+});
+
+const parallelActionSchema = z.object({
+  type: z.literal('parallel'),
+  config: z.object({
+    // Parallel execution config (future implementation)
+    maxConcurrent: z.number().int().positive().optional().default(5)
+  }).required()
+});
+
+// Union of all valid action types
+const actionSchema = z.discriminatedUnion('type', [
+  messageActionSchema,
+  apiCallActionSchema,
+  queueJobActionSchema,
+  delayActionSchema,
+  customActionSchema,
+  parallelActionSchema
+]);
+
+// Compensation action (used within steps and workflow-level compensation)
+const compensationActionSchema = z.object({
+  type: z.string().min(1), // Custom string, not limited to enum
+  config: z.record(z.string(), z.any())
+});
+
+const stepCompensationSchema = z.object({
+  type: z.enum(['reverse', 'custom']),
+  action: compensationActionSchema
+});
+
+// Full step schema
+const stepSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().optional().nullable(),
-  steps: z.any(),
-  compensation: z.object({
-    type: z.enum(['sequential', 'parallel']),
-    steps: z.array(z.object({
-      name: z.string(),
-      action: z.object({
-        type: z.string(),
-        config: z.any()
-      })
-    }))
-  }).optional(),
+  action: actionSchema,
+  priority: z.enum(['low', 'normal', 'high', 'critical']).optional(),
   timeoutMs: z.number().int().positive().optional(),
   retryPolicy: z.object({
     maxAttempts: z.number().int().positive(),
     baseDelayMs: z.number().int().nonnegative(),
     maxDelayMs: z.number().int().positive(),
     jitterFactor: z.number().min(0).max(1)
+  }).optional(),
+  compensation: stepCompensationSchema.optional(),
+  optional: z.boolean().optional(),
+  condition: z.object({
+    expression: z.string().min(1)
   }).optional()
+});
+
+// Workflow-level compensation schema
+const compensationSchema = z.object({
+  type: z.enum(['sequential', 'parallel']),
+  steps: z.array(stepSchema).min(1)
+});
+
+// Retry policy schema (workflow level default)
+const retryPolicySchema = z.object({
+  maxAttempts: z.number().int().positive(),
+  baseDelayMs: z.number().int().nonnegative(),
+  maxDelayMs: z.number().int().positive(),
+  jitterFactor: z.number().min(0).max(1)
+});
+
+// Complete workflow definition schema
+const workflowDefinitionSchema = z.object({
+  workflowId: z.string().min(1).max(100),
+  name: z.string().min(1).max(200),
+  description: z.string().optional().nullable(),
+  steps: z.array(stepSchema).min(1),
+  compensation: compensationSchema.optional(),
+  timeoutMs: z.number().int().positive().optional(),
+  retryPolicy: retryPolicySchema.optional(),
+  // Note: isActive and createdBy are set by the system, not user-provided
 });
 
 const startWorkflowSchema = z.object({

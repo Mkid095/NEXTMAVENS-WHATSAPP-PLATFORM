@@ -58,10 +58,275 @@ tags:
     description: Dead letter queue management
   - name: Audit
     description: Immutable audit logs
+  - name: Workflow
+    description: Workflow orchestration engine
   - name: 2FA
     description: Two-factor authentication management
 
 paths:
+  # ============================================================================
+  # Workflow Orchestration
+  # ============================================================================
+
+  /admin/workflows:
+    post:
+      tags: [Workflow]
+      summary: Create workflow definition
+      description: Creates a new workflow definition with steps and configuration.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkflowRequest'
+      responses:
+        '200':
+          description: Workflow definition created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowDefinitionResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    get:
+      tags: [Workflow]
+      summary: List workflow definitions
+      description: Returns paginated list of workflow definitions with optional filters.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50, maximum: 100 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0 }
+        - name: isActive
+          in: query
+          schema: { type: boolean }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Paginated list of workflow definitions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListWorkflowsResponse'
+
+  /admin/workflows/{id}:
+    get:
+      tags: [Workflow]
+      summary: Get workflow definition
+      description: Retrieves full details of a workflow definition by ID.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Workflow definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowDefinitionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Workflow]
+      summary: Update workflow definition
+      description: Updates mutable fields of a workflow definition. Steps, compensation, and retryPolicy replace existing values when provided.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkflowRequest'
+      responses:
+        '200':
+          description: Workflow definition updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowDefinitionResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Workflow]
+      summary: Delete workflow definition
+      description: Soft deletes a workflow definition (sets isActive=false). Cannot be re-activated.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Workflow definition deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      isActive: { type: boolean }
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/workflows/instances:
+    post:
+      tags: [Workflow]
+      summary: Start workflow instance
+      description: Creates and starts a new workflow execution instance.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartWorkflowRequest'
+      responses:
+        '200':
+          description: Workflow instance started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowInstanceResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+    get:
+      tags: [Workflow]
+      summary: List workflow instances
+      description: Returns paginated list of workflow instance executions.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50, maximum: 100 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0 }
+        - name: definitionId
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PENDING, RUNNING, COMPLETED, FAILED, CANCELLED, COMPENSATING, COMPENSATED]
+        - name: orgId
+          in: query
+          schema: { type: string }
+        - name: fromDate
+          in: query
+          schema: { type: string, format: date-time }
+        - name: toDate
+          in: query
+          schema: { type: string, format: date-time }
+      responses:
+        '200':
+          description: Paginated list of workflow instances
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListInstancesResponse'
+
+  /admin/workflows/instances/{instanceId}:
+    get:
+      tags: [Workflow]
+      summary: Get workflow instance status
+      description: Returns detailed status including full step history for the instance.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Workflow instance details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowInstanceResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags: [Workflow]
+      summary: Cancel workflow instance
+      description: Initiates cancellation of a running workflow. Triggers compensation if defined.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Optional cancellation reason
+      responses:
+        '200':
+          description: Workflow cancellation initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      instanceId: { type: string }
+                      status: { type: string, enum: [cancelled] }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /admin/workflows/health:
+    get:
+      tags: [Workflow]
+      summary: Workflow engine health check
+      description: Returns health status of the workflow orchestration system including queue metrics.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowHealthResponse'
+
   # ============================================================================
   # Health Check
   # ============================================================================
@@ -1242,5 +1507,400 @@ components:
             heapTotal: { type: number }
             heapUsed: { type: number }
             external: { type: number }
+
+  # ============================================================================
+  # Workflow Schemas
+  # ============================================================================
+
+  WorkflowStepAction:
+    type: object
+    required: [type, config]
+    properties:
+      type:
+        type: string
+        enum: [message, api-call, queue-job, delay, custom, parallel]
+      config:
+        type: object
+        description: Action-specific configuration fields (see documentation)
+
+  WorkflowStep:
+    type: object
+    required: [name, action]
+    properties:
+      name:
+        type: string
+        description: Unique step identifier within the workflow
+        maxLength: 200
+      description:
+        type: string
+        description: Human-readable step description
+      action:
+        $ref: '#/components/schemas/WorkflowStepAction'
+      priority:
+        type: string
+        enum: [low, normal, high, critical]
+        default: normal
+      timeoutMs:
+        type: integer
+        minimum: 1
+        description: Step-level timeout override
+      retryPolicy:
+        $ref: '#/components/schemas/RetryPolicy'
+      compensation:
+        $ref: '#/components/schemas/StepCompensation'
+      optional:
+        type: boolean
+        description: Skip this step if previous step failed
+      condition:
+        type: object
+        properties:
+          expression:
+            type: string
+            description: JavaScript expression evaluated against context
+
+  StepCompensation:
+    type: object
+    required: [type, action]
+    properties:
+      type:
+        type: string
+        enum: [reverse, custom]
+      action:
+        type: object
+        required: [type, config]
+        properties:
+          type:
+            type: string
+          config:
+            type: object
+
+  RetryPolicy:
+    type: object
+    required: [maxAttempts, baseDelayMs, maxDelayMs, jitterFactor]
+    properties:
+      maxAttempts:
+        type: integer
+        minimum: 1
+        description: Maximum retry attempts (including first try)
+      baseDelayMs:
+        type: integer
+        minimum: 0
+        description: Initial backoff delay in milliseconds
+      maxDelayMs:
+        type: integer
+        minimum: 1
+        description: Maximum backoff delay ceiling
+      jitterFactor:
+        type: number
+        minimum: 0
+        maximum: 1
+        description: Randomization factor (0-1) to prevent thundering herd
+
+  WorkflowCompensation:
+    type: object
+    required: [type, steps]
+    properties:
+      type:
+        type: string
+        enum: [sequential, parallel]
+      steps:
+        type: array
+        items:
+          $ref: '#/components/schemas/WorkflowStep'
+        minItems: 1
+
+  CreateWorkflowRequest:
+    type: object
+    required: [workflowId, name, steps]
+    properties:
+      workflowId:
+        type: string
+        minLength: 1
+        maxLength: 100
+      name:
+        type: string
+        minLength: 1
+        maxLength: 200
+      description:
+        type: string
+        nullable: true
+      steps:
+        type: array
+        minItems: 1
+        items:
+          $ref: '#/components/schemas/WorkflowStep'
+      compensation:
+        $ref: '#/components/schemas/WorkflowCompensation'
+      timeoutMs:
+        type: integer
+        minimum: 1
+      retryPolicy:
+        $ref: '#/components/schemas/RetryPolicy'
+
+  UpdateWorkflowRequest:
+    type: object
+    properties:
+      workflowId:
+        type: string
+        minLength: 1
+        maxLength: 100
+      name:
+        type: string
+        minLength: 1
+        maxLength: 200
+      description:
+        type: string
+        nullable: true
+      steps:
+        type: array
+        minItems: 1
+        items:
+          $ref: '#/components/schemas/WorkflowStep'
+      compensation:
+        $ref: '#/components/schemas/WorkflowCompensation'
+      timeoutMs:
+        type: integer
+        minimum: 1
+      retryPolicy:
+        $ref: '#/components/schemas/RetryPolicy'
+
+  WorkflowDefinitionResponse:
+    type: object
+    required: [id, workflowId, name, version, isActive, createdAt]
+    properties:
+      id:
+        type: string
+      workflowId:
+        type: string
+      name:
+        type: string
+      description:
+        type: string
+        nullable: true
+      version:
+        type: integer
+      steps:
+        type: array
+        items:
+          $ref: '#/components/schemas/WorkflowStep'
+      compensation:
+        $ref: '#/components/schemas/WorkflowCompensation'
+      timeoutMs:
+        type: integer
+      retryPolicy:
+        $ref: '#/components/schemas/RetryPolicy'
+      isActive:
+        type: boolean
+      createdBy:
+        type: string
+      createdAt:
+        type: string
+        format: date-time
+      updatedAt:
+        type: string
+        format: date-time
+
+  ListWorkflowsResponse:
+    type: object
+    required: [definitions, total]
+    properties:
+      definitions:
+        type: array
+        items:
+          type: object
+          required: [id, workflowId, name, version, isActive, createdAt]
+          properties:
+            id:
+              type: string
+            workflowId:
+              type: string
+            name:
+              type: string
+            description:
+              type: string
+              nullable: true
+            version:
+              type: integer
+            isActive:
+              type: boolean
+            stepCount:
+              type: integer
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+      total:
+        type: integer
+
+  StartWorkflowRequest:
+    type: object
+    required: [definitionId]
+    properties:
+      definitionId:
+        type: string
+      context:
+        type: object
+        additionalProperties: true
+        description: Initial workflow context data
+
+  WorkflowInstanceResponse:
+    type: object
+    required: [instanceId, status, startedAt]
+    properties:
+      instanceId:
+        type: string
+      status:
+        type: string
+        enum: [PENDING, RUNNING, COMPLETED, FAILED, CANCELLED, COMPENSATING, COMPENSATED]
+      currentStep:
+        type: integer
+        nullable: true
+      contextJson:
+        type: object
+        additionalProperties: true
+      startedAt:
+        type: string
+        format: date-time
+      completedAt:
+        type: string
+        format: date-time
+        nullable: true
+      failedAt:
+        type: string
+        format: date-time
+        nullable: true
+      failureReason:
+        type: string
+        nullable: true
+      stepsHistory:
+        type: array
+        items:
+          $ref: '#/components/schemas/WorkflowStepHistory'
+      orgId:
+        type: string
+      definition:
+        $ref: '#/components/schemas/WorkflowDefinitionRef'
+
+  WorkflowDefinitionRef:
+    type: object
+    required: [id, workflowId, name]
+    properties:
+      id:
+        type: string
+      workflowId:
+        type: string
+      name:
+        type: string
+
+  WorkflowStepHistory:
+    type: object
+    required: [stepIndex, status, startedAt]
+    properties:
+      stepIndex:
+        type: integer
+      stepName:
+        type: string
+      status:
+        type: string
+        enum: [PENDING, RUNNING, COMPLETED, FAILED, SKIPPED]
+      startedAt:
+        type: string
+        format: date-time
+      completedAt:
+        type: string
+        format: date-time
+        nullable: true
+      failedAt:
+        type: string
+        format: date-time
+        nullable: true
+      errorMessage:
+        type: string
+        nullable: true
+      retryCount:
+        type: integer
+        default: 0
+      inputJson:
+        type: object
+        nullable: true
+      outputJson:
+        type: object
+        nullable: true
+      metadata:
+        type: object
+        nullable: true
+
+  ListInstancesResponse:
+    type: object
+    required: [instances, total]
+    properties:
+      instances:
+        type: array
+        items:
+          $ref: '#/components/schemas/WorkflowInstanceListItem'
+      total:
+        type: integer
+      nextOffset:
+        type: integer
+        nullable: true
+
+  WorkflowInstanceListItem:
+    type: object
+    required: [id, instanceId, status, startedAt, orgId]
+    properties:
+      id:
+        type: string
+      instanceId:
+        type: string
+      status:
+        type: string
+        enum: [PENDING, RUNNING, COMPLETED, FAILED, CANCELLED, COMPENSATING, COMPENSATED]
+      currentStep:
+        type: integer
+        nullable: true
+      startedAt:
+        type: string
+        format: date-time
+      completedAt:
+        type: string
+        format: date-time
+        nullable: true
+      failedAt:
+        type: string
+        format: date-time
+        nullable: true
+      failureReason:
+        type: string
+        nullable: true
+      orgId:
+        type: string
+      definition:
+        $ref: '#/components/schemas/WorkflowDefinitionRef'
+
+  WorkflowHealthResponse:
+    type: object
+    required: [status, queue, timestamp]
+    properties:
+      status:
+        type: string
+        enum: [healthy, degraded, unhealthy]
+      queue:
+        type: object
+        properties:
+          active:
+            type: integer
+          waiting:
+            type: integer
+          completed:
+            type: integer
+          failed:
+            type: integer
+          delayed:
+            type: integer
+      timestamp:
+        type: string
+        format: date-time
 
 EOF
