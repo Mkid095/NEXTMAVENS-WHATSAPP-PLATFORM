@@ -278,6 +278,48 @@ export const messageStatusHistoryEntriesTotal = new Counter({
 });
 
 // ============================================================================
+// Workflow Orchestration Metrics (Phase 3 Step 3)
+// ============================================================================
+
+export const workflowInstancesTotal = new Counter({
+  name: 'whatsapp_platform_workflow_instances_total',
+  help: 'Total number of workflow instances created',
+  labelNames: ['workflow_id', 'org_id', 'status'],
+});
+
+export const workflowStepsCompletedTotal = new Counter({
+  name: 'whatsapp_platform_workflow_steps_completed_total',
+  help: 'Total number of workflow steps completed successfully',
+  labelNames: ['workflow_id', 'step_name'],
+});
+
+export const workflowStepsFailedTotal = new Counter({
+  name: 'whatsapp_platform_workflow_steps_failed_total',
+  help: 'Total number of workflow steps that failed',
+  labelNames: ['workflow_id', 'step_name', 'error_category'],
+});
+
+export const workflowCompensationsTriggeredTotal = new Counter({
+  name: 'whatsapp_platform_workflow_compensations_triggered_total',
+  help: 'Total number of compensation flows triggered',
+  labelNames: ['workflow_id', 'trigger_reason'],
+});
+
+export const workflowDurationSeconds = new Histogram({
+  name: 'whatsapp_platform_workflow_duration_seconds',
+  help: 'Workflow execution duration from start to completion',
+  labelNames: ['workflow_id', 'status'],
+  buckets: [1, 5, 10, 30, 60, 300, 600, 1800, 3600],
+});
+
+export const workflowStepDurationSeconds = new Histogram({
+  name: 'whatsapp_platform_workflow_step_duration_seconds',
+  help: 'Individual step execution duration',
+  labelNames: ['workflow_id', 'step_name'],
+  buckets: [0.1, 0.5, 1, 2.5, 5, 10, 30, 60],
+});
+
+// ============================================================================
 // Setup Function
 // ============================================================================
 

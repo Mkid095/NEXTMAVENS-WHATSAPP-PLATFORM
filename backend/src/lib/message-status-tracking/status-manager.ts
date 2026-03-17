@@ -5,11 +5,15 @@
 
 import { prisma } from '../prisma';
 import { MessageStatus } from '@prisma/client';
+import * as promClient from 'prom-client';
 import {
   StatusChangeReason,
   StatusHistoryEntry,
   StatusUpdateRequest,
   StatusUpdateResponse,
+  StatusMetrics,
+  StatusDistribution,
+  StatusTransitionMetrics,
   isSuccessStatus,
   isFailureStatus,
   formatTransitionKey
@@ -146,15 +150,15 @@ export async function updateMessageStatus(
   // Record metrics (if available)
   if (statusMetrics) {
     const duration = (Date.now() - startTime) / 1000;
-    messageStatusUpdateDuration.observe({ reason: reason }, duration);
-    messageStatusTransitionsTotal.inc({ from: oldStatus, to: status, reason: reason });
-    messageStatusHistoryEntriesTotal.inc({ reason: reason });
+    statusMetrics.messageStatusUpdateDuration.observe({ reason: reason }, duration);
+    statusMetrics.messageStatusTransitionsTotal.inc({ from: oldStatus, to: status, reason: reason });
+    statusMetrics.messageStatusHistoryEntriesTotal.inc({ reason: reason });
 
     // Update distribution gauge: decrement old status count, increment new status count
     // Note: We can't directly decrement gauges reliably in distributed systems,
     // but we can periodically recompute distribution via getStatusMetrics()
     // For now, just increment new status count (may be slightly off but acceptable for monitoring)
-    messageStatusDistribution.inc({ status: status, orgId: message.orgId });
+    statusMetrics.messageStatusDistribution.inc({ status: status, orgId: message.orgId });
   }
 
   // Emit Socket.IO event (async, don't block)
@@ -277,7 +281,16 @@ export async function getStatusHistory(
   // Filter by orgId from message relation (extra safety)
   const filtered = entries.filter(e => e.message.orgId === orgId);
 
-  return filtered.slice(0, limit);
+  // Map to DTO shape, casting reason to StatusChangeReason and removing message relation
+  return filtered.map(e => ({
+    id: e.id,
+    messageId: e.messageId,
+    status: e.status,
+    changedAt: e.changedAt,
+    changedBy: e.changedBy,
+    reason: e.reason as any as StatusChangeReason, // Cast string to enum
+    metadata: e.metadata as Record<string, any> | null
+  })).slice(0, limit);
 }
 
 /**
@@ -320,13 +333,12 @@ let statusTransitionCounter: any = null;
 
 function getMetrics() {
   if (!statusDistributionGauge) {
-    const { register } = require('prom-client');
-    statusDistributionGauge = new require('prom-client').Gauge({
+    statusDistributionGauge = new promClient.Gauge({
       name: 'whatsapp_platform_message_status_total',
       help: 'Current distribution of message statuses',
       labelNames: ['status', 'orgId']
     });
-    statusTransitionCounter = new require('prom-client').Counter({
+    statusTransitionCounter = new promClient.Counter({
       name: 'whatsapp_platform_message_status_transitions_total',
       help: 'Total status transitions',
       labelNames: ['from', 'to', 'reason']
@@ -378,8 +390,8 @@ export async function getStatusMetrics(orgId?: string): Promise<StatusMetrics> {
     const distribution: StatusDistribution = {};
     let totalMessages = 0;
     for (const { status, _count } of messageCounts) {
-      distribution[status] = _count;
-      totalMessages += _count;
+      distribution[status] = _count.status;
+      totalMessages += _count.status;
     }
 
     // For transitions, we need to query history
@@ -446,7 +458,7 @@ export async function getStatusMetrics(orgId?: string): Promise<StatusMetrics> {
     const byReason: Record<StatusChangeReason, number> = {} as any;
     for (const { reason, _count } of reasonCounts) {
       if (reason) {
-        byReason[reason as StatusChangeReason] = _count;
+        byReason[reason as StatusChangeReason] = _count.reason;
       }
     }
 
@@ -506,7 +518,7 @@ async function emitStatusChangeEvent(event: {
 
   try {
     // Broadcast to organization room
-    await socketService.broadcastToOrg(orgId, 'message:status:changed', {
+    await socketService.broadcastToOrg(event.orgId, 'message:status:changed', {
       messageId: event.messageId,
       instanceId: event.instanceId,
       chatId: event.chatId,
@@ -520,7 +532,7 @@ async function emitStatusChangeEvent(event: {
 
     // Also broadcast to specific instance if available
     if (event.instanceId) {
-      await socketService.broadcastToInstance(orgId, event.instanceId, {
+      await socketService.broadcastToInstance(event.orgId, event.instanceId, {
         type: 'message:status:changed',
         data: {
           messageId: event.messageId,
@@ -636,9 +648,9 @@ export async function createStatusHistoryEntry(
 
   // Update metrics
   if (statusMetrics) {
-    messageStatusHistoryEntriesTotal.inc({ reason: reason });
+    statusMetrics.messageStatusHistoryEntriesTotal.inc({ reason: reason });
     // Also increment distribution gauge for this status
-    messageStatusDistribution.inc({ status, orgId });
+    statusMetrics.messageStatusDistribution.inc({ status, orgId });
   }
 }
 

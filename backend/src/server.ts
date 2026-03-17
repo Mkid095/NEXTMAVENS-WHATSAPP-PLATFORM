@@ -393,6 +393,12 @@ async function buildServer() {
   await app.register(poolAdminRoutes.default || poolAdminRoutes);
   console.log('[SERVER] Connection pool admin routes registered');
 
+  // Register Workflow Orchestration Admin API routes (Phase 3 Step 3)
+  const workflowRoutes = await import('./app/api/workflow-orchestration/route.js');
+  // @ts-ignore
+  await app.register(workflowRoutes.default || workflowRoutes, { prefix: '/admin/workflows' });
+  console.log('[SERVER] Workflow orchestration admin routes registered');
+
   // Error handler
   app.setErrorHandler((error, request, reply) => {
     app.log.error(error);

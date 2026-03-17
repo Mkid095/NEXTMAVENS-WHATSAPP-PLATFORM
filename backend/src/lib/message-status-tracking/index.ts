@@ -11,8 +11,8 @@
  */
 
 export {
-  // Types
-  type StatusChangeReason,
+  // Types and enums
+  StatusChangeReason,
   type StatusHistoryEntry,
   type PaginatedStatusHistory,
   type StatusUpdateRequest,
@@ -34,6 +34,7 @@ export {
   updateMessageStatus,
   getStatusHistory,
   getLatestStatus,
+  getStatusMetrics,
   updateStatusMetrics,
   validateTransition,
   setSocketService,

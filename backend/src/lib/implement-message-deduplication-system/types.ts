@@ -91,6 +91,11 @@ export let DEFAULT_DEDUPLICATION_CONFIG: Record<MessageType, DeduplicationConfig
     enabled: false, // Cache refresh should always happen
     strategy: DeduplicationStrategy.SIMPLE,
     ttl: 5 * 60 * 1000 // 5 minutes
+  },
+  [MessageType.WORKFLOW_STEP]: {
+    enabled: false, // Workflow steps have their own deduplication
+    strategy: DeduplicationStrategy.SIMPLE,
+    ttl: 60 * 1000 // 1 minute
   }
 };
 

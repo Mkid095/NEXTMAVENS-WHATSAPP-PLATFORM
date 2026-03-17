@@ -3,8 +3,11 @@
  * Sets up a BullMQ queue with priority support
  */
 
-import { Queue, QueueScheduler } from 'bullmq';
+import { Queue } from 'bullmq';
 import { MessagePriority, MessageType, getPriorityForType } from './types';
+
+// QueueScheduler may not have types in some BullMQ versions; use any
+const QueueScheduler: any = require('bullmq').QueueScheduler || require('bullmq').default.QueueScheduler;
 
 // Import retry policies (lazy to avoid circular deps)
 let retryPolicies: any = null;

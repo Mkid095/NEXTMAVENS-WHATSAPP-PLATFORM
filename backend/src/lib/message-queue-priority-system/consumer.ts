@@ -37,6 +37,9 @@ import { addToDlq, getRedisClient, initializeDlqConsumerGroups } from '../messag
 import { createStatusHistoryEntry } from '../message-status-tracking/status-manager';
 import { StatusChangeReason } from '../message-status-tracking/types';
 
+// Import workflow orchestration (Phase 3 Step 3)
+import { processWorkflowStep } from '../workflow-orchestration/processor';
+
 // Simple type guards
 function isMessageUpsert(job: Job): boolean {
   return job.name === MessageType.MESSAGE_UPSERT;
@@ -64,6 +67,10 @@ function isDatabaseCleanup(job: Job): boolean {
 }
 function isCacheRefresh(job: Job): boolean {
   return job.name === MessageType.CACHE_REFRESH;
+}
+
+function isWorkflowStep(job: Job): boolean {
+  return job.name === MessageType.WORKFLOW_STEP;
 }
 
 // ============================================================================
@@ -330,6 +337,11 @@ async function processCacheRefresh(job: Job): Promise<void> {
   // Future: invoke refresh function
 }
 
+async function processWorkflowStepJob(job: Job): Promise<void> {
+  // Delegate to workflow orchestration processor
+  await processWorkflowStep(job);
+}
+
 // ============================================================================
 // Main Processor (Enhanced with Retry & DLQ)
 // ============================================================================
@@ -360,6 +372,8 @@ async function processJob(job: Job): Promise<void> {
       await processDatabaseCleanup(job);
     } else if (isCacheRefresh(job)) {
       await processCacheRefresh(job);
+    } else if (isWorkflowStep(job)) {
+      await processWorkflowStepJob(job);
     } else {
       console.warn(`[QueueWorker] Unknown job name: ${job.name}`);
       throw new Error(`Unsupported job type: ${job.name}`);
@@ -389,15 +403,15 @@ async function processJob(job: Job): Promise<void> {
           await addToDlq(job as any, error, attempts);
           queueJobsFailedTotal.inc({ failure_type: 'dlq' });
 
-          const errorCategory = (require('../message-retry-and-dlq-system/retry-policy').classifyError || classifyErrorDefault)(error) as string;
+          const errorCategory = (require('../message-retry-and-dlq-system/retry-policy').classifyError || classifyErrorDefault)(error);
           if (messageFailureReasonTotal) {
             messageFailureReasonTotal.inc({
               message_type: messageType,
-              error_category: errorCategory,
+              error_category: errorCategory as any, // Cast for metric label
               reason: extractErrorReason(error)
             });
           }
-          recordDlqMove(messageType, errorCategory);
+          recordDlqMove(messageType, errorCategory as any);
 
           console.log(`[QueueWorker] Job ${job.id} moved to DLQ with category: ${errorCategory}`);
         } catch (dlqError) {

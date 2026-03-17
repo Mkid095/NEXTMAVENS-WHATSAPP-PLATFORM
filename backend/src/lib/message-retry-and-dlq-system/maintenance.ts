@@ -3,7 +3,7 @@
  * Periodic cleanup and maintenance tasks for DLQ
  */
 
-import { getRedisClient } from './dlq';
+import { getRedisClient, cleanOldDlqEntries } from './dlq';
 
 // ============================================================================
 // Scheduled Cleanup
@@ -75,16 +75,26 @@ export async function getDlqHealthReport() {
       const newest = await client.xrevrange(key, 0, 0, 'COUNT', 1);
 
       if (oldest && oldest.length > 0) {
-        const [, fields] = oldest[0];
-        const timeField = fields.find((f: [string, string]) => f[0] === 'timestamp');
+        const [id, fieldsFlat] = oldest[0] as [string, string[]];
+        // Convert flat array to pairs
+        const fields: [string, string][] = [];
+        for (let i = 0; i < fieldsFlat.length; i += 2) {
+          fields.push([fieldsFlat[i], fieldsFlat[i + 1]]);
+        }
+        const timeField = fields.find((f) => f[0] === 'timestamp');
         if (timeField) {
           streamInfo.oldest = timeField[1];
         }
       }
 
       if (newest && newest.length > 0) {
-        const [, fields] = newest[0];
-        const timeField = fields.find((f: [string, string]) => f[0] === 'timestamp');
+        const [id, fieldsFlat] = newest[0] as [string, string[]];
+        // Convert flat array to pairs
+        const fields: [string, string][] = [];
+        for (let i = 0; i < fieldsFlat.length; i += 2) {
+          fields.push([fieldsFlat[i], fieldsFlat[i + 1]]);
+        }
+        const timeField = fields.find((f) => f[0] === 'timestamp');
         if (timeField) {
           streamInfo.newest = timeField[1];
         }

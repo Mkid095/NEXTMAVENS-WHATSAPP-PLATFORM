@@ -13,7 +13,8 @@ import {
   updateMessageStatus,
   getStatusHistory,
   getStatusMetrics,
-  MessageStatus
+  MessageStatus,
+  StatusChangeReason
 } from '../../../lib/message-status-tracking';
 
 // ============================================================================
@@ -22,17 +23,9 @@ import {
 
 const statusUpdateSchema = z.object({
   status: z.nativeEnum(MessageStatus),
-  reason: z.enum([
-    'admin',
-    'webhook',
-    'queue',
-    'dlq',
-    'retry_exhausted',
-    'automatic_recovery',
-    'cancellation'
-  ]).optional(),
+  reason: z.nativeEnum(StatusChangeReason).optional(),
   changedBy: z.string().optional(),
-  metadata: z.record(z.any()).optional()
+  metadata: z.any().optional()
 });
 
 const historyQuerySchema = z.object({
@@ -41,15 +34,7 @@ const historyQuerySchema = z.object({
   fromDate: z.string().datetime().optional(),
   toDate: z.string().datetime().optional(),
   status: z.nativeEnum(MessageStatus).optional(),
-  reason: z.enum([
-    'admin',
-    'webhook',
-    'queue',
-    'dlq',
-    'retry_exhausted',
-    'automatic_recovery',
-    'cancellation'
-  ]).optional()
+  reason: z.nativeEnum(StatusChangeReason).optional()
 });
 
 // ============================================================================

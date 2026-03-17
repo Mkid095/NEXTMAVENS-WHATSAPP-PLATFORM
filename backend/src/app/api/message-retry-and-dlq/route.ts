@@ -421,7 +421,8 @@ export async function listDlqStreamsHandler(request: FastifyRequest, reply: Fast
     // Group by message type and get counts
     const streams = await Promise.all(
       streamKeys.map(async (key) => {
-        const client = (await import('../../../lib/message-retry-and-dlq-system/dlq')).getRedisClient();
+        const { getRedisClient } = await import('../../../lib/message-retry-and-dlq-system/dlq');
+        const client = await getRedisClient();
         const count = await client.xlen(key);
         const parts = key.split(':');
         const messageType = parts[parts.length - 1];

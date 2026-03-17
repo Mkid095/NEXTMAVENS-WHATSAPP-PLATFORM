@@ -24,26 +24,27 @@ import {
 export function parseWebhookPayload(
   payload: EvolutionWebhookPayload
 ): ParsedWebhookEvent {
-  const { event, instanceId, data } = payload;
+  const { event, instanceId, data, timestamp } = payload;
+  const timestampMs = timestamp ? parseInt(timestamp, 10) : undefined;
 
   switch (event) {
     case 'MESSAGES_UPSERT':
-      return parseMessageUpsert(instanceId, data as MessageUpsertData);
+      return parseMessageUpsert(instanceId, data as MessageUpsertData, timestampMs);
 
     case 'MESSAGES_UPDATE':
-      return parseMessageUpdate(instanceId, data as MessageUpdateData);
+      return parseMessageUpdate(instanceId, data as MessageUpdateData, timestampMs);
 
     case 'MESSAGES_DELETE':
-      return parseMessageDelete(instanceId, data as MessageDeleteData);
+      return parseMessageDelete(instanceId, data as MessageDeleteData, timestampMs);
 
     case 'CONNECTION_UPDATE':
-      return parseConnectionUpdate(instanceId, data as ConnectionUpdateData);
+      return parseConnectionUpdate(instanceId, data as ConnectionUpdateData, timestampMs);
 
     case 'QRCODE_UPDATED':
-      return parseQRCodeUpdate(instanceId, data as QRCodeUpdateData);
+      return parseQRCodeUpdate(instanceId, data as QRCodeUpdateData, timestampMs);
 
     case 'SEND_MESSAGE':
-      return parseSendMessage(instanceId, data);
+      return parseSendMessage(instanceId, data, timestampMs);
 
     case 'APPLICATION_STARTUP':
       return {
@@ -51,6 +52,7 @@ export function parseWebhookPayload(
         instanceId,
         orgId: null, // Will be looked up later
         message: `Instance ${instanceId} startup detected`,
+        timestamp: timestampMs,
       };
 
     default:
@@ -61,6 +63,7 @@ export function parseWebhookPayload(
         message: `Unhandled event type: ${event}`,
         unhandled: true,
         rawData: data,
+        timestamp: timestampMs,
       };
   }
 }
@@ -84,11 +87,13 @@ export interface ParsedWebhookEvent {
   to?: string;
   type?: string;
   content?: Record<string, unknown>;
+  timestamp?: number; // Unix timestamp (milliseconds) from webhook
 }
 
 function parseMessageUpsert(
   instanceId: string,
-  data: MessageUpsertData
+  data: MessageUpsertData,
+  timestamp?: number
 ): ParsedWebhookEvent {
   const messageContent = buildMessageContent(data);
 
@@ -103,12 +108,14 @@ function parseMessageUpsert(
     type: data.type,
     content: messageContent,
     status: 'PENDING', // New messages start pending
+    timestamp,
   };
 }
 
 function parseMessageUpdate(
   instanceId: string,
-  data: MessageUpdateData
+  data: MessageUpdateData,
+  timestamp?: number
 ): ParsedWebhookEvent {
   return {
     event: 'MESSAGES_UPDATE',
@@ -116,12 +123,14 @@ function parseMessageUpdate(
     orgId: null,
     messageId: data.id,
     status: mapMessageStatus(data.status),
+    timestamp,
   };
 }
 
 function parseMessageDelete(
   instanceId: string,
-  data: MessageDeleteData
+  data: MessageDeleteData,
+  timestamp?: number
 ): ParsedWebhookEvent {
   return {
     event: 'MESSAGES_DELETE',
@@ -132,36 +141,42 @@ function parseMessageDelete(
     to: data.to,
     type: data.type,
     message: `Message deleted`,
+    timestamp,
   };
 }
 
 function parseConnectionUpdate(
   instanceId: string,
-  data: ConnectionUpdateData
+  data: ConnectionUpdateData,
+  timestamp?: number
 ): ParsedWebhookEvent {
   return {
     event: 'CONNECTION_UPDATE',
     instanceId,
     orgId: null,
     message: `Connection status changed to: ${data.status}`,
+    timestamp,
   };
 }
 
 function parseQRCodeUpdate(
   instanceId: string,
-  data: QRCodeUpdateData
+  data: QRCodeUpdateData,
+  timestamp?: number
 ): ParsedWebhookEvent {
   return {
     event: 'QRCODE_UPDATED',
     instanceId,
     orgId: null,
     message: `QR code status: ${data.status}`,
+    timestamp,
   };
 }
 
 function parseSendMessage(
   instanceId: string,
-  data: EvolutionEventData
+  data: EvolutionEventData,
+  timestamp?: number
 ): ParsedWebhookEvent {
   const sendData = data as Record<string, unknown>;
   return {
@@ -171,6 +186,7 @@ function parseSendMessage(
     messageId: sendData.messageId as string,
     status: sendData.status === 'success' ? 'SENT' : 'FAILED',
     message: `Send message ${sendData.status}`,
+    timestamp,
   };
 }
 

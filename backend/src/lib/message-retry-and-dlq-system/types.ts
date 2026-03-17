@@ -179,7 +179,8 @@ export function classifyError(error: unknown): ErrorCategory {
   }
 
   // Database-specific checks
-  if (err.code === 'P2002') { // Prisma unique constraint
+  const anyErr = err as any;
+  if (anyErr.code === 'P2002') { // Prisma unique constraint
     // Duplicate key could be either transient (race condition) or permanent (true duplicate)
     // For message upsert, duplicates are handled specially, so treat as permanent
     return ErrorCategory.PERMANENT;
