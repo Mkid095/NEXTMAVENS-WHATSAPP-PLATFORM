@@ -33,6 +33,10 @@ import {
 } from '../message-retry-and-dlq-system/retry-policy';
 import { addToDlq, getRedisClient, initializeDlqConsumerGroups } from '../message-retry-and-dlq-system/dlq';
 
+// Import status tracking (Phase 3 Step 2)
+import { createStatusHistoryEntry } from '../message-status-tracking/status-manager';
+import { StatusChangeReason } from '../message-status-tracking/types';
+
 // Simple type guards
 function isMessageUpsert(job: Job): boolean {
   return job.name === MessageType.MESSAGE_UPSERT;
@@ -73,6 +77,7 @@ async function processMessageUpsert(job: Job): Promise<void> {
   }
 
   const { messageId, chatId, instanceId, orgId, from, to, type, content, status, timestamp } = data;
+  let finalStatus: PrismaMessageStatus;
 
   // Ensure chat exists
   await ensureChatExists(orgId, instanceId, chatId, from, to);
@@ -93,13 +98,14 @@ async function processMessageUpsert(job: Job): Promise<void> {
         sentAt: timestamp ? new Date(timestamp) : new Date(),
       },
     });
+    finalStatus = (status ?? 'PENDING') as PrismaMessageStatus;
 
     // Broadcast
     const socketService = getSocketService();
     if (socketService) {
       await socketService.broadcastToInstance(orgId, instanceId, {
         type: 'whatsapp:message:upsert',
-        data: { messageId, chatId, from, to, type, content, status: status ?? 'PENDING', timestamp: timestamp ? new Date(timestamp).getTime() : Date.now() },
+        data: { messageId, chatId, from, to, type, content, status: finalStatus, timestamp: timestamp ? new Date(timestamp).getTime() : Date.now() },
       });
     }
   } catch (error: any) {
@@ -107,14 +113,16 @@ async function processMessageUpsert(job: Job): Promise<void> {
       const existing = await prisma.whatsAppMessage.findUnique({ where: { id: messageId } });
       if (!existing) throw new Error(`Message ${messageId} claimed duplicate but not found`);
 
+      const newStatus = (status ?? existing.status) as PrismaMessageStatus;
       await prisma.whatsAppMessage.update({
         where: { id: messageId },
         data: {
-          status: (status ?? existing.status) as PrismaMessageStatus,
+          status: newStatus,
           content: content ?? undefined,
           sentAt: timestamp ? new Date(timestamp) : undefined,
         },
       });
+      finalStatus = newStatus;
 
       const socketService = getSocketService();
       if (socketService) {
@@ -127,7 +135,7 @@ async function processMessageUpsert(job: Job): Promise<void> {
             to,
             type,
             content,
-            status: status ?? existing.status,
+            status: finalStatus,
             timestamp: timestamp ? new Date(timestamp).getTime() : existing.sentAt?.getTime() ?? Date.now(),
           },
         });
@@ -136,6 +144,13 @@ async function processMessageUpsert(job: Job): Promise<void> {
       throw error;
     }
   }
+
+  // Record status history for audit trail (Phase 3 Step 2)
+  await createStatusHistoryEntry(messageId, orgId, finalStatus, StatusChangeReason.QUEUE_PROCESSING, 'system', {
+    jobId: job.id,
+    jobName: job.name as string,
+    source: 'message-queue'
+  });
 }
 
 async function processMessageStatusUpdate(job: Job): Promise<void> {
@@ -145,6 +160,7 @@ async function processMessageStatusUpdate(job: Job): Promise<void> {
   }
 
   const { messageId, status, instanceId, chatId, orgId } = data;
+  const newStatus = status as PrismaMessageStatus;
 
   const instance = await prisma.whatsAppInstance.findFirst({
     where: { id: instanceId, orgId },
@@ -157,7 +173,7 @@ async function processMessageStatusUpdate(job: Job): Promise<void> {
 
   await prisma.whatsAppMessage.upsert({
     where: { id: messageId },
-    update: { status: status as PrismaMessageStatus },
+    update: { status: newStatus },
     create: {
       id: messageId,
       orgId,
@@ -167,7 +183,7 @@ async function processMessageStatusUpdate(job: Job): Promise<void> {
       from: 'unknown',
       to: '',
       type: 'text',
-      status: status as PrismaMessageStatus,
+      status: newStatus,
       content: '',
       sentAt: new Date()
     }
@@ -177,9 +193,16 @@ async function processMessageStatusUpdate(job: Job): Promise<void> {
   if (socketService) {
     await socketService.broadcastToInstance(orgId, instanceId, {
       type: 'whatsapp:message:update',
-      data: { messageId, status, instanceId, chatId, orgId }
+      data: { messageId, status: newStatus, instanceId, chatId, orgId }
     });
   }
+
+  // Record status history for audit trail (Phase 3 Step 2)
+  await createStatusHistoryEntry(messageId, orgId, newStatus, StatusChangeReason.QUEUE_PROCESSING, 'system', {
+    jobId: job.id,
+    jobName: job.name as string,
+    source: 'message-queue'
+  });
 }
 
 async function processMessageDelete(job: Job): Promise<void> {

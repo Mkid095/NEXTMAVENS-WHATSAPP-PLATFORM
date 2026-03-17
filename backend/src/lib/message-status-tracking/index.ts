@@ -38,7 +38,8 @@ export {
   validateTransition,
   setSocketService,
   recordStatusChangeFromReceipt,
-  recordDlqTransfer
+  recordDlqTransfer,
+  createStatusHistoryEntry
 } from './status-manager';
 
 // Re-export types for convenience

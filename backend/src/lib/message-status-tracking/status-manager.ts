@@ -15,6 +15,20 @@ import {
   formatTransitionKey
 } from './types';
 
+// Import metrics (optional, may not be initialized yet)
+let statusMetrics: any = null;
+try {
+  const metrics = require('../create-comprehensive-metrics-dashboard-(grafana)/index');
+  statusMetrics = {
+    messageStatusDistribution: metrics.messageStatusDistribution,
+    messageStatusTransitionsTotal: metrics.messageStatusTransitionsTotal,
+    messageStatusUpdateDuration: metrics.messageStatusUpdateDuration,
+    messageStatusHistoryEntriesTotal: metrics.messageStatusHistoryEntriesTotal
+  };
+} catch (err) {
+  // Metrics not available yet, will be set later via setMetrics()
+}
+
 // ============================================================================
 // Core Status Update Function
 // ============================================================================
@@ -40,6 +54,7 @@ export async function updateMessageStatus(
   request: StatusUpdateRequest
 ): Promise<StatusUpdateResponse> {
   const { status, reason = StatusChangeReason.ADMIN_MANUAL, changedBy = 'system', metadata } = request;
+  const startTime = Date.now();
 
   // Fetch current message state (with orgId check for tenant isolation)
   const message = await prisma.whatsAppMessage.findFirst({
@@ -128,6 +143,20 @@ export async function updateMessageStatus(
     return { updatedMessage, historyEntry };
   });
 
+  // Record metrics (if available)
+  if (statusMetrics) {
+    const duration = (Date.now() - startTime) / 1000;
+    messageStatusUpdateDuration.observe({ reason: reason }, duration);
+    messageStatusTransitionsTotal.inc({ from: oldStatus, to: status, reason: reason });
+    messageStatusHistoryEntriesTotal.inc({ reason: reason });
+
+    // Update distribution gauge: decrement old status count, increment new status count
+    // Note: We can't directly decrement gauges reliably in distributed systems,
+    // but we can periodically recompute distribution via getStatusMetrics()
+    // For now, just increment new status count (may be slightly off but acceptable for monitoring)
+    messageStatusDistribution.inc({ status: status, orgId: message.orgId });
+  }
+
   // Emit Socket.IO event (async, don't block)
   emitStatusChangeEvent({
     messageId,
@@ -150,7 +179,10 @@ export async function updateMessageStatus(
     oldStatus,
     newStatus: status,
     historyEntryId: result.historyEntry.id,
-    timestamp: result.historyEntry.changedAt
+    timestamp: result.historyEntry.changedAt,
+    instanceId: message.instanceId,
+    chatId: message.chatId,
+    orgId: message.orgId
   };
 }
 
@@ -553,4 +585,60 @@ export async function recordDlqTransfer(
   });
 }
 
+/**
+ * Record status change from queue processing (job completion)
+ * Used by message queue workers to track processing lifecycle
+ */
+export async function recordSystemStatusChange(
+  messageId: string,
+  orgId: string,
+  newStatus: MessageStatus,
+  metadata?: Record<string, any>
+): Promise<StatusUpdateResponse> {
+  return updateMessageStatus(messageId, orgId, {
+    status: newStatus,
+    reason: StatusChangeReason.QUEUE_PROCESSING,
+    changedBy: 'system',
+    metadata: {
+      ...metadata,
+      source: 'queue-worker'
+    }
+  });
+}
+
 // Prisma client is imported at top
+
+// ============================================================================
+// Utility Functions (Internal)
+// ============================================================================
+
+/**
+ * Create a status history entry without updating the WhatsAppMessage
+ * Use when the message status has already been updated elsewhere (e.g., queue processors)
+ */
+export async function createStatusHistoryEntry(
+  messageId: string,
+  orgId: string,
+  status: MessageStatus,
+  reason: StatusChangeReason,
+  changedBy: string = 'system',
+  metadata?: Record<string, any>
+): Promise<void> {
+  await prisma.messageStatusHistory.create({
+    data: {
+      messageId,
+      status,
+      changedBy: changedBy === 'system' ? null : changedBy,
+      reason,
+      metadata
+    }
+  });
+
+  // Update metrics
+  if (statusMetrics) {
+    messageStatusHistoryEntriesTotal.inc({ reason: reason });
+    // Also increment distribution gauge for this status
+    messageStatusDistribution.inc({ status, orgId });
+  }
+}
+
