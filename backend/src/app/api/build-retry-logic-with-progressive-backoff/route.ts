@@ -57,10 +57,18 @@ export default async function (fastify: FastifyInstance) {
 
   fastify.post(
     '/policies',
-    { schema: { body: createPolicySchema } },
-    async (request: FastifyRequest<{ Body: CreatePolicyBody }>, reply: FastifyReply) => {
-      const policy = retryLib.createPolicy(request.body);
-      return { policy };
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const body = createPolicySchema.parse(request.body);
+        const policy = retryLib.createPolicy(body);
+        return { policy };
+      } catch (error: any) {
+        if (error instanceof z.ZodError) {
+          reply.code(400).send({ error: 'Validation error', details: error.format() });
+          return;
+        }
+        throw error;
+      }
     }
   );
 
@@ -80,15 +88,23 @@ export default async function (fastify: FastifyInstance) {
 
   fastify.put(
     '/policies/:id',
-    { schema: { body: updatePolicySchema } },
-    async (request: FastifyRequest<{ Body: UpdatePolicyBody, Params: { id: string } }>, reply: FastifyReply) => {
-      const { id } = request.params;
-      const updated = retryLib.updatePolicy(id, request.body);
-      if (!updated) {
-        reply.code(404);
-        return { error: 'Policy not found' };
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const { id } = request.params as { id: string };
+        const body = updatePolicySchema.parse(request.body);
+        const updated = retryLib.updatePolicy(id, body);
+        if (!updated) {
+          reply.code(404);
+          return { error: 'Policy not found' };
+        }
+        return { policy: updated };
+      } catch (error: any) {
+        if (error instanceof z.ZodError) {
+          reply.code(400).send({ error: 'Validation error', details: error.format() });
+          return;
+        }
+        throw error;
       }
-      return { policy: updated };
     }
   );
 
@@ -108,38 +124,46 @@ export default async function (fastify: FastifyInstance) {
 
   fastify.post(
     '/retry-test',
-    { schema: { body: retryTestSchema } },
-    async (request: FastifyRequest<{ Body: RetryTestBody }>, reply: FastifyReply) => {
-      const { policy, succeedAfter } = request.body;
-      const policyObj = retryLib.createPolicy(policy); // validate and assign ID
-      let attempts = 0;
-
-      // Simulate a flaky operation: fails until attempts >= succeedAfter
-      const flakyOp = async () => {
-        attempts++;
-        if (attempts < succeedAfter) {
-          throw new Error(`Transient failure (attempt ${attempts})`);
-        }
-        return 'Operation succeeded';
-      };
-
+    async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const result = await retryLib.executeWithRetry(flakyOp, policyObj);
-        return {
-          success: true,
-          result: result.value,
-          attempts: result.attempts,
-          totalDelayMs: result.totalDelayMs,
-          policyId: policyObj.id,
+        const body = retryTestSchema.parse(request.body);
+        const { policy, succeedAfter } = body;
+        const policyObj = retryLib.createPolicy(policy); // validate and assign ID
+        let attempts = 0;
+
+        // Simulate a flaky operation: fails until attempts >= succeedAfter
+        const flakyOp = async () => {
+          attempts++;
+          if (attempts < succeedAfter) {
+            throw new Error(`Transient failure (attempt ${attempts})`);
+          }
+          return 'Operation succeeded';
         };
+
+        try {
+          const result = await retryLib.executeWithRetry(flakyOp, policyObj);
+          return {
+            success: true,
+            result: result.value,
+            attempts: result.attempts,
+            totalDelayMs: result.totalDelayMs,
+            policyId: policyObj.id,
+          };
+        } catch (error: any) {
+          reply.code(500);
+          return {
+            success: false,
+            error: error.message,
+            attempts,
+            policyId: policyObj.id,
+          };
+        }
       } catch (error: any) {
-        reply.code(500);
-        return {
-          success: false,
-          error: error.message,
-          attempts,
-          policyId: policyObj.id,
-        };
+        if (error instanceof z.ZodError) {
+          reply.code(400).send({ error: 'Validation error', details: error.format() });
+          return;
+        }
+        throw error;
       }
     }
   );

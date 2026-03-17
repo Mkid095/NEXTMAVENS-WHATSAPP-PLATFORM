@@ -3,8 +3,27 @@
  * Sets up a BullMQ queue with priority support
  */
 
-import { Queue } from 'bullmq';
+import { Queue, QueueScheduler } from 'bullmq';
 import { MessagePriority, MessageType, getPriorityForType } from './types';
+
+// Import retry policies (lazy to avoid circular deps)
+let retryPolicies: any = null;
+async function loadRetryPolicies() {
+  if (!retryPolicies) {
+    const policies = await import('../message-retry-and-dlq-system/retry-policy');
+    retryPolicies = policies.DEFAULT_RETRY_POLICIES;
+  }
+  return retryPolicies;
+}
+
+// Import metrics (Phase 2 Step 8)
+import {
+  queueJobsTotal,
+  queueJobsActive,
+  queueJobsCompletedTotal,
+  queueJobsFailedTotal,
+  queueProcessingDuration
+} from '../create-comprehensive-metrics-dashboard-(grafana)/index';
 
 export { getPriorityForType, MessageType };
 
@@ -25,21 +44,76 @@ export const QUEUE_NAME = 'whatsapp-messages';
 export const DEFAULT_CONCURRENCY = parseInt(process.env.QUEUE_CONCURRENCY || '10', 10);
 
 
+// Retry configuration (Phase 3 Step 1)
+// Note: These are defaults; actual retry attempts per job type will be managed via job options
+const ENABLE_RETRY_DLQ = process.env.ENABLE_RETRY_DLQ === 'true';
+const DEFAULT_MAX_RETRIES = parseInt(process.env.MESSAGE_RETRY_MAX_ATTEMPTS || '5', 10);
+const DEFAULT_RETRY_DELAY = parseInt(process.env.MESSAGE_RETRY_BASE_DELAY_MS || '1000', 10);
+const MAX_RETRY_DELAY = parseInt(process.env.MESSAGE_RETRY_MAX_DELAY_MS || '300000', 10); // 5 minutes
+
 // Create queue
 export const messageQueue = new Queue(QUEUE_NAME, {
   connection: redisConnectionOptions,
   defaultJobOptions: {
     removeOnComplete: { count: 1000, age: 24 * 60 * 60 * 1000 },
     removeOnFail: { count: 500, age: 7 * 24 * 60 * 60 * 1000 },
-    priority: MessagePriority.MEDIUM
-    // Note: retries/backoff not enabled to avoid need for QueueScheduler
+    priority: MessagePriority.MEDIUM,
+    ...(ENABLE_RETRY_DLQ && {
+      // Enable retries with exponential backoff only if feature flag is on
+      attempts: DEFAULT_MAX_RETRIES,
+      backoff: {
+        type: 'exponential',
+        delay: DEFAULT_RETRY_DELAY
+      }
+    })
+    // Note: DLQ handled separately via custom logic in processJob
   }
 });
 
-// QueueScheduler for managing delayed/retry jobs
-export const queueScheduler = {
-  close: async () => {}
-};
+// QueueScheduler for managing delayed/retry jobs (required for backoff)
+export const queueScheduler = new QueueScheduler(QUEUE_NAME, {
+  connection: redisConnectionOptions,
+  // Run every 5 seconds to check for delayed jobs
+  interval: 5000,
+  // Optional: limit the number of delayed jobs to fetch per worker
+  limiter: { max: 1000 }
+});
+
+// Handle queue scheduler errors
+queueScheduler.on('error', (err: Error) => {
+  console.error('[QueueScheduler] Error:', err);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('[QueueScheduler] Shutting down...');
+  await queueScheduler.close();
+});
+
+process.on('SIGINT', async () => {
+  console.log('[QueueScheduler] Shutting down...');
+  await queueScheduler.close();
+});
+
+// ============================================================================
+// Retry Policy Helpers (Phase 3 Step 1)
+// ============================================================================
+
+/**
+ * Get retry limit for a specific message type
+ */
+async function getRetryLimitForType(type: MessageType): Promise<number> {
+  const policies = await loadRetryPolicies();
+  return policies[type]?.maxRetries ?? DEFAULT_MAX_RETRIES;
+}
+
+/**
+ * Get base retry delay for a specific message type (in ms)
+ */
+async function getRetryBaseDelayForType(type: MessageType): Promise<number> {
+  const policies = await loadRetryPolicies();
+  return policies[type]?.baseDelayMs ?? DEFAULT_RETRY_DELAY;
+}
 
 // Simple add function
 export async function addJob(
@@ -61,12 +135,33 @@ export async function addJob(
       /** Required delay for debounce mode */
       delay?: number;
     };
+    /** Override retry attempts for this specific job */
+    retries?: number;
+    /** Override retry delay for this specific job */
+    backoffDelay?: number;
   } = {}
 ): Promise<any> {
   const priority = options.priority ?? getPriorityForType(type);
 
+  // Record metric: job added
+  const priorityLabel = Object.keys(MessagePriority).find(key => (MessagePriority as any)[key] === priority) || 'MEDIUM';
+  queueJobsTotal.inc({ message_type: type, priority: priorityLabel.toLowerCase() });
+
   // Build BullMQ job options
   const bullmqOptions: any = { priority };
+
+  // Apply retry configuration if enabled
+  if (ENABLE_RETRY_DLQ) {
+    // Use provided overrides, or get from default retry policies based on message type
+    const retries = options.retries ?? await getRetryLimitForType(type);
+    const backoffDelay = options.backoffDelay ?? await getRetryBaseDelayForType(type);
+
+    bullmqOptions.attempts = retries;
+    bullmqOptions.backoff = {
+      type: 'exponential',
+      delay: backoffDelay
+    };
+  }
 
   // Integrate deduplication if requested
   if (options.deduplication) {

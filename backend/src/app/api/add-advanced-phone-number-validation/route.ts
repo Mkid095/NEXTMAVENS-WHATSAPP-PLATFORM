@@ -30,16 +30,22 @@ export default async function (fastify: FastifyInstance) {
 
   fastify.post(
     '/validate',
-    { schema: { body: phoneValidationSchema } },
-    async (request: FastifyRequest<{ Body: PhoneValidationBody }>, reply: FastifyReply) => {
-      const { phone, defaultCountry } = request.body;
-
-      const result = phoneLib.validatePhoneNumber(phone, {
-        defaultCountry,
-        allowWhatsAppJid: true,
-      });
-
-      return result;
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const body = phoneValidationSchema.parse(request.body);
+        const { phone, defaultCountry } = body;
+        const result = phoneLib.validatePhoneNumber(phone, {
+          defaultCountry,
+          allowWhatsAppJid: true,
+        });
+        return result;
+      } catch (error: any) {
+        if (error instanceof z.ZodError) {
+          reply.code(400).send({ error: 'Validation error', details: error.format() });
+          return;
+        }
+        throw error;
+      }
     }
   );
 
@@ -49,17 +55,20 @@ export default async function (fastify: FastifyInstance) {
 
   fastify.post(
     '/normalize',
-    { schema: { body: phoneValidationSchema } },
-    async (request: FastifyRequest<{ Body: PhoneValidationBody }>, reply: FastifyReply) => {
-      const { phone, defaultCountry } = request.body;
-
+    async (request: FastifyRequest, reply: FastifyReply) => {
       try {
+        const body = phoneValidationSchema.parse(request.body);
+        const { phone, defaultCountry } = body;
         const normalized = phoneLib.normalizePhoneNumber(phone, {
           defaultCountry,
           allowWhatsAppJid: true,
         });
         return { normalized, valid: true };
       } catch (error: any) {
+        if (error instanceof z.ZodError) {
+          reply.code(400).send({ valid: false, error: 'Validation error', details: error.format() });
+          return;
+        }
         reply.code(400);
         return { valid: false, error: error.message };
       }

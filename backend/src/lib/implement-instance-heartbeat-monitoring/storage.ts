@@ -2,6 +2,14 @@ import { Redis } from 'ioredis';
 import { prisma } from '../prisma';
 import { HeartbeatMetrics, HeartbeatConfig, DEFAULT_HEARTBEAT_CONFIG } from './types';
 
+// Import metrics (Phase 2 Step 8)
+import {
+  instanceHeartbeatTotal,
+  instanceHeartbeatAge,
+  instanceCurrentlyOnline,
+  instanceBackgroundSyncDuration
+} from '../create-comprehensive-metrics-dashboard-(grafana)/index';
+
 let sharedRedis: Redis | null = null;
 
 export function setRedisClient(client: Redis): void {
@@ -85,12 +93,25 @@ export async function recordHeartbeat(
 
   // Optionally store metrics separately (expire with same TTL)
   if (metrics) {
+    const metricsObj = { ...metrics, updatedAt: now };
+    const fields = Object.entries(metricsObj).flat();
+    // @ts-ignore - ioredis hmset signature is complex but this works
     await redis.hmset(
       `${METRICS_KEY_PREFIX}${instanceId}`,
-      { ...metrics, updatedAt: now },
+      ...fields,
       'EX',
       config.ttl
     );
+  }
+
+  // Record metrics (best effort, ignore failures)
+  try {
+    instanceHeartbeatTotal.inc({ status: 'online' });
+    // Also record age metric (seconds since last heartbeat, should be near 0)
+    const ageSec = (Date.now() - now) / 1000;
+    instanceHeartbeatAge.set({ instance_id: instanceId }, ageSec);
+  } catch (e) {
+    // Metrics system may not be initialized during testing or early startup
   }
 
   // Update PostgreSQL with proper RLS context
@@ -217,6 +238,7 @@ export async function getAllInstancesWithStatus(
 }
 
 export async function syncInstanceStatuses(): Promise<void> {
+  const startTime = Date.now();
   const redis = getRedisClient();
   const config = DEFAULT_HEARTBEAT_CONFIG;
   const now = Date.now();
@@ -263,4 +285,13 @@ export async function syncInstanceStatuses(): Promise<void> {
       });
     }
   });
+
+  // Record metrics
+  try {
+    instanceCurrentlyOnline.set(onlineInstanceIds.size);
+    const duration = (Date.now() - startTime) / 1000;
+    instanceBackgroundSyncDuration.observe(duration);
+  } catch (e) {
+    // Metrics may not be ready during startup
+  }
 }

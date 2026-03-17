@@ -105,9 +105,10 @@ export async function resumeQueueHandler(request: FastifyRequest, reply: Fastify
   }
 }
 
-export async function cleanQueueHandler(request: FastifyRequest<{ Body: z.infer<typeof cleanQueueSchema> }>, reply: FastifyReply) {
+export async function cleanQueueHandler(request: FastifyRequest, reply: FastifyReply) {
   try {
-    const { ageHours = 24, batchSize = 1000 } = request.body;
+    const body = cleanQueueSchema.parse(request.body);
+    const { ageHours = 24, batchSize = 1000 } = body;
 
     // Note: cleanOldJobs returns a count but is currently a placeholder
     await cleanOldJobs(ageHours, batchSize);
@@ -122,6 +123,10 @@ export async function cleanQueueHandler(request: FastifyRequest<{ Body: z.infer<
       }
     };
   } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      reply.code(400).send({ error: 'Validation error', details: error.format() });
+      return;
+    }
     console.error('[QueueAdmin] Error cleaning queue:', error);
     return reply.code(500).send({
       success: false,
@@ -167,11 +172,13 @@ export async function healthHandler(request: FastifyRequest, reply: FastifyReply
 // ============================================================================
 
 export async function registerQueueAdminRoutes(fastify: any) {
-  fastify.get('/admin/queues/metrics', { schema: { hide: true } }, getMetricsHandler);
-  fastify.post('/admin/queues/pause', { schema: { hide: true } }, pauseQueueHandler);
-  fastify.post('/admin/queues/resume', { schema: { hide: true } }, resumeQueueHandler);
-  fastify.post('/admin/queues/clean', { schema: { body: cleanQueueSchema, hide: true } }, cleanQueueHandler);
-  fastify.get('/admin/queues/health', { schema: { hide: true } }, healthHandler);
+  fastify.get('/admin/queues/metrics', getMetricsHandler);
+  fastify.post('/admin/queues/pause', pauseQueueHandler);
+  fastify.post('/admin/queues/resume', resumeQueueHandler);
+  fastify.post('/admin/queues/clean', cleanQueueHandler);
+  fastify.get('/admin/queues/health', healthHandler);
 
   console.log('[QueueAdmin] Registered admin queue routes under /admin/queues');
 }
+
+export default registerQueueAdminRoutes;

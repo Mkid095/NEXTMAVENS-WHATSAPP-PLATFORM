@@ -31,10 +31,9 @@ export default async function (fastify: FastifyInstance) {
 
   fastify.post(
     '/:id/heartbeat',
-    { schema: { body: emptySchema } },
-    async (request: FastifyRequest<{ Params: { id: string }; Body: any }>, reply: FastifyReply) => {
+    async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        const { id: instanceId } = request.params;
+        const { id: instanceId } = request.params as { id: string };
 
         // Verify instance exists and token matches
         const instance = await prisma.whatsAppInstance.findUnique({

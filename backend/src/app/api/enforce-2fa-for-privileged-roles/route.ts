@@ -20,7 +20,7 @@
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { ZodType, z } from 'zod';
-import { prisma } from '../../lib/prisma.js';
+import { prisma } from '../../../lib/prisma.js';
 import {
   generate2FASetup,
   verifyAndEnable2FA,
@@ -30,7 +30,7 @@ import {
   require2FA,
   isPrivilegedRole,
   PRIVILEGED_ROLES,
-} from '../../lib/enforce-2fa-for-privileged-roles';
+} from '../../../lib/enforce-2fa-for-privileged-roles';
 
 // ┌─────────────────────────────────────────────────────────────┐
 // │ Zod Schemas for Validation                                   │
@@ -315,30 +315,18 @@ export default async function (fastify: FastifyInstance): Promise<void> {
   });
 
   // POST /admin/2fa/setup - Generate 2FA setup credentials
-  fastify.post(
-    '/setup',
-    { schema: { body: setupSchema } },
-    setupHandler
-  );
+  // Note: setupHandler manages its own validation (expects empty body)
+  fastify.post('/setup', setupHandler);
 
   // POST /admin/2fa/verify - Verify and enable 2FA
-  fastify.post(
-    '/verify',
-    { schema: { body: verifySchema } },
-    verifyHandler
-  );
+  // Handler validates token with verifySchema
+  fastify.post('/verify', verifyHandler);
 
   // POST /admin/2fa/disable - Disable 2FA
-  fastify.post(
-    '/disable',
-    { schema: { body: disableSchema } },
-    disableHandler
-  );
+  // Handler validates token with disableSchema
+  fastify.post('/disable', disableHandler);
 
   // GET /admin/2fa/status - Check 2FA status
-  fastify.get(
-    '/status',
-    { schema: { querystring: statusSchema } },
-    statusHandler
-  );
+  // Handler validates query with statusSchema
+  fastify.get('/status', statusHandler);
 }

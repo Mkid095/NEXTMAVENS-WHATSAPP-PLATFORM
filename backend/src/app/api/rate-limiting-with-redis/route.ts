@@ -66,7 +66,6 @@ export default async function (fastify: FastifyInstance) {
   // ------------------------------------------------------------------------
   fastify.get(
     '/rules',
-    { schema: { querystring: z.object({}) } },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const limiter = getRateLimiter();
       if (!limiter) {
@@ -89,36 +88,44 @@ export default async function (fastify: FastifyInstance) {
   // ------------------------------------------------------------------------
   fastify.post(
     '/rules',
-    { schema: { body: createRuleSchema } },
-    async (request: FastifyRequest<{ Body: z.infer<typeof createRuleSchema> }>, reply: FastifyReply) => {
-      const limiter = getRateLimiter();
-      if (!limiter) {
-        reply.code(503);
-        return { error: 'Rate limiter not initialized' };
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const body = createRuleSchema.parse(request.body);
+        const limiter = getRateLimiter();
+        if (!limiter) {
+          reply.code(503);
+          return { error: 'Rate limiter not initialized' };
+        }
+
+        const { ruleId, ...ruleData } = body;
+
+        // Check if rule ID already exists
+        const exists = limiter.config.rules.some(r => r.id === ruleId);
+        if (exists) {
+          reply.code(409);
+          return { error: `Rule with id '${ruleId}' already exists` };
+        }
+
+        const newRule: RateLimitRule = {
+          id: ruleId,
+          ...ruleData
+        };
+
+        limiter.config.rules.push(newRule);
+
+        reply.code(201);
+        return {
+          success: true,
+          message: 'Rate limit rule created',
+          rule: newRule
+        };
+      } catch (error: any) {
+        if (error instanceof z.ZodError) {
+          reply.code(400).send({ error: 'Validation error', details: error.format() });
+          return;
+        }
+        throw error;
       }
-
-      const { ruleId, ...ruleData } = request.body;
-
-      // Check if rule ID already exists
-      const exists = limiter.config.rules.some(r => r.id === ruleId);
-      if (exists) {
-        reply.code(409);
-        return { error: `Rule with id '${ruleId}' already exists` };
-      }
-
-      const newRule: RateLimitRule = {
-        id: ruleId,
-        ...ruleData
-      };
-
-      limiter.config.rules.push(newRule);
-
-      reply.code(201);
-      return {
-        success: true,
-        message: 'Rate limit rule created',
-        rule: newRule
-      };
     }
   );
 
@@ -127,29 +134,36 @@ export default async function (fastify: FastifyInstance) {
   // ------------------------------------------------------------------------
   fastify.get(
     '/rules/:id',
-    { schema: { params: z.object({ id: z.string() }) } },
-    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-      const limiter = getRateLimiter();
-      if (!limiter) {
-        reply.code(503);
-        return { error: 'Rate limiter not initialized' };
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const params = z.object({ id: z.string() }).parse(request.params);
+        const { id } = params;
+        const limiter = getRateLimiter();
+        if (!limiter) {
+          reply.code(503);
+          return { error: 'Rate limiter not initialized' };
+        }
+
+        // Check default rule first
+        if (id === limiter.config.defaultRule.id) {
+          return { rule: limiter.config.defaultRule };
+        }
+
+        // Search custom rules
+        const rule = limiter.config.rules.find(r => r.id === id);
+        if (!rule) {
+          reply.code(404);
+          return { error: `Rule '${id}' not found` };
+        }
+
+        return { rule };
+      } catch (error: any) {
+        if (error instanceof z.ZodError) {
+          reply.code(400).send({ error: 'Validation error', details: error.format() });
+          return;
+        }
+        throw error;
       }
-
-      const { id } = request.params;
-
-      // Check default rule first
-      if (id === limiter.config.defaultRule.id) {
-        return { rule: limiter.config.defaultRule };
-      }
-
-      // Search custom rules
-      const rule = limiter.config.rules.find(r => r.id === id);
-      if (!rule) {
-        reply.code(404);
-        return { error: `Rule '${id}' not found` };
-      }
-
-      return { rule };
     }
   );
 
@@ -158,41 +172,48 @@ export default async function (fastify: FastifyInstance) {
   // ------------------------------------------------------------------------
   fastify.put(
     '/rules/:id',
-    { schema: { params: z.object({ id: z.string() }), body: updateRuleSchema } },
     async (
-      request: FastifyRequest<{ Params: { id: string }; Body: z.infer<typeof updateRuleSchema> }>,
+      request: FastifyRequest,
       reply: FastifyReply
     ) => {
-      const limiter = getRateLimiter();
-      if (!limiter) {
-        reply.code(503);
-        return { error: 'Rate limiter not initialized' };
+      try {
+        const params = z.object({ id: z.string() }).parse(request.params);
+        const updates = updateRuleSchema.parse(request.body);
+        const { id } = params;
+        const limiter = getRateLimiter();
+        if (!limiter) {
+          reply.code(503);
+          return { error: 'Rate limiter not initialized' };
+        }
+
+        // Find rule
+        const ruleIndex = limiter.config.rules.findIndex(r => r.id === id);
+        if (ruleIndex === -1) {
+          reply.code(404);
+          return { error: `Rule '${id}' not found` };
+        }
+
+        // Update rule fields
+        const rule = limiter.config.rules[ruleIndex];
+        if (updates.maxRequests !== undefined) rule.maxRequests = updates.maxRequests;
+        if (updates.windowMs !== undefined) rule.windowMs = updates.windowMs;
+        if (updates.orgId !== undefined) rule.orgId = updates.orgId;
+        if (updates.instanceId !== undefined) rule.instanceId = updates.instanceId;
+        if (updates.endpoint !== undefined) rule.endpoint = updates.endpoint;
+        if (updates.trackMetrics !== undefined) rule.trackMetrics = updates.trackMetrics;
+
+        return {
+          success: true,
+          message: 'Rate limit rule updated',
+          rule
+        };
+      } catch (error: any) {
+        if (error instanceof z.ZodError) {
+          reply.code(400).send({ error: 'Validation error', details: error.format() });
+          return;
+        }
+        throw error;
       }
-
-      const { id } = request.params;
-      const updates = request.body;
-
-      // Find rule
-      const ruleIndex = limiter.config.rules.findIndex(r => r.id === id);
-      if (ruleIndex === -1) {
-        reply.code(404);
-        return { error: `Rule '${id}' not found` };
-      }
-
-      // Update rule fields
-      const rule = limiter.config.rules[ruleIndex];
-      if (updates.maxRequests !== undefined) rule.maxRequests = updates.maxRequests;
-      if (updates.windowMs !== undefined) rule.windowMs = updates.windowMs;
-      if (updates.orgId !== undefined) rule.orgId = updates.orgId;
-      if (updates.instanceId !== undefined) rule.instanceId = updates.instanceId;
-      if (updates.endpoint !== undefined) rule.endpoint = updates.endpoint;
-      if (updates.trackMetrics !== undefined) rule.trackMetrics = updates.trackMetrics;
-
-      return {
-        success: true,
-        message: 'Rate limit rule updated',
-        rule
-      };
     }
   );
 
@@ -201,34 +222,41 @@ export default async function (fastify: FastifyInstance) {
   // ------------------------------------------------------------------------
   fastify.delete(
     '/rules/:id',
-    { schema: { params: z.object({ id: z.string() }) } },
-    async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-      const limiter = getRateLimiter();
-      if (!limiter) {
-        reply.code(503);
-        return { error: 'Rate limiter not initialized' };
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const params = z.object({ id: z.string() }).parse(request.params);
+        const { id } = params;
+        const limiter = getRateLimiter();
+        if (!limiter) {
+          reply.code(503);
+          return { error: 'Rate limiter not initialized' };
+        }
+
+        // Cannot delete default rule
+        if (id === limiter.config.defaultRule.id) {
+          reply.code(400);
+          return { error: 'Cannot delete default rule' };
+        }
+
+        const initialLength = limiter.config.rules.length;
+        limiter.config.rules = limiter.config.rules.filter(r => r.id !== id);
+
+        if (limiter.config.rules.length === initialLength) {
+          reply.code(404);
+          return { error: `Rule '${id}' not found` };
+        }
+
+        return {
+          success: true,
+          message: `Rule '${id}' deleted`
+        };
+      } catch (error: any) {
+        if (error instanceof z.ZodError) {
+          reply.code(400).send({ error: 'Validation error', details: error.format() });
+          return;
+        }
+        throw error;
       }
-
-      const { id } = request.params;
-
-      // Cannot delete default rule
-      if (id === limiter.config.defaultRule.id) {
-        reply.code(400);
-        return { error: 'Cannot delete default rule' };
-      }
-
-      const initialLength = limiter.config.rules.length;
-      limiter.config.rules = limiter.config.rules.filter(r => r.id !== id);
-
-      if (limiter.config.rules.length === initialLength) {
-        reply.code(404);
-        return { error: `Rule '${id}' not found` };
-      }
-
-      return {
-        success: true,
-        message: `Rule '${id}' deleted`
-      };
     }
   );
 
@@ -237,7 +265,6 @@ export default async function (fastify: FastifyInstance) {
   // ------------------------------------------------------------------------
   fastify.get(
     '/metrics',
-    { schema: { querystring: z.object({}) } },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const limiter = getRateLimiter();
       if (!limiter) {
@@ -271,7 +298,6 @@ export default async function (fastify: FastifyInstance) {
   // ------------------------------------------------------------------------
   fastify.post(
     '/metrics/reset',
-    { schema: { body: z.object({}) } },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const limiter = getRateLimiter();
       if (!limiter) {
@@ -293,37 +319,45 @@ export default async function (fastify: FastifyInstance) {
   // ------------------------------------------------------------------------
   fastify.get(
     '/status',
-    { schema: { querystring: statusQuerySchema } },
-    async (request: FastifyRequest<{ Querystring: z.infer<typeof statusQuerySchema> }>, reply: FastifyReply) => {
-      const limiter = getRateLimiter();
-      if (!limiter) {
-        reply.code(503);
-        return { error: 'Rate limiter not initialized' };
-      }
-
-      const { identifier, ruleId } = request.query;
-
-      // Determine which rule to use
-      let rule: RateLimitRule;
-      if (ruleId) {
-        const found = limiter.config.rules.find(r => r.id === ruleId) || limiter.config.defaultRule;
-        if (found.id !== ruleId) {
-          reply.code(404);
-          return { error: `Rule '${ruleId}' not found` };
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const query = statusQuerySchema.parse(request.query);
+        const limiter = getRateLimiter();
+        if (!limiter) {
+          reply.code(503);
+          return { error: 'Rate limiter not initialized' };
         }
-        rule = found;
-      } else {
-        // Use default rule if none specified
-        rule = limiter.config.defaultRule;
+
+        const { identifier, ruleId } = query;
+
+        // Determine which rule to use
+        let rule: RateLimitRule;
+        if (ruleId) {
+          const found = limiter.config.rules.find(r => r.id === ruleId) || limiter.config.defaultRule;
+          if (found.id !== ruleId) {
+            reply.code(404);
+            return { error: `Rule '${ruleId}' not found` };
+          }
+          rule = found;
+        } else {
+          // Use default rule if none specified
+          rule = limiter.config.defaultRule;
+        }
+
+        const status = await limiter.getStatus(identifier, rule);
+
+        return {
+          identifier,
+          rule: { id: rule.id, maxRequests: rule.maxRequests, windowMs: rule.windowMs },
+          ...status
+        };
+      } catch (error: any) {
+        if (error instanceof z.ZodError) {
+          reply.code(400).send({ error: 'Validation error', details: error.format() });
+          return;
+        }
+        throw error;
       }
-
-      const status = await limiter.getStatus(identifier, rule);
-
-      return {
-        identifier,
-        rule: { id: rule.id, maxRequests: rule.maxRequests, windowMs: rule.windowMs },
-        ...status
-      };
     }
   );
 
@@ -332,29 +366,37 @@ export default async function (fastify: FastifyInstance) {
   // ------------------------------------------------------------------------
   fastify.post(
     '/reset',
-    { schema: { body: resetSchema } },
-    async (request: FastifyRequest<{ Body: z.infer<typeof resetSchema> }>, reply: FastifyReply) => {
-      const limiter = getRateLimiter();
-      if (!limiter) {
-        reply.code(503);
-        return { error: 'Rate limiter not initialized' };
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const body = resetSchema.parse(request.body);
+        const limiter = getRateLimiter();
+        if (!limiter) {
+          reply.code(503);
+          return { error: 'Rate limiter not initialized' };
+        }
+
+        const { identifier, ruleId } = body;
+
+        // Determine which rule
+        const rule = ruleId
+          ? (limiter.config.rules.find(r => r.id === ruleId) || limiter.config.defaultRule)
+          : limiter.config.defaultRule;
+
+        const success = await limiter.reset(identifier, rule);
+
+        return {
+          success,
+          message: success ? 'Rate limit reset' : 'No rate limit found for identifier',
+          identifier,
+          ruleId: rule.id
+        };
+      } catch (error: any) {
+        if (error instanceof z.ZodError) {
+          reply.code(400).send({ error: 'Validation error', details: error.format() });
+          return;
+        }
+        throw error;
       }
-
-      const { identifier, ruleId } = request.body;
-
-      // Determine which rule
-      const rule = ruleId
-        ? (limiter.config.rules.find(r => r.id === ruleId) || limiter.config.defaultRule)
-        : limiter.config.defaultRule;
-
-      const success = await limiter.reset(identifier, rule);
-
-      return {
-        success,
-        message: success ? 'Rate limit reset' : 'No rate limit found for identifier',
-        identifier,
-        ruleId: rule.id
-      };
     }
   );
 

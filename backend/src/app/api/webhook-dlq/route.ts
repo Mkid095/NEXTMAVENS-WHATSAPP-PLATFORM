@@ -37,7 +37,9 @@ const querySchema = z.object({
 
 export async function listDeadLettersHandler(request: FastifyRequest, reply: FastifyReply) {
   try {
-    const { page = 1, limit = 50, orgId, instanceId, event } = querySchema.parse(request.query);
+    // request.query is typed as any, so cast appropriately
+    const queryParams = request.query as Record<string, any>;
+    const { page = 1, limit = 50, orgId, instanceId, event } = querySchema.parse(queryParams);
 
     const result = await getDeadLetters(
       { orgId, instanceId, event },
@@ -115,9 +117,10 @@ export async function deleteDeadLetterHandler(request: FastifyRequest<{ Params: 
   }
 }
 
-export async function cleanDeadLettersHandler(request: FastifyRequest<{ Body: z.infer<typeof cleanSchema> }>, reply: FastifyReply) {
+export async function cleanDeadLettersHandler(request: FastifyRequest, reply: FastifyReply) {
   try {
-    const { olderThanDays = 7 } = request.body;
+    const body = cleanSchema.parse(request.body);
+    const { olderThanDays = 7 } = body;
     const deletedCount = await cleanOldDeadLetters(olderThanDays);
 
     return {
@@ -128,6 +131,10 @@ export async function cleanDeadLettersHandler(request: FastifyRequest<{ Body: z.
       },
     };
   } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      reply.code(400).send({ success: false, error: 'Invalid request body', details: error.format() });
+      return;
+    }
     console.error('[DLQAdmin] Error cleaning dead letters:', error);
     return reply.code(500).send({ success: false, error: 'Failed to clean dead letters' });
   }
@@ -138,11 +145,13 @@ export async function cleanDeadLettersHandler(request: FastifyRequest<{ Body: z.
 // ============================================================================
 
 export async function registerDeadLetterQueueAdminRoutes(fastify: any) {
-  fastify.get('/admin/dlq', { schema: { query: querySchema, hide: true } }, listDeadLettersHandler);
-  fastify.get('/admin/dlq/:id', { schema: { hide: true } }, getDeadLetterHandler);
-  fastify.post('/admin/dlq/:id/retry', { schema: { hide: true } }, retryDeadLetterHandler);
-  fastify.delete('/admin/dlq/:id', { schema: { hide: true } }, deleteDeadLetterHandler);
-  fastify.post('/admin/dlq/clean', { schema: { body: cleanSchema, hide: true } }, cleanDeadLettersHandler);
+  fastify.get('/admin/dlq', listDeadLettersHandler);
+  fastify.get('/admin/dlq/:id', getDeadLetterHandler);
+  fastify.post('/admin/dlq/:id/retry', retryDeadLetterHandler);
+  fastify.delete('/admin/dlq/:id', deleteDeadLetterHandler);
+  fastify.post('/admin/dlq/clean', cleanDeadLettersHandler);
 
   console.log('[DLQAdmin] Registered dead letter queue admin routes under /admin/dlq');
 }
+
+export default registerDeadLetterQueueAdminRoutes;
