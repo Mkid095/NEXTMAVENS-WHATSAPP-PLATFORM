@@ -158,7 +158,7 @@ export async function updateMessageStatus(
     // Note: We can't directly decrement gauges reliably in distributed systems,
     // but we can periodically recompute distribution via getStatusMetrics()
     // For now, just increment new status count (may be slightly off but acceptable for monitoring)
-    statusMetrics.messageStatusDistribution.inc({ status: status, orgId: message.orgId });
+    statusMetrics.messageStatusDistribution.inc({ status: status, org_id: message.orgId });
   }
 
   // Emit Socket.IO event (async, don't block)
@@ -650,7 +650,7 @@ export async function createStatusHistoryEntry(
   if (statusMetrics) {
     statusMetrics.messageStatusHistoryEntriesTotal.inc({ reason: reason });
     // Also increment distribution gauge for this status
-    statusMetrics.messageStatusDistribution.inc({ status, orgId });
+    statusMetrics.messageStatusDistribution.inc({ status, org_id: orgId });
   }
 }
 

@@ -34,6 +34,7 @@ model Organization {
   payments     Payment[]
   auditLogs    AuditLog[]  // Audit logs for this org
   deadLetters  DeadLetterQueue[]  // DLQ entries for this org
+  usageEvents  UsageEvent[]       // Usage-based billing events
 
   @@map("organizations")
   @@index([slug])
@@ -691,4 +692,24 @@ model WorkflowStepHistory {
   @@index([stepIndex])
   @@index([startedAt])
   @@index([instanceId, stepIndex])
+}
+
+model UsageEvent {
+  id                String   @id @default(cuid())
+  orgId             String
+  customerId        String   // Stripe customer ID
+  meterName         String
+  value             Float    // Usage quantity (can be integer or decimal depending on meter)
+  recordedAt        DateTime @default(now())
+  stripeMeterEventId String? // Stripe's event ID for idempotency
+  metadata          Json?
+
+  // Relations
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@map("usage_events")
+  @@index([orgId, meterName, recordedAt])
+  @@index([customerId])
+  @@index([meterName, recordedAt])
+  @@unique([orgId, customerId, meterName, recordedAt, stripeMeterEventId]) // logical idempotency
 }

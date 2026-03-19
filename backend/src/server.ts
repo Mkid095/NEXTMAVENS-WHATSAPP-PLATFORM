@@ -399,6 +399,18 @@ async function buildServer() {
   await app.register(workflowRoutes.default || workflowRoutes, { prefix: '/admin/workflows' });
   console.log('[SERVER] Workflow orchestration admin routes registered');
 
+  // Register Invoice Generation & Download Admin API routes (Phase 3 Step 4)
+  const invoiceRoutes = await import('./app/api/build-invoice-generation-&-download/route.js');
+  // @ts-ignore
+  await app.register(invoiceRoutes.default || invoiceRoutes, { prefix: '/admin/invoices' });
+  console.log('[SERVER] Invoice generation & download admin routes registered');
+
+  // Register Usage-Based Billing & Overage API routes (Phase 3 Step 5)
+  const usageRoutes = await import('./app/api/implement-usage-based-billing-&-overage/route.js');
+  // @ts-ignore
+  await app.register(usageRoutes.default || usageRoutes, { prefix: '/api/usage' });
+  console.log('[SERVER] Usage-based billing routes registered');
+
   // Error handler
   app.setErrorHandler((error, request, reply) => {
     app.log.error(error);

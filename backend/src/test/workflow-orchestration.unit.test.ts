@@ -1071,14 +1071,14 @@ describe('Workflow Processor', () => {
 
   test('should handle message action successfully', async () => {
     mockMessageQueue.add.mockResolvedValue({ id: 'msg-job-123' } as any);
-    mockPrisma.workflowInstance.findUnique.mockResolvedValue({
+    mockPrisma.workflowInstance.findFirst.mockResolvedValue({
       id: 'inst_123',
       instanceId: 'wf_inst_123',
       definitionId: 'def_123',
       status: 'RUNNING',
       orgId: 'org-123',
     });
-    mockPrisma.workflowDefinition.findUnique.mockResolvedValue({
+    mockPrisma.workflowDefinition.findFirst.mockResolvedValue({
       id: 'def_123',
       steps: [{ name: 'send-msg', action: { type: 'message', config: { to: '+1', message: 'hi' } } }],
     });
@@ -1116,14 +1116,14 @@ describe('Workflow Processor', () => {
   });
 
   test('should retry on transient failure', async () => {
-    mockPrisma.workflowInstance.findUnique.mockResolvedValue({
+    mockPrisma.workflowInstance.findFirst.mockResolvedValue({
       id: 'inst_123',
       instanceId: 'wf_inst_123',
       definitionId: 'def_123',
       status: 'RUNNING',
       orgId: 'org-123',
     });
-    mockPrisma.workflowDefinition.findUnique.mockResolvedValue({
+    mockPrisma.workflowDefinition.findFirst.mockResolvedValue({
       id: 'def_123',
       steps: [{ name: 'api-call', action: { type: 'api-call', config: { url: 'https://api.test' } } }],
     });
@@ -1170,14 +1170,14 @@ describe('Workflow Processor', () => {
   });
 
   test('should fail workflow on permanent error', async () => {
-    mockPrisma.workflowInstance.findUnique.mockResolvedValue({
+    mockPrisma.workflowInstance.findFirst.mockResolvedValue({
       id: 'inst_123',
       instanceId: 'wf_inst_123',
       definitionId: 'def_123',
       status: 'RUNNING',
       orgId: 'org-123',
     });
-    mockPrisma.workflowDefinition.findUnique.mockResolvedValue({
+    mockPrisma.workflowDefinition.findFirst.mockResolvedValue({
       id: 'def_123',
       steps: [{ name: 'api-call', action: { type: 'api-call', config: { url: 'https://api.test' } } }],
     });
@@ -1228,14 +1228,14 @@ describe('Workflow Processor', () => {
   });
 
   test('should handle delay action', async () => {
-    mockPrisma.workflowInstance.findUnique.mockResolvedValue({
+    mockPrisma.workflowInstance.findFirst.mockResolvedValue({
       id: 'inst_123',
       instanceId: 'wf_inst_123',
       definitionId: 'def_123',
       status: 'RUNNING',
       orgId: 'org-123',
     });
-    mockPrisma.workflowDefinition.findUnique.mockResolvedValue({
+    mockPrisma.workflowDefinition.findFirst.mockResolvedValue({
       id: 'def_123',
       steps: [{ name: 'wait', action: { type: 'delay', config: { delayMs: 100 } } }],
     });
@@ -1275,7 +1275,7 @@ describe('Workflow Processor', () => {
   });
 
   test('should skip step if instance is not RUNNING', async () => {
-    mockPrisma.workflowInstance.findUnique.mockResolvedValue({
+    mockPrisma.workflowInstance.findFirst.mockResolvedValue({
       id: 'inst_123',
       instanceId: 'wf_inst_123',
       definitionId: 'def_123',

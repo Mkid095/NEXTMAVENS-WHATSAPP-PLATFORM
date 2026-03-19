@@ -32,6 +32,11 @@ const mockMetrics = {
   messageStatusHistoryEntriesTotal: { inc: jest.fn() }
 };
 
+//Mock the prisma module to use our mockPrisma
+jest.mock('../lib/prisma', () => ({
+  prisma: mockPrisma,
+}));
+
 // Helper to reset mocks
 beforeEach(() => {
   jest.clearAllMocks();
