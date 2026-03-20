@@ -17,7 +17,7 @@ import { recordUsage, getCurrentUsage, getUsageAnalytics } from '../../../lib/im
 const recordUsageBodySchema = z.object({
   meter: z.string().min(1).max(100), // e.g., "api_requests", "messages_sent"
   value: z.number().positive(),
-  customerId: z.string().min(1).optional(), // defaults to org's Stripe customer ID
+  customerId: z.string().min(1).optional(), // defaults to org's Paystack customer ID
   timestamp: z.string().datetime().optional(),
   metadata: z.any().optional(),
 });
@@ -52,8 +52,8 @@ export async function recordUsageHandler(request: FastifyRequest, reply: Fastify
       return { success: false, error: 'Missing x-org-id header' };
     }
 
-    // Use provided customerId or fallback to org's Stripe customer ID
-    const customerId = body.customerId || orgId; // In production, fetch org's stripeCustomerId
+    // Use provided customerId or fallback to org's Paystack customer ID
+    const customerId = body.customerId || orgId; // In production, fetch org's paystackCustomerId
 
     const result = await recordUsage({
       orgId,

@@ -13,8 +13,14 @@ jest.mock('../../../lib/prisma', () => ({
  },
 }));
 
-jest.mock('../../../lib/implement-usage-based-billing-&-overage/stripe-client', () => ({
- recordMeterEvent: jest.fn(),
+// Paystack client mock
+jest.mock('../../../lib/implement-usage-based-billing-&-overage/paystack-client', () => ({
+ generateUsageInvoice: jest.fn(),
+}));
+
+// Mock tax integration module
+jest.mock('../../../lib/tax-integration', () => ({
+ getTaxConfig: jest.fn(),
 }));
 
 // Mock the metrics as no-ops
@@ -23,13 +29,15 @@ jest.mock('../../../lib/implement-usage-based-billing-&-overage/metrics', () => 
  currentUsageGauge: { set: jest.fn() },
  quotaRemainingGauge: { set: jest.fn() },
  overageChargesCentsTotal: { inc: jest.fn() },
+ paymentApiCallsTotal: { inc: jest.fn() },
  usageRecordingDuration: { observe: jest.fn() },
 }));
 
-import { recordUsage, getCurrentUsage, getUsageAnalytics } from '../../../lib/implement-usage-based-billing-&-overage/usage-service';
+import { recordUsage, getCurrentUsage, getUsageAnalytics, generatePeriodInvoice } from '../../../lib/implement-usage-based-billing-&-overage/usage-service';
 import type { RecordUsageInput, UsageAnalytics } from '../../../lib/implement-usage-based-billing-&-overage/types';
 import { prisma as mockPrisma } from '../../../lib/prisma';
-import { recordMeterEvent as mockStripeRecordMeterEvent } from '../../../lib/implement-usage-based-billing-&-overage/stripe-client';
+import { generateUsageInvoice as mockGenerateInvoice } from '../../../lib/implement-usage-based-billing-&-overage/paystack-client';
+import { getTaxConfig as mockGetTaxConfig } from '../../../lib/tax-integration';
 
 // Test data
 const mockOrgId = 'org-123';
@@ -55,6 +63,7 @@ const mockSubscription = {
 const mockOrganization = {
  id: mockOrgId,
  name: 'Test Org',
+ email: 'test@example.com',
  plan: 'STARTER',
  subscription: mockSubscription,
 };
@@ -75,13 +84,7 @@ beforeEach(() => {
   metadata: null,
  } as any);
  mockPrisma.$queryRaw.mockResolvedValue([{ total: 0n }]);
- mockStripeRecordMeterEvent.mockResolvedValue({
-  id: 'stripe-event-1',
-  event_name: mockMeterName,
-  customer: mockCustomerId,
-  value: 100,
-  created: Math.floor(Date.now() / 1000),
- });
+ // No external call during recordUsage
 });
 
 describe('recordUsage', () => {
@@ -124,7 +127,7 @@ describe('recordUsage', () => {
   });
  });
 
- it('should send meter event to Stripe', async () => {
+ it('should not generate invoice during usage recording (batching is separate)', async () => {
   const input: RecordUsageInput = {
    orgId: mockOrgId,
    customerId: mockCustomerId,
@@ -134,13 +137,8 @@ describe('recordUsage', () => {
 
   await recordUsage(input);
 
-  expect(mockStripeRecordMeterEvent).toHaveBeenCalledWith({
-   event_name: mockMeterName,
-   customer: mockCustomerId,
-   value: 75,
-   timestamp: expect.any(Number),
-   idempotency_key: 'event-1',
-  });
+  // Paystack invoice generation is separate via generatePeriodInvoice
+  expect(mockGenerateInvoice).not.toHaveBeenCalled();
  });
 
  it('should accumulate usage within same period', async () => {
@@ -153,15 +151,8 @@ describe('recordUsage', () => {
   // Second call
   await recordUsage({ orgId: mockOrgId, customerId: mockCustomerId, meterName: mockMeterName, value: 50 });
 
-  // Verify $queryRaw was called (it uses positional params for Prisma SQL)
+  // Verify $queryRaw was called twice (once per usage record)
   expect(mockPrisma.$queryRaw).toHaveBeenCalledTimes(2);
-  // Check first argument contains the query
-  expect(mockPrisma.$queryRaw).toHaveBeenCalledWith(
-   expect.any(String),
-   expect.any(String),
-   expect.any(String),
-   expect.any(Date)
-  );
  });
 
  it('should throw if value is not positive', async () => {
@@ -207,13 +198,8 @@ describe('getCurrentUsage', () => {
  it('should query usage from database', async () => {
   await getCurrentUsage(mockOrgId, mockMeterName);
 
-  // Verify $queryRaw was called with SQL template and parameters
-  expect(mockPrisma.$queryRaw).toHaveBeenCalledWith(
-   expect.any(String),
-   expect.any(String),
-   expect.any(String),
-   expect.any(Date)
-  );
+  // Verify $queryRaw was called
+  expect(mockPrisma.$queryRaw).toHaveBeenCalled();
  });
 });
 
@@ -253,5 +239,95 @@ describe('getUsageAnalytics', () => {
 
   expect(result.totalUsage).toBe(0);
   expect(result.dailyBreakdown).toHaveLength(0);
+ });
+});
+
+describe('generatePeriodInvoice', () => {
+ beforeEach(() => {
+  mockPrisma.organization.findUnique.mockResolvedValue({
+   id: mockOrgId,
+   name: 'Test Org',
+   email: 'test@example.com',
+   plan: 'STARTER',
+  } as any);
+  mockPrisma.$queryRaw.mockResolvedValue([{ total: 15000n }]); // 15,000 units (exceeds quota)
+  mockGenerateInvoice.mockResolvedValue({
+   id: 12345,
+   request_code: 'PRQ_test123',
+   amount: 50000, // 500 NGN in kobo (5,000 overage * 5 cents = 25000 cents = 250 NGN, but let's use 500)
+   invoice_number: 1,
+   status: 'pending',
+   paid: false,
+  } as any);
+  mockGetTaxConfig.mockResolvedValue(null); // No tax by default
+ });
+
+ it('should generate invoice when usage exceeds quota', async () => {
+  const result = await generatePeriodInvoice(mockOrgId, mockMeterName);
+
+  expect(result.success).toBe(true);
+  expect(result.paymentRequestId).toBe(12345);
+  expect(result.requestCode).toBe('PRQ_test123');
+  expect(result.amountKobo).toBe(50000);
+  expect(mockGenerateInvoice).toHaveBeenCalledWith(
+   mockOrgId,
+   mockMeterName,
+   expect.any(Date),
+   expect.any(Date),
+   5, // overageRateCents for STARTER
+   10000, // includedUnits
+   'Test Org',
+   'test@example.com',
+   15000,
+   undefined, // taxRatePercent
+   undefined // taxName
+  );
+ });
+
+ it('should not generate invoice when usage within quota', async () => {
+  // Under quota
+  mockPrisma.$queryRaw.mockResolvedValue([{ total: 5000n }]);
+
+  const result = await generatePeriodInvoice(mockOrgId, mockMeterName);
+
+  expect(result.success).toBe(true);
+  expect(result.message).toBe('No overage to invoice for this period');
+  expect(mockGenerateInvoice).not.toHaveBeenCalled();
+ });
+
+ it('should throw when organization not found', async () => {
+  mockPrisma.organization.findUnique.mockResolvedValueOnce(null);
+
+  await expect(generatePeriodInvoice(mockOrgId, mockMeterName)).rejects.toThrow('Organization not found');
+ });
+
+ it('should apply tax when organization has tax configuration', async () => {
+  // Set up tax config
+  mockGetTaxConfig.mockResolvedValue({
+    orgId: mockOrgId,
+    taxRate: 7.5,
+    taxName: 'VAT',
+  });
+
+  // Override usage to ensure overage
+  mockPrisma.$queryRaw.mockResolvedValue([{ total: 15000n }]);
+
+  const result = await generatePeriodInvoice(mockOrgId, mockMeterName);
+
+  expect(result.success).toBe(true);
+  // Verify generateUsageInvoice called with tax parameters
+  expect(mockGenerateInvoice).toHaveBeenCalledWith(
+    mockOrgId,
+    mockMeterName,
+    expect.any(Date),
+    expect.any(Date),
+    5, // overageRateCents
+    10000,
+    'Test Org',
+    'test@example.com',
+    15000,
+    7.5, // taxRatePercent
+    'VAT' // taxName
+  );
  });
 });

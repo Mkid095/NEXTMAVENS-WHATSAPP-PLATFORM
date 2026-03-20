@@ -18,7 +18,13 @@ model Organization {
   id          String   @id @default(cuid())
   name        String   // "Acme Corp"
   slug        String   @unique // "acme-corp"
+  email       String   // Billing/contact email
+  taxRate     Float?   // Tax rate as percentage (e.g., 7.5 for 7.5%)
+  taxName     String?  // Tax type: VAT, GST, Sales Tax, etc.
+  taxId       String?  // Tax registration number (optional)
   plan        Plan     @default(FREE)
+  // Payment method management
+  paystackCustomerCode String? @unique // Paystack customer identifier
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -32,9 +38,11 @@ model Organization {
   quotaUsages  QuotaUsage[]
   invoices     Invoice[]
   payments     Payment[]
+  paymentMethods PaymentMethod[] // Customer payment methods
   auditLogs    AuditLog[]  // Audit logs for this org
   deadLetters  DeadLetterQueue[]  // DLQ entries for this org
   usageEvents  UsageEvent[]       // Usage-based billing events
+  featureFlags OrganizationFeatureFlag[] // Feature flag overrides
 
   @@map("organizations")
   @@index([slug])
@@ -562,6 +570,31 @@ model Payment {
   @@index([stripePaymentId])
 }
 
+// ┌─────────────────────────────────────────────────────────────┐
+// │ Payment Methods (Customer Cards)                           │
+// └─────────────────────────────────────────────────────────────┘
+
+model PaymentMethod {
+  id                String   @id @default(cuid())
+  orgId             String
+  authorizationCode String   // Reusable Paystack authorization code for this card
+  last4             String   // Last 4 digits of card
+  brand             String   // visa, mastercard, amex
+  expMonth          Int
+  expYear           Int
+  isDefault         Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@map("payment_methods")
+  @@index([orgId])
+  @@unique([orgId, authorizationCode]) // avoid duplicate cards per org
+  @@index([isDefault])
+}
+
 enum PaymentStatus {
   SUCCEEDED
   FAILED
@@ -695,14 +728,13 @@ model WorkflowStepHistory {
 }
 
 model UsageEvent {
-  id                String   @id @default(cuid())
-  orgId             String
-  customerId        String   // Stripe customer ID
-  meterName         String
-  value             Float    // Usage quantity (can be integer or decimal depending on meter)
-  recordedAt        DateTime @default(now())
-  stripeMeterEventId String? // Stripe's event ID for idempotency
-  metadata          Json?
+  id         String   @id @default(cuid())
+  orgId      String
+  customerId String   // Customer identifier (defaults to orgId)
+  meterName  String
+  value      Float    // Usage quantity (can be integer or decimal depending on meter)
+  recordedAt DateTime @default(now())
+  metadata   Json?
 
   // Relations
   org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
@@ -711,5 +743,44 @@ model UsageEvent {
   @@index([orgId, meterName, recordedAt])
   @@index([customerId])
   @@index([meterName, recordedAt])
-  @@unique([orgId, customerId, meterName, recordedAt, stripeMeterEventId]) // logical idempotency
+}
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │ Feature Management Models (Phase 3 Step 8.5)                │
+// └─────────────────────────────────────────────────────────────┘
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  key         String   @unique // e.g., "billing_enabled", "payments_enabled"
+  name        String   // Human-readable name
+  description String?  // Optional description
+  enabled     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  orgOverrides OrganizationFeatureFlag[]
+
+  @@map("feature_flags")
+  @@index([key])
+  @@index([enabled])
+}
+
+model OrganizationFeatureFlag {
+  id         String   @id @default(cuid())
+  orgId      String
+  featureKey String   // References FeatureFlag.key
+  enabled    Boolean? // null = inherit from global, true = forced on, false = forced off
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  feature    FeatureFlag  @relation(fields: [featureKey], references: [key], onDelete: Cascade)
+
+  @@unique([orgId, featureKey])
+  @@map("organization_feature_flags")
+  @@index([orgId])
+  @@index([featureKey])
+  @@index([enabled])
 }

@@ -39,10 +39,10 @@ export const overageChargesCentsTotal = new Counter({
   registers: [usageRegistry],
 });
 
-// Stripe API call metrics
-export const stripeApiCallsTotal = new Counter({
-  name: 'stripe_api_calls_total',
-  help: 'Total calls to Stripe API',
+// Payment Provider API call metrics (Paystack/Stripe)
+export const paymentApiCallsTotal = new Counter({
+  name: 'payment_api_calls_total',
+  help: 'Total calls to Payment Provider API',
   labelNames: ['endpoint', 'status'],
   registers: [usageRegistry],
 });

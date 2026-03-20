@@ -1,6 +1,7 @@
 /**
  * Usage-Based Billing & Overage - Type Definitions
  * Core types for tracking usage, quotas, and overage calculations
+ * Integrated with Paystack for invoice management
  */
 
 export interface UsageEvent {
@@ -10,7 +11,6 @@ export interface UsageEvent {
   meterName: string;
   value: number;
   recordedAt: Date;
-  stripeMeterEventId?: string;
   metadata?: Record<string, any>;
 }
 
@@ -84,39 +84,25 @@ export interface RecordUsageResult {
   message?: string;
 }
 
-export interface StripeMeterEventPayload {
-  event_name: string;
+// Paystack types
+export interface PaystackInvoiceItem {
+  id: number;
+  description: string;
+  amount: number; // in kobo
+  invoice: number;
   customer: string;
-  value: number;
-  timestamp: number; // Unix timestamp
-  // Optional: identity for idempotency
-  idempotency_key?: string;
 }
 
-export interface StripeBillingMeter {
-  id: string;
-  name: string;
-  event_name: string;
-  aggregation: 'sum' | 'count';
-  value_settings?: {
-    unit_amount: number;
-    unit_amount_decimal?: string;
+export interface PaystackInvoice {
+  id: number;
+  invoice_number: string;
+  customer: {
+    email: string;
+    id: number;
   };
-}
-
-export interface StripeMeterEventResponse {
-  id: string;
-  event_name: string;
-  customer: string;
-  value: number;
-  created: number;
-}
-
-export interface StripeUsageAnalyticsResponse {
-  data: Array<{
-    timestamp: number;
-    value: number;
-  }>;
-  has_more: boolean;
-  url: string;
+  status: 'draft' | 'sent' | 'paid' | 'failed' | 'voided';
+  due_date: string;
+  amount: number; // total in kobo
+  created_at: string;
+  metadata?: Record<string, any>;
 }

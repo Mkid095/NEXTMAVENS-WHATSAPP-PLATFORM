@@ -2,7 +2,9 @@
 
 ## Executive Summary
 
-This research focuses on implementing usage-based billing (also called consumption-based billing) with overage handling in a Stripe-integrated SaaS platform. The goal is to bill customers based on actual usage rather than fixed subscription fees, with automatic charges for usage beyond included quotas.
+This research focuses on implementing usage-based billing (also called consumption-based billing) with overage handling using Paystack as the payment provider. The goal is to bill customers based on actual usage rather than fixed subscription fees, with automatic charges for usage beyond included quotas.
+
+**Note**: The implementation evolved from initial Stripe research to Paystack integration to better serve the African market with local payment methods (cards, bank transfer, mobile money).
 
 ## Key Concepts
 
@@ -17,58 +19,69 @@ Usage-based billing (UBB) charges customers based on their actual consumption of
 ### Overage
 Overage refers to usage beyond the included quota in a subscription. For example, a plan might include 10,000 API calls per month, with additional calls billed at $0.50 per 1,000 calls.
 
-## Stripe's Modern Approach: Billing Meters
+## Paystack Payment Request API
 
-Stripe has evolved its usage-based billing API. The legacy "usage records" API is deprecated as of 2025-03-31. The modern approach uses **Billing Meters** and **Meter Events**.
+Paystack provides a Payment Request API (also called Invoice API) that allows creating invoices with line items. This is suitable for usage-based billing where overage charges are calculated and billed at the end of the billing period.
 
 ### Core Concepts
 
-1. **Billing Meter**: Configuration in Stripe that defines how usage is aggregated and billed
-   - **Event name**: Identifier used when reporting usage (e.g., "api_requests")
-   - **Aggregation type**:
-     - `sum` - Total all values (for quantities like GB, tokens, minutes)
-     - `count` - Count number of events (for per-event billing)
-   - **Value settings**: Unit amount, currency, and how to calculate charges
+1. **Customer**: Paystack customer record (email, name, phone). Required for invoices.
+   - Created automatically via `getOrCreateCustomer()` if not exists.
 
-2. **Meter Event**: Data sent to Stripe to record usage
-   ```javascript
-   stripe.billingMeterEvents.create({
-     event_name: "api_requests",
-     customer: "cus_123",
-     value: 1500, // quantity used
-     timestamp: new Date(),
-   });
+2. **Payment Request (Invoice)**: A bill sent to a customer.
+   - Contains line items (description, amount, quantity)
+   - Has a due date, status (draft/sent/paid), and payment link
+   - Can be finalized and sent via email
+
+3. **Line Item**: Individual charge on an invoice.
+   - `name`: Description (e.g., "api_requests overage (5000 units)")
+   - `amount`: Price in kobo (smallest NGN unit; multiply NGN by 100)
+   - `quantity`: Number of units (usually 1 for overage line items)
+
+4. **Amount Calculation**: Paystack expects amounts in kobo.
+   ```typescript
+   const amountKobo = Math.round(overageCents / 100); // Convert cents to kobo
    ```
 
-3. **Meter Usage Analytics**: API to query usage data for dashboards and reporting
-   ```javascript
-   const analytics = stripe.billingMeterUsageAnalytics.query({
-     meter: "meter_123",
-     customer: "cus_123",
-     time_range: { start: ..., end: ... },
-   });
-   ```
+### Creating an Invoice
+
+```
+1. Ensure customer exists (or create)
+2. Create draft payment request with line items
+   POST /paymentrequest
+   {
+     "customer": "CUS_xxxxx",
+     "description": "Usage billing for March 2025",
+     "line_items": [
+       {"name": "api_requests overage (5000 units)", "amount": 25000, "quantity": 1}
+     ],
+     "due_date": "2025-04-07",
+     "draft": true
+   }
+3. (Optional) Finalize: POST /paymentrequest/finalize/:code
+4. Send to customer: POST /paymentrequest/send/:code
+```
 
 ### Implementation Flow
 
 ```
-1. Create a product in Stripe
-2. Create a price with `usage_type: "metered"`
-3. Create a billing meter linked to the price
-4. During customer usage:
-   - Record meter events (real-time or batched)
-   - Optionally store in local DB for caching/analytics
-5. At billing period end:
-   - Stripe aggregates usage from meter events
-   - invoices automatically include usage charges
-   - Overage is calculated based on plan tier
+1. Record usage events locally (fast, no external API)
+2. At billing period end or admin trigger:
+   - Fetch current period usage from DB
+   - Compare to quota to calculate overage
+   - If overage > 0:
+     a. Create line item with overage units × rate
+     b. Create draft payment request via Paystack
+     c. (Optional) Finalize and send automatically
+3. Store payment request details for reconciliation
 ```
 
 ### Important Notes
-- Meter events can be sent in real-time or in batches
-- Stripe allows some event timestamp flexibility (backdating up to 7 days)
-- Usage is aggregated per billing period (subscription cycle)
-- There is a limit on meter events per minute per meter (rate limits apply)
+- Paystack does not provide real-time meter events like Stripe. Invoices are created explicitly.
+- Amounts are in **kobo** (NGN). For USD plans, convert to NGN before creating invoice.
+- Payment requests can be created in draft mode and finalized later.
+- Customer records must have valid email for invoice delivery.
+- API rate limits apply (check Paystack docs).
 
 ## Technical Architecture
 

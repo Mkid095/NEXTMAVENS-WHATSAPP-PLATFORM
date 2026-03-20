@@ -1,13 +1,28 @@
 /**
  * Usage Service
  * Core business logic for usage-based billing and overage tracking
+ * Integrated with Paystack for invoice generation
  */
 
 import { prisma } from '../prisma';
-import { usageEventsTotal, currentUsageGauge, quotaRemainingGauge, overageChargesCentsTotal, usageRecordingDuration } from './metrics';
-import { recordMeterEvent } from './stripe-client';
+import {
+  usageEventsTotal,
+  currentUsageGauge,
+  quotaRemainingGauge,
+  overageChargesCentsTotal,
+  usageRecordingDuration,
+  paymentApiCallsTotal,
+} from './metrics';
 import { checkQuota, calculateOverage } from './quota-calculator';
-import type { UsageEvent, RecordUsageInput, RecordUsageResult, UsageAnalytics, Quota } from './types';
+import { generateUsageInvoice } from './paystack-client';
+import type {
+  UsageEvent,
+  RecordUsageInput,
+  RecordUsageResult,
+  UsageAnalytics,
+  Quota,
+} from './types';
+import { getTaxConfig } from '../tax-integration';
 
 // Static quota configuration based on plan
 const PLAN_QUOTAS: Record<string, Record<string, { includedUnits: number; overageRateCents: number }>> = {
@@ -40,7 +55,7 @@ export async function recordUsage(input: RecordUsageInput): Promise<RecordUsageR
     const timestamp = input.timestamp || new Date();
     const orgId = input.orgId;
 
-    // Fetch organization to get plan
+    // Fetch organization to get plan and contact info
     const org = await prisma.organization.findUnique({
       where: { id: orgId },
     });
@@ -58,7 +73,7 @@ export async function recordUsage(input: RecordUsageInput): Promise<RecordUsageR
       meterName,
       includedUnits: planQuota.includedUnits,
       overageRateCents: planQuota.overageRateCents,
-      currency: 'usd',
+      currency: 'usd', // Base currency in cents
     };
 
     // Get current period (calendar month)
@@ -90,17 +105,6 @@ export async function recordUsage(input: RecordUsageInput): Promise<RecordUsageR
     quotaRemainingGauge.set({ org_id: orgId, meter_name: meterName }, quota.includedUnits - newTotal);
     usageEventsTotal.inc({ org_id: orgId, meter_name: meterName });
 
-    // Send to Stripe (fire-and-forget)
-    recordMeterEvent({
-      event_name: meterName,
-      customer: input.customerId || orgId,
-      value: input.value,
-      timestamp: Math.floor(timestamp.getTime() / 1000),
-      idempotency_key: usageEvent.id,
-    }).catch((err) => {
-      console.error(`[UsageService] Failed to send meter event to Stripe:`, err);
-    });
-
     const duration = (performance.now() - startTime) / 1000;
     usageRecordingDuration.observe({ meter_name: meterName }, duration);
 
@@ -113,6 +117,87 @@ export async function recordUsage(input: RecordUsageInput): Promise<RecordUsageR
       message: quotaResult.withinQuota ? undefined : `Over quota by ${quotaResult.available * -1} units`,
     };
   } catch (error: any) {
+    const duration = (performance.now() - startTime) / 1000;
+    usageRecordingDuration.observe({ meter_name: meterName }, duration);
+    throw error;
+  }
+}
+
+/**
+ * Generate an invoice for the current billing period via Paystack
+ * Creates a payment request with overage charges
+ */
+export async function generatePeriodInvoice(orgId: string, meterName: string): Promise<{
+  success: boolean;
+  paymentRequestId?: number;
+  requestCode?: string;
+  amountKobo?: number;
+  message?: string;
+}> {
+  const startTime = performance.now();
+  try {
+    // Fetch organization
+    const org = await prisma.organization.findUnique({
+      where: { id: orgId },
+    });
+    if (!org) {
+      throw new Error(`Organization not found: ${orgId}`);
+    }
+
+    // Get quota
+    const planQuota = PLAN_QUOTAS[org.plan]?.[meterName];
+    if (!planQuota) {
+      throw new Error(`No quota defined for plan ${org.plan} and meter ${meterName}`);
+    }
+
+    // Get current period usage
+    const period = getCurrentCalendarPeriod();
+    const currentUsage = await getCurrentUsageFromDB(orgId, meterName, period.periodStart);
+
+    // Check if there's any overage to bill
+    if (currentUsage <= planQuota.includedUnits) {
+      return {
+        success: true,
+        message: 'No overage to invoice for this period',
+      };
+    }
+
+    // Fetch tax configuration (if any)
+    const taxConfig = await getTaxConfig(orgId);
+
+    // Generate invoice via Paystack
+    const paymentRequest = await generateUsageInvoice(
+      orgId,
+      meterName,
+      period.periodStart,
+      period.periodEnd,
+      planQuota.overageRateCents,
+      planQuota.includedUnits,
+      org.name,
+      org.email || 'billing@example.com', // TODO: use actual customer email
+      currentUsage,
+      taxConfig?.taxRate,
+      taxConfig?.taxName
+    );
+
+    // Record invoice in our database (we'll need an Invoice model from Step 4)
+    // For now, log the payment request details
+    console.log(`[UsageService] Generated payment request ${paymentRequest.request_code} for ${orgId}: ${paymentRequest.amount} kobo`);
+
+    paymentApiCallsTotal.inc({ endpoint: 'paymentrequest.create', status: 'success' });
+
+    const duration = (performance.now() - startTime) / 1000;
+    usageRecordingDuration.observe({ meter_name: meterName }, duration);
+
+    return {
+      success: true,
+      paymentRequestId: paymentRequest.id,
+      requestCode: paymentRequest.request_code,
+      amountKobo: paymentRequest.amount,
+      message: `Invoice created: ${paymentRequest.invoice_number}`,
+    };
+  } catch (error: any) {
+    paymentApiCallsTotal.inc({ endpoint: 'paymentrequest.create', status: 'error' });
     const duration = (performance.now() - startTime) / 1000;
     usageRecordingDuration.observe({ meter_name: meterName }, duration);
     throw error;

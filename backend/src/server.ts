@@ -94,6 +94,18 @@ async function buildServer() {
   }
 
   // ============================================================================
+  // FEATURE FLAGS INITIALIZATION (Phase 3 Step 8.5)
+  // ============================================================================
+  try {
+    const { initializeFeatureFlags } = await import('./lib/feature-management');
+    await initializeFeatureFlags();
+    console.log('[FeatureManagement] Feature flags initialized with defaults');
+  } catch (error) {
+    console.error('[FeatureManagement] Initialization failed:', error);
+    // Fail open - continue if feature flags fail to initialize
+  }
+
+  // ============================================================================
   // GLOBAL PREHANDLER MIDDLEWARE PIPELINE
   // ============================================================================
   app.addHook('preHandler', async (request, reply) => {
@@ -410,6 +422,36 @@ async function buildServer() {
   // @ts-ignore
   await app.register(usageRoutes.default || usageRoutes, { prefix: '/api/usage' });
   console.log('[SERVER] Usage-based billing routes registered');
+
+  // Register Usage-Based Billing Admin API routes (Phase 3 Step 5 - Paystack)
+  const usageAdminRoutes = await import('./app/api/implement-usage-based-billing-&-overage/admin.route.js');
+  // @ts-ignore
+  await app.register(usageAdminRoutes.default || usageAdminRoutes, { prefix: '/admin/usage' });
+  console.log('[SERVER] Usage-based billing admin routes registered');
+
+  // Register Tax Integration API routes (Phase 3 Step 6)
+  const taxRoutes = await import('./app/api/tax-integration/route.js');
+  // @ts-ignore
+  await app.register(taxRoutes.default || taxRoutes, { prefix: '/api/tax' });
+  console.log('[SERVER] Tax integration routes registered');
+
+  // Register Billing Admin Dashboard API routes (Phase 3 Step 7)
+  const billingAdminRoutes = await import('./app/api/build-billing-admin-dashboard/route.js');
+  // @ts-ignore
+  await app.register(billingAdminRoutes.default || billingAdminRoutes, { prefix: '/admin/billing' });
+  console.log('[SERVER] Billing admin dashboard routes registered');
+
+  // Register Feature Management Admin API routes (Phase 3 Step 8.5)
+  const featureRoutes = await import('./app/api/admin/features/route.js');
+  // @ts-ignore
+  await app.register(featureRoutes.default || featureRoutes, { prefix: '/admin/features' });
+  console.log('[SERVER] Feature management admin routes registered');
+
+  // Register Payment Method Management API routes (Phase 3 Step 8)
+  const paymentMethodRoutes = await import('./app/api/implement-card-updates-&-payment-method-management/route.js');
+  // @ts-ignore
+  await app.register(paymentMethodRoutes.default || paymentMethodRoutes, { prefix: '/api/payment-methods' });
+  console.log('[SERVER] Payment method management routes registered');
 
   // Error handler
   app.setErrorHandler((error, request, reply) => {

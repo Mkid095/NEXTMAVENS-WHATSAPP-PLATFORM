@@ -16,15 +16,22 @@ jest.mock('../../../../lib/prisma', () => ({
   },
 }));
 
-// Mock the Stripe client
-jest.mock('../../../../lib/implement-usage-based-billing-&-overage/stripe-client', () => ({
-  recordMeterEvent: jest.fn(),
+// Mock the Paystack client
+jest.mock('../../../../lib/implement-usage-based-billing-&-overage/paystack-client', () => ({
+  generateUsageInvoice: jest.fn(),
+}));
+
+// Mock the tax integration module
+jest.mock('../../../../lib/tax-integration', () => ({
+  getTaxConfig: jest.fn(),
 }));
 
 // Import the mocked modules
 import { prisma as mockPrisma } from '../../../../lib/prisma';
-import { recordMeterEvent as mockRecordMeterEvent } from '../../../../lib/implement-usage-based-billing-&-overage/stripe-client';
-import { registerUsageRoutes } from '../../../../app/api/implement-usage-based-billing-&-overage/route.js';
+import { generateUsageInvoice as mockGenerateInvoice } from '../../../../lib/implement-usage-based-billing-&-overage/paystack-client';
+import { getTaxConfig as mockGetTaxConfig } from '../../../../lib/tax-integration';
+import { registerUsageRoutes } from '../../../../app/api/implement-usage-based-billing-&-overage/route';
+import registerUsageAdminRoutes from '../../../../app/api/implement-usage-based-billing-&-overage/admin.route';
 
 // Test constants
 const mockOrgId = 'org-123';
@@ -53,13 +60,15 @@ describe('Usage API Integration', () => {
       recordedAt: new Date(),
     });
     mockPrisma.$queryRaw.mockResolvedValue([{ total: 0n }]); // default current usage is 0
-    mockRecordMeterEvent.mockResolvedValue({
-      id: 'evt_1',
-      event_name: mockMeterName,
-      customer: mockOrgId,
-      value: 100,
-      created: Math.floor(Date.now() / 1000),
-    });
+    mockGenerateInvoice.mockResolvedValue({
+      id: 12345,
+      request_code: 'PRQ_test123',
+      amount: 50000,
+      invoice_number: 1,
+      status: 'pending',
+      paid: false,
+    } as any);
+    mockGetTaxConfig.mockResolvedValue(null); // No tax by default
 
     // Auth hook: simulates orgGuard + auth middleware
     fastify.addHook('preHandler', async (request, reply) => {
@@ -68,11 +77,15 @@ describe('Usage API Integration', () => {
         reply.code(400).send({ error: 'Missing x-org-id' });
         return;
       }
-      (request as any).user = { id: mockUserId };
+      // Check x-user-role header for admin tests, default to regular user
+      const role = (request.headers['x-user-role'] as string) || 'USER';
+      (request as any).user = { id: mockUserId, role, orgId };
     });
 
     // Register usage routes
     fastify.register(registerUsageRoutes, { prefix: '/api/usage' });
+    // Register admin routes
+    fastify.register(registerUsageAdminRoutes, { prefix: '/admin/usage' });
 
     await fastify.ready();
   });
@@ -202,6 +215,104 @@ describe('Usage API Integration', () => {
       });
 
       expect(response.statusCode).toBe(400);
+    });
+  });
+
+  describe('POST /admin/usage/invoices/generate', () => {
+    // Test with SUPER_ADMIN role
+    it('should generate invoice as SUPER_ADMIN', async () => {
+      // Override org mock to include email and plan
+      mockPrisma.organization.findUnique.mockResolvedValue({
+        id: mockOrgId,
+        name: 'Test Org',
+        email: 'billing@test.com',
+        plan: 'PRO',
+      } as any);
+      mockPrisma.$queryRaw.mockResolvedValue([{ total: 150000n }]); // 150k > 100k quota
+
+      const response = await fastify.inject({
+        method: 'POST',
+        url: '/admin/usage/invoices/generate',
+        body: {
+          orgId: mockOrgId,
+          meterName: mockMeterName,
+        },
+        headers: {
+          'x-org-id': mockOrgId,
+          'x-user-role': 'SUPER_ADMIN',
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.data.paymentRequestId).toBeDefined();
+      expect(body.data.requestCode).toBe('PRQ_test123');
+    });
+
+    it('should return 403 as non-admin', async () => {
+      const response = await fastify.inject({
+        method: 'POST',
+        url: '/admin/usage/invoices/generate',
+        body: {
+          orgId: mockOrgId,
+          meterName: mockMeterName,
+        },
+        headers: {
+          'x-org-id': mockOrgId,
+          'x-user-role': 'USER', // regular user, not admin
+        },
+      });
+
+      expect(response.statusCode).toBe(403);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toContain('admin role required');
+    });
+
+    it('should return 400 if validation fails', async () => {
+      const response = await fastify.inject({
+        method: 'POST',
+        url: '/admin/usage/invoices/generate',
+        body: {
+          orgId: '', // invalid empty
+          meterName: mockMeterName,
+        },
+        headers: {
+          'x-org-id': mockOrgId,
+          'x-user-role': 'SUPER_ADMIN',
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('should handle no overage case', async () => {
+      mockPrisma.organization.findUnique.mockResolvedValue({
+        id: mockOrgId,
+        name: 'Test Org',
+        email: 'billing@test.com',
+        plan: 'ENTERPRISE',
+      } as any);
+      mockPrisma.$queryRaw.mockResolvedValue([{ total: 500000n }]); // 500k < 1M quota
+
+      const response = await fastify.inject({
+        method: 'POST',
+        url: '/admin/usage/invoices/generate',
+        body: {
+          orgId: mockOrgId,
+          meterName: mockMeterName,
+        },
+        headers: {
+          'x-org-id': mockOrgId,
+          'x-user-role': 'SUPER_ADMIN',
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.data.message).toBe('No overage to invoice for this period');
     });
   });
 });

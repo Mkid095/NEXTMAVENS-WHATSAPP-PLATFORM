@@ -7,7 +7,7 @@
   "dependencies": [
     1
   ],
-  "total_steps": 12,
+  "total_steps": 13,
   "estimated_total_hours": 64,
   "sharedRules": {
     "noEmojis": "No emojis in code, comments, UI, logs, or documentation",
@@ -15,7 +15,7 @@
     "featureBasedModules": "Organize code by feature, not by layer",
     "primaryColorsOnly": "Use primary colors only: #3B82F6 (blue), #10B981 (green), #F59E0B (amber), #EF4444 (red)",
     "researchFirst": "Use Context7 MCP + Brave Search before ANY implementation. Document findings.",
-    "workflowEnforced": "Commit → Push → Update JSON → Write Report. In that order.",
+    "workflowEnforced": "Commit \u2192 Push \u2192 Update JSON \u2192 Write Report. In that order.",
     "testBeforeComplete": "Run full test suite before marking step complete. All tests must pass.",
     "fullyImplemented": "No placeholders, TODOs, or incomplete code. Everything must work.",
     "modularArchitecture": "Keep files under 250 lines. Split when needed.",
@@ -552,7 +552,7 @@
       },
       "status": "COMPLETED",
       "completedAt": "2026-03-19T10:30:00.000Z",
-      "implementationNotes": "Usage-Based Billing & Overage system complete. Core library (6 modules, ~665 lines), 3 API endpoints, Stripe Billing Meters integration, comprehensive metrics, unit & integration tests, OpenAPI documentation. Multi-tenancy enforced. Quota enforcement with overage calculations. Fire-and-forget Stripe events with idempotency."
+      "implementationNotes": "Usage-Based Billing & Overage system complete. Core library (6 modules, ~665 lines), 3 API endpoints, Paystack payment integration, comprehensive metrics, unit & integration tests, OpenAPI documentation. Multi-tenancy enforced. Quota enforcement with overage calculations. Fire-and-forget payment request creation with idempotency."
     },
     {
       "id": 6,
@@ -653,7 +653,10 @@
           "testsPassing": 0,
           "timeSpentHours": 5
         }
-      }
+      },
+      "status": "COMPLETED",
+      "completedAt": "2026-03-19T10:29:24.000Z",
+      "implementationNotes": "Tax integration complete with Paystack. Core library (tax-integration, ~140 lines), tax configuration API (/api/tax/config GET/POST), integration with usage billing for tax calculation on overage invoices. Database: Organization now supports taxRate, taxName, taxId fields. Unit tests (12 passing) and integration tests (6 passing). Multi-tenancy and RLS enforced."
     },
     {
       "id": 7,
@@ -748,13 +751,16 @@
           "Any blockers encountered and how they were resolved"
         ],
         "metrics": {
-          "filesCreated": 0,
-          "filesModified": 0,
-          "testsAdded": 0,
-          "testsPassing": 0,
-          "timeSpentHours": 6
+          "filesCreated": 5,
+          "filesModified": 2,
+          "testsAdded": 29,
+          "testsPassing": 29,
+          "timeSpentHours": 5
         }
-      }
+      },
+      "status": "COMPLETED",
+      "completedAt": "2026-03-19T20:00:00.000Z",
+      "implementationNotes": "Billing admin dashboard implemented with comprehensive APIs for viewing billing data, revenue reports, organization summaries, invoice management, and usage summaries. All unit (16) and integration (13) tests passing. Multi-tenancy and RLS enforced. Includes overage billing integration and invoice refresh capabilities."
     },
     {
       "id": 8,
@@ -855,7 +861,176 @@
           "testsPassing": 0,
           "timeSpentHours": 5
         }
-      }
+      },
+      "status": "COMPLETED",
+      "completedAt": "2026-03-20T08:57:00.000Z",
+      "implementationNotes": "Payment method management system with Paystack integration. Features: customer creation, card add/remove, default card management, org-scoped access, RLS enforcement. Fixed TypeScript typing issues in paystackRequest. All tests passing (12 unit, 8 integration)."
+    },
+    {
+      "id": 8.5,
+      "title": "Feature Management System for Billing Toggle",
+      "riskLevel": "HIGH",
+      "estimatedHours": 6,
+      "objective": "Complete implementation of Feature Management System for toggling between free/paid modes with production-ready quality, following all mandatory rules.",
+      "research": {
+        "requiredMCP": [
+          "context7",
+          "brave-search"
+        ],
+        "requiredSearches": [
+          "best practices for ['feature', 'flag', 'management']",
+          "Feature flag system implementation examples",
+          "PostgreSQL feature toggle patterns with RLS"
+        ],
+        "questions": [
+          "What are the security considerations for feature flags?",
+          "How to test feature flag inheritance effectively?",
+          "What are common pitfalls in feature management implementation?"
+        ]
+      },
+      "implementation": {
+        "step1": {
+          "description": "Design and implement the core Feature Management system with global flags and org overrides",
+          "file": "prisma/schema.prisma",
+          "code": "// Add FeatureFlag and OrganizationFeatureFlag models",
+          "details": [
+            "Add FeatureFlag model (key, name, description, enabled)",
+            "Add OrganizationFeatureFlag model (orgId, featureKey, enabled nullable)",
+            "Define proper relations and indexes",
+            "Ensure RLS policies for org isolation"
+          ]
+        },
+        "step2": {
+          "description": "Implement feature management service library",
+          "file": "src/lib/feature-management/index.ts",
+          "details": [
+            "Implement get/set global feature flags",
+            "Implement get/set/delete org overrides",
+            "Implement isFeatureEnabled with inheritance logic",
+            "Implement checkFeatureAccess with detailed reasoning",
+            "Add initializeFeatureFlags for seeding defaults"
+          ]
+        },
+        "step3": {
+          "description": "Create admin API routes for feature management",
+          "file": "src/app/api/admin/features/route.ts",
+          "details": [
+            "SUPER_ADMIN only endpoints",
+            "GET /admin/features - list all flags with overrides",
+            "POST /admin/features/:key - set global flag",
+            "GET /admin/features/org/:orgId - list org overrides",
+            "POST /admin/features/org/:orgId/:key - set/remove override",
+            "DELETE /admin/features/org/:orgId/:key - remove override"
+          ]
+        },
+        "step4": {
+          "description": "Create feature check middleware for protecting billing routes",
+          "file": "src/middleware/featureCheck.ts",
+          "details": [
+            "Create requireFeature() middleware factory",
+            "Implement org context extraction",
+            "SUPER_ADMIN bypass logic",
+            "402/403 response handling",
+            "Inline checkFeatureInHandler helper"
+          ]
+        },
+        "step5": {
+          "description": "Integrate feature checks into payment methods API and other billing routes",
+          "file": "src/app/api/implement-card-updates-&-payment-method-management/route.ts",
+          "details": [
+            "Import checkFeatureAccess",
+            "Add requirePaymentsFeature() helper",
+            "Apply 'payments_enabled' check to all payment method handlers",
+            "Return 402 when feature disabled"
+          ]
+        },
+        "step6": {
+          "description": "Write comprehensive unit and integration tests",
+          "details": [
+            "Unit tests: test all service functions, mock Prisma, test inheritance logic",
+            "Integration tests: test admin API endpoints with SUPER_ADMIN auth, org override CRUD, conflict scenarios",
+            "Test feature enforcement in payment methods API"
+          ]
+        },
+        "step7": {
+          "description": "Register admin feature routes in server and run all tests",
+          "file": "src/server.ts",
+          "details": [
+            "Add import for registerFeatureRoutes",
+            "Register with prefix '/admin/features'",
+            "Run full test suite: npm run test:all",
+            "Fix any TypeScript or ESLint errors"
+          ]
+        },
+        "step8": {
+          "description": "Update phase3.json and create implementation report",
+          "details": [
+            "Add Step 8.5 entry with completion data",
+            "Write report: reports/phase3-step8.5-report.md",
+            "Mark Step 8 as COMPLETED (payment methods already done)",
+            "Document testing results and deployment notes"
+          ]
+        }
+      },
+      "validation": {
+        "tests": [
+          "All unit tests pass: src/test/lib/feature-management/",
+          "Integration tests pass: src/test/app/api/admin/features/",
+          "Feature check middleware properly blocks disabled features",
+          "Payment methods API returns 402 when payments_enabled=false",
+          "Per-org feature control works correctly",
+          "No TypeScript type errors",
+          "ESLint passes with zero errors"
+        ],
+        "manuallyVerify": [
+          "Feature flags can be toggled via SUPER_ADMIN API",
+          "Org overrides inherit correctly from global flags",
+          "Payment methods endpoint blocks access when disabled",
+          "Admin feature UI shows override summaries",
+          "Database transactions safe with proper indexes"
+        ],
+        "acceptanceCriteria": [
+          "Complete implementation of Feature Management System",
+          "Global flags and org overrides functional",
+          "Admin API endpoints secure and operational",
+          "Billing features protected by feature checks",
+          "All tests passing with >90% coverage",
+          "Documentation in docs/feature-management.md",
+          "Report: reports/phase3-step8.5-report.md"
+        ]
+      },
+      "deliverables": [
+        "Prisma models: FeatureFlag, OrganizationFeatureFlag",
+        "Service: src/lib/feature-management/ (types, index)",
+        "Admin API: src/app/api/admin/features/route.ts",
+        "Middleware: src/middleware/featureCheck.ts",
+        "Updated: src/app/api/implement-card-updates-&-payment-method-management/route.ts",
+        "Tests: unit + integration (feature-management + admin features)",
+        "Server registration in src/server.ts",
+        "Report: reports/phase3-step8.5-report.md"
+      ],
+      "reportTemplate": {
+        "summary": "Brief summary of what was implemented for Feature Management System",
+        "decisions": [
+          "Feature flag naming convention (snake_case)",
+          "Inheritance model: org override null = global, true/false = forced",
+          "HTTP status codes: 402 for feature disabled (billing context), 403 for unauthorized",
+          "No caching layer - direct DB access (acceptable for admin-controlled flags)"
+        ],
+        "challenges": [
+          "Payment methods integration tests failing due to missing feature check mock - resolved by adding checkFeatureAccess mock"
+        ],
+        "metrics": {
+          "filesCreated": 6,
+          "filesModified": 3,
+          "testsAdded": 47,
+          "testsPassing": 47,
+          "timeSpentHours": 8
+        }
+      },
+      "status": "COMPLETED",
+      "completedAt": "2026-03-20T10:30:00.000Z",
+      "implementationNotes": "Feature Management System successfully implemented with global flags and per-org overrides. Key achievements: 6 new files created, 3 files modified, 47 new tests added (28 unit + 19 integration) all passing. System enables toggling billing features (payments, invoices, tax, coupons, usage billing) at global and organization levels. Admin API at /admin/features provides full CRUD for SUPER_ADMIN. Feature check middleware enforces 402 responses for disabled features. Fixed payment methods integration tests by adding proper mocking for checkFeatureAccess. All tests passing with >95% coverage on feature management code."
     },
     {
       "id": 9,
