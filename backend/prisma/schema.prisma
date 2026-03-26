@@ -43,6 +43,7 @@ model Organization {
   deadLetters  DeadLetterQueue[]  // DLQ entries for this org
   usageEvents  UsageEvent[]       // Usage-based billing events
   featureFlags OrganizationFeatureFlag[] // Feature flag overrides
+  coupons      Coupon[]           // Coupon management for Step 9
 
   @@map("organizations")
   @@index([slug])
@@ -783,4 +784,45 @@ model OrganizationFeatureFlag {
   @@index([orgId])
   @@index([featureKey])
   @@index([enabled])
+}
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │ Coupon & Discount Models (Phase 3 Step 9)                  │
+// └─────────────────────────────────────────────────────────────┘
+
+model Coupon {
+  id                String   @id @default(cuid())
+  code              String   @unique
+  name              String
+  description       String?
+  discountType      String   // "percentage" | "fixed"
+  discountValue     Float
+  maxUses           Int?
+  usedCount         Int      @default(0)
+  perUserLimit      Int?
+  minPurchaseAmount Float?
+  validFrom         DateTime
+  validTo           DateTime
+  orgId             String
+  createdBy         String
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  org       Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  usage     CouponUsage[]
+}
+
+model CouponUsage {
+  id       String   @id @default(cuid())
+  couponId String
+  orgId    String
+  userId   String?
+  usedAt   DateTime @default(now())
+  orderId  String?
+
+  coupon Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+
+  @@unique([couponId, orgId, userId, orderId])
 }

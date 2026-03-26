@@ -514,6 +514,59 @@ enum PaymentStatus {
 }
 
 // ┌─────────────────────────────────────────────────────────────┐
+// │ Coupon & Discount Models                                   │
+// └─────────────────────────────────────────────────────────────┘
+
+model Coupon {
+  id               String   @id @default(cuid())
+  code             String   @unique
+  name             String
+  description      String?
+  discountType     String   // "percentage" or "fixed"
+  discountValue    Decimal  // Percentage (0-100) or fixed amount in currency units
+  maxUses          Int?     // Overall usage limit (null = unlimited)
+  usedCount        Int      @default(0)
+  perUserLimit     Int?     // Max uses per user/org (null = unlimited)
+  minPurchaseAmount Decimal? // Minimum purchase amount required (in currency units)
+  validFrom        DateTime
+  validTo          DateTime
+  orgId            String
+  createdBy        String   // User ID who created the coupon
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  org     Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  usage   CouponUsage[]
+
+  @@map("coupons")
+  @@index([code])
+  @@index([orgId])
+  @@index([isActive])
+  @@index([validTo])
+}
+
+model CouponUsage {
+  id         String   @id @default(cuid())
+  couponId   String
+  orgId      String
+  userId     String?  // User who applied the coupon (if applicable)
+  usedAt     DateTime @default(now())
+  orderId    String?  // Linked invoice or payment ID
+
+  // Relations
+  coupon Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
+
+  @@unique([couponId, orgId, userId, orderId])
+  @@map("coupon_usage")
+  @@index([couponId])
+  @@index([orgId])
+  @@index([userId])
+  @@index([usedAt])
+}
+
+// ┌─────────────────────────────────────────────────────────────┐
 // │ Audit & Compliance                                         │
 // └─────────────────────────────────────────────────────────────┘
 

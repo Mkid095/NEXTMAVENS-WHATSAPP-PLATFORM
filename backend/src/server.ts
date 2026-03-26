@@ -453,6 +453,12 @@ async function buildServer() {
   await app.register(paymentMethodRoutes.default || paymentMethodRoutes, { prefix: '/api/payment-methods' });
   console.log('[SERVER] Payment method management routes registered');
 
+  // Register Coupon & Discount System API routes (Phase 3 Step 9)
+  const couponRoutes = await import('./app/api/build-coupon-&-discount-system/route.js');
+  // @ts-ignore
+  await app.register(couponRoutes.default || couponRoutes, { prefix: '/api/coupons' });
+  console.log('[SERVER] Coupon & discount system routes registered');
+
   // Error handler
   app.setErrorHandler((error, request, reply) => {
     app.log.error(error);
