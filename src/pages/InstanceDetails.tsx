@@ -46,7 +46,7 @@ export function InstanceDetails() {
   const { data: resellerTokenData, isLoading: isLoadingResellerToken, error: resellerTokenError, refetch: refetchResellerToken } = useQuery({
     queryKey: ['reseller-token', instance?.orgId],
     queryFn: async () => {
-      const response = await api.get('/whatsapp/reseller/token');
+      const response = await api.get('whatsapp/reseller/token');
       return response.data;
     },
     enabled: !!instance?.orgId,

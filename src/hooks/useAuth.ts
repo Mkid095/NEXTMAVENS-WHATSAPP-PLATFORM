@@ -15,7 +15,7 @@ export interface LoginResponse {
 export function useLogin() {
   return useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
-      const { data } = await api.post<LoginResponse>('/auth/login', credentials);
+      const { data } = await api.post<LoginResponse>('auth/login', credentials);
       return data;
     },
   });
@@ -24,7 +24,7 @@ export function useLogin() {
 export function useRegister() {
   return useMutation({
     mutationFn: async (credentials: { email: string; password: string; name: string }) => {
-      const { data } = await api.post('/auth/register', credentials);
+      const { data } = await api.post('auth/register', credentials);
       return data;
     },
   });
@@ -45,5 +45,7 @@ export function getAuthUser(): User | null {
 }
 
 export function isAuthenticated(): boolean {
-  return !!localStorage.getItem('accessToken');
+  const token = localStorage.getItem('accessToken');
+  console.log('[isAuthenticated] token:', token ? `${token.substring(0, 20)}...` : 'null');
+  return !!token;
 }

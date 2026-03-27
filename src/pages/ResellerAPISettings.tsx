@@ -13,7 +13,7 @@ export function ResellerAPISettings() {
   const { data, refetch, isLoading, error } = useQuery({
     queryKey: ['reseller-token'],
     queryFn: async () => {
-      const response = await api.get('/whatsapp/reseller/token');
+      const response = await api.get('whatsapp/reseller/token');
       return response.data;
     },
     retry: false,
@@ -22,7 +22,7 @@ export function ResellerAPISettings() {
   // Regenerate token (calls same endpoint to get fresh token)
   const regenerateMutation = useMutation({
     mutationFn: async () => {
-      const response = await api.get('/whatsapp/reseller/token');
+      const response = await api.get('whatsapp/reseller/token');
       return response.data;
     },
     onSuccess: (data) => {

@@ -58,7 +58,7 @@ export function useInstances() {
   return useQuery({
     queryKey: ['whatsapp-instances'],
     queryFn: async () => {
-      const { data } = await api.get('/whatsapp/instances');
+      const { data } = await api.get('whatsapp/instances');
       return (data.instances || []) as WhatsAppInstance[];
     },
   });
@@ -69,7 +69,7 @@ export function useCreateInstance() {
 
   return useMutation({
     mutationFn: async (instanceData: { name: string; webhookUrl?: string }) => {
-      const { data } = await api.post('/whatsapp/instances', instanceData);
+      const { data } = await api.post('whatsapp/instances', instanceData);
       return data.instance || null;
     },
     onSuccess: () => {
@@ -86,7 +86,7 @@ export function useQRCode(instanceId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const { data } = await api.post(`/whatsapp/instances/${instanceId}/connect`);
+      const { data } = await api.post(`whatsapp/instances/${instanceId}/connect`);
       return data || null;
     },
     onSuccess: () => {
@@ -104,7 +104,7 @@ export function useCachedQR(instanceId: string, enabled: boolean = true) {
   return useQuery({
     queryKey: ['whatsapp-instance-qr', instanceId],
     queryFn: async () => {
-      const { data } = await api.get(`/whatsapp/instances/${instanceId}/qr`);
+      const { data } = await api.get(`whatsapp/instances/${instanceId}/qr`);
       return data || null;
     },
     refetchInterval: 2000,
@@ -116,7 +116,7 @@ export function useInstanceStatus(instanceId: string, enabled: boolean = true) {
   return useQuery({
     queryKey: ['whatsapp-instance-status', instanceId],
     queryFn: async () => {
-      const { data } = await api.get(`/whatsapp/instances/${instanceId}/status`);
+      const { data } = await api.get(`whatsapp/instances/${instanceId}/status`);
       return data || null;
     },
     refetchInterval: 5000,
@@ -128,7 +128,7 @@ export function useDisconnectInstance() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (instanceId: string) => {
-      const { data } = await api.post(`/whatsapp/instances/${instanceId}/disconnect`);
+      const { data } = await api.post(`whatsapp/instances/${instanceId}/disconnect`);
       return data;
     },
     onSuccess: () => {
@@ -167,7 +167,7 @@ export function useChats(instanceId: string | null) {
     queryKey: ['whatsapp-chats', instanceId],
     queryFn: async () => {
       if (!instanceId) return [];
-      const { data } = await api.get(`/whatsapp/instances/${instanceId}/chats`);
+      const { data } = await api.get(`whatsapp/instances/${instanceId}/chats`);
       return (data.chats || []) as WhatsAppChat[];
     },
     enabled: !!instanceId,
@@ -179,7 +179,7 @@ export function useChatMessages(instanceId: string | null, chatJid: string | nul
     queryKey: ['whatsapp-messages', instanceId, chatJid],
     queryFn: async () => {
       if (!instanceId || !chatJid) return [];
-      const { data } = await api.get(`/whatsapp/instances/${instanceId}/chats/${chatJid}/messages`);
+      const { data } = await api.get(`whatsapp/instances/${instanceId}/chats/${chatJid}/messages`);
       return (data.messages || []) as WhatsAppMessage[];
     },
     enabled: !!instanceId && !!chatJid,
@@ -190,7 +190,7 @@ export function useChatMessages(instanceId: string | null, chatJid: string | nul
 export function useMarkRead(instanceId: string) {
   return useMutation({
     mutationFn: async (chatJid: string) => {
-      const { data } = await api.post(`/whatsapp/instances/${instanceId}/chats/read`, {
+      const { data } = await api.post(`whatsapp/instances/${instanceId}/chats/read`, {
         keys: [{ remoteJid: chatJid, fromMe: false }]
       });
       return data || null;
@@ -212,7 +212,7 @@ export function useWebhooks(instanceId: string | null) {
     queryKey: ['whatsapp-webhooks', instanceId],
     queryFn: async () => {
       if (!instanceId) return [];
-      const { data } = await api.get(`/whatsapp/instances/${instanceId}/webhooks`);
+      const { data } = await api.get(`whatsapp/instances/${instanceId}/webhooks`);
       return (data.webhooks || []) as WhatsAppWebhook[];
     },
     enabled: !!instanceId,
@@ -223,7 +223,7 @@ export function useUpdateWebhook(instanceId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (webhookData: Partial<WhatsAppWebhook>) => {
-      const { data } = await api.post(`/whatsapp/instances/${instanceId}/webhooks`, webhookData);
+      const { data } = await api.post(`whatsapp/instances/${instanceId}/webhooks`, webhookData);
       return data || null;
     },
     onSuccess: () => {
@@ -237,10 +237,10 @@ export function useUpdateProfile(instanceId: string) {
   return useMutation({
     mutationFn: async (profileData: { name?: string; status?: string }) => {
       if (profileData.name) {
-        await api.patch(`/whatsapp/instances/${instanceId}/profile/name`, { name: profileData.name });
+        await api.patch(`whatsapp/instances/${instanceId}/profile/name`, { name: profileData.name });
       }
       if (profileData.status) {
-        await api.patch(`/whatsapp/instances/${instanceId}/profile/status`, { status: profileData.status });
+        await api.patch(`whatsapp/instances/${instanceId}/profile/status`, { status: profileData.status });
       }
     },
     onSuccess: () => {
@@ -258,7 +258,7 @@ export function useUpdateSettings(instanceId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (settings: { rejectCalls?: boolean; groupsIgnore?: boolean; alwaysOnline?: boolean }) => {
-      const { data } = await api.put(`/whatsapp/instances/${instanceId}`, { ...settings });
+      const { data } = await api.put(`whatsapp/instances/${instanceId}`, { ...settings });
       return data || null;
     },
     onSuccess: () => {
@@ -280,7 +280,7 @@ export function useApiKeys(instanceId: string) {
   return useQuery({
     queryKey: ['whatsapp-api-keys', instanceId],
     queryFn: async () => {
-      const { data } = await api.get(`/whatsapp/instances/${instanceId}/keys`);
+      const { data } = await api.get(`whatsapp/instances/${instanceId}/keys`);
       return (data.keys || []) as WhatsAppApiKey[];
     },
     enabled: !!instanceId,
@@ -291,7 +291,7 @@ export function useCreateApiKey(instanceId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (keyData: { name: string }) => {
-      const { data } = await api.post(`/whatsapp/instances/${instanceId}/keys`, keyData);
+      const { data } = await api.post(`whatsapp/instances/${instanceId}/keys`, keyData);
       return data.key || null;
     },
     onSuccess: () => {
@@ -308,7 +308,7 @@ export function useDeleteApiKey(instanceId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (keyId: string) => {
-      await api.delete(`/whatsapp/instances/${instanceId}/keys/${keyId}`);
+      await api.delete(`whatsapp/instances/${instanceId}/keys/${keyId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-api-keys', instanceId] });
@@ -338,7 +338,7 @@ export function useSubInstances(parentInstanceId: string) {
   return useQuery({
     queryKey: ['sub-instances', parentInstanceId],
     queryFn: async () => {
-      const { data } = await api.get(`/whatsapp/reseller/sub-instances?parentId=${parentInstanceId}`);
+      const { data } = await api.get(`whatsapp/reseller/sub-instances?parentId=${parentInstanceId}`);
       return (data.subInstances || []) as SubInstance[];
     },
     enabled: !!parentInstanceId,
@@ -357,7 +357,7 @@ export function useCreateSubInstance() {
       quotaLimit?: number;
       quotaPeriod?: string;
     }) => {
-      const { data: response } = await api.post('/whatsapp/reseller/create-sub-instance', data);
+      const { data: response } = await api.post('whatsapp/reseller/create-sub-instance', data);
       return response.subInstance || null;
     },
     onSuccess: () => {
@@ -371,7 +371,7 @@ export function useSubInstanceStatus(subInstanceId: string) {
   return useQuery({
     queryKey: ['sub-instance-status', subInstanceId],
     queryFn: async () => {
-      const { data } = await api.get(`/whatsapp/reseller/sub-instances/${subInstanceId}/status`);
+      const { data } = await api.get(`whatsapp/reseller/sub-instances/${subInstanceId}/status`);
       return data || null;
     },
     enabled: !!subInstanceId,
@@ -382,7 +382,7 @@ export function useConnectSubInstance(subInstanceId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const { data } = await api.post(`/whatsapp/reseller/sub-instances/${subInstanceId}/connect`);
+      const { data } = await api.post(`whatsapp/reseller/sub-instances/${subInstanceId}/connect`);
       return data || null;
     },
     onSuccess: () => {
@@ -396,7 +396,7 @@ export function useDeleteSubInstance() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (subInstanceId: string) => {
-      await api.delete(`/whatsapp/reseller/sub-instances/${subInstanceId}`);
+      await api.delete(`whatsapp/reseller/sub-instances/${subInstanceId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sub-instances'] });
@@ -422,7 +422,7 @@ export function useAgents(instanceId: string) {
   return useQuery({
     queryKey: ['agents', instanceId],
     queryFn: async () => {
-      const { data } = await api.get(`/whatsapp/instances/${instanceId}/agents`);
+      const { data } = await api.get(`whatsapp/instances/${instanceId}/agents`);
       return (data.agents || []) as WhatsAppAgent[];
     },
     enabled: !!instanceId,
@@ -433,7 +433,7 @@ export function useCreateAgent(instanceId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: { name: string; avatar?: string }) => {
-      const { data: response } = await api.post(`/whatsapp/instances/${instanceId}/agents`, data);
+      const { data: response } = await api.post(`whatsapp/instances/${instanceId}/agents`, data);
       return response.agent || null;
     },
     onSuccess: () => {
@@ -450,7 +450,7 @@ export function useUpdateAgentStatus() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ agentId, status }: { agentId: string; status: 'available' | 'busy' | 'away' | 'offline' }) => {
-      const { data } = await api.put(`/whatsapp/agents/${agentId}/status`, { status });
+      const { data } = await api.put(`whatsapp/agents/${agentId}/status`, { status });
       return data || null;
     },
     onSuccess: () => {
@@ -474,7 +474,7 @@ export function useQueue(instanceId: string) {
   return useQuery({
     queryKey: ['queue', instanceId],
     queryFn: async () => {
-      const { data } = await api.get(`/whatsapp/instances/${instanceId}/queue`);
+      const { data } = await api.get(`whatsapp/instances/${instanceId}/queue`);
       return (data.queue || []) as any[];
     },
     enabled: !!instanceId,
@@ -486,7 +486,7 @@ export function useAssignments(instanceId: string) {
   return useQuery({
     queryKey: ['assignments', instanceId],
     queryFn: async () => {
-      const { data } = await api.get(`/whatsapp/assignments/${instanceId}`);
+      const { data } = await api.get(`whatsapp/assignments/${instanceId}`);
       return (data.assignments || []) as ChatAssignment[];
     },
     enabled: !!instanceId,
@@ -497,7 +497,7 @@ export function useAssignChat() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ chatJid, agentId }: { chatJid: string; agentId: string }) => {
-      const { data } = await api.post('/whatsapp/assignments', { chatJid, agentId });
+      const { data } = await api.post('whatsapp/assignments', { chatJid, agentId });
       return data || null;
     },
     onSuccess: () => {
@@ -543,7 +543,7 @@ export function useGroups(instanceId: string) {
   return useQuery({
     queryKey: ['groups', instanceId],
     queryFn: async () => {
-      const { data } = await api.get(`/whatsapp/groups?instanceId=${instanceId}`);
+      const { data } = await api.get(`whatsapp/groups?instanceId=${instanceId}`);
       return (data.groups || []) as WhatsAppGroup[];
     },
     enabled: !!instanceId,
@@ -554,7 +554,7 @@ export function useCreateGroup() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: { instanceId: string; name: string; participants: string[] }) => {
-      const { data: response } = await api.post('/whatsapp/groups', data);
+      const { data: response } = await api.post('whatsapp/groups', data);
       return response.group || null;
     },
     onSuccess: () => {
@@ -571,7 +571,7 @@ export function useGroupDetails(groupJid: string) {
   return useQuery({
     queryKey: ['group', groupJid],
     queryFn: async () => {
-      const { data } = await api.get(`/whatsapp/groups/${groupJid}`);
+      const { data } = await api.get(`whatsapp/groups/${groupJid}`);
       return data.group || null;
     },
     enabled: !!groupJid,
@@ -582,7 +582,7 @@ export function useUpdateGroup(groupJid: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (updates: { subject?: string; description?: string; isAnnounceGroup?: boolean }) => {
-      const { data } = await api.put(`/whatsapp/groups/${groupJid}`, updates);
+      const { data } = await api.put(`whatsapp/groups/${groupJid}`, updates);
       return data || null;
     },
     onSuccess: () => {
@@ -596,7 +596,7 @@ export function useDeleteGroup() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (groupJid: string) => {
-      await api.delete(`/whatsapp/groups/${groupJid}`);
+      await api.delete(`whatsapp/groups/${groupJid}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['groups'] });
@@ -613,7 +613,7 @@ export function useGroupParticipants(groupJid: string) {
   return useQuery({
     queryKey: ['group-participants', groupJid],
     queryFn: async () => {
-      const { data } = await api.get(`/whatsapp/groups/${groupJid}/participants`);
+      const { data } = await api.get(`whatsapp/groups/${groupJid}/participants`);
       return (data.participants || []) as GroupParticipant[];
     },
     enabled: !!groupJid,
@@ -624,7 +624,7 @@ export function useAddParticipant(groupJid: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (phoneNumber: string) => {
-      const { data } = await api.post(`/whatsapp/groups/${groupJid}/participants`, { phoneNumber });
+      const { data } = await api.post(`whatsapp/groups/${groupJid}/participants`, { phoneNumber });
       return data || null;
     },
     onSuccess: () => {
@@ -641,7 +641,7 @@ export function useRemoveParticipant(groupJid: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (participantJid: string) => {
-      await api.delete(`/whatsapp/groups/${groupJid}/participants/${participantJid}`);
+      await api.delete(`whatsapp/groups/${groupJid}/participants/${participantJid}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['group-participants', groupJid] });
@@ -674,7 +674,7 @@ export function useTemplates(instanceId: string) {
   return useQuery({
     queryKey: ['templates', instanceId],
     queryFn: async () => {
-      const { data } = await api.get(`/whatsapp/templates?instanceId=${instanceId}`);
+      const { data } = await api.get(`whatsapp/templates?instanceId=${instanceId}`);
       return (data.templates || []) as MessageTemplate[];
     },
     enabled: !!instanceId,
@@ -691,7 +691,7 @@ export function useCreateTemplate() {
       language: string;
       components: any[];
     }) => {
-      const { data: response } = await api.post('/whatsapp/templates', data);
+      const { data: response } = await api.post('whatsapp/templates', data);
       return response.template || null;
     },
     onSuccess: () => {
@@ -708,7 +708,7 @@ export function useUpdateTemplate(templateId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (updates: Partial<MessageTemplate>) => {
-      const { data } = await api.put(`/whatsapp/templates/${templateId}`, updates);
+      const { data } = await api.put(`whatsapp/templates/${templateId}`, updates);
       return data || null;
     },
     onSuccess: () => {
@@ -725,7 +725,7 @@ export function useDeleteTemplate() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (templateId: string) => {
-      await api.delete(`/whatsapp/templates/${templateId}`);
+      await api.delete(`whatsapp/templates/${templateId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['templates'] });
@@ -741,7 +741,7 @@ export function useRenderTemplate(templateId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (variables: Record<string, string>) => {
-      const { data } = await api.post(`/whatsapp/templates/${templateId}/render`, { variables });
+      const { data } = await api.post(`whatsapp/templates/${templateId}/render`, { variables });
       return data || null;
     },
     onSuccess: () => {
@@ -779,10 +779,10 @@ export function useAnalytics(instanceId: string, period: 'day' | 'week' | 'month
     queryKey: ['analytics', instanceId, period],
     queryFn: async () => {
       const [convRes, msgRes, agentRes, slaRes] = await Promise.all([
-        api.get(`/whatsapp/analytics/conversations?instanceId=${instanceId}&period=${period}`),
-        api.get(`/whatsapp/analytics/messages?instanceId=${instanceId}&period=${period}`),
-        api.get(`/whatsapp/analytics/agents?instanceId=${instanceId}&period=${period}`),
-        api.get(`/whatsapp/analytics/sla?instanceId=${instanceId}&period=${period}`),
+        api.get(`whatsapp/analytics/conversations?instanceId=${instanceId}&period=${period}`),
+        api.get(`whatsapp/analytics/messages?instanceId=${instanceId}&period=${period}`),
+        api.get(`whatsapp/analytics/agents?instanceId=${instanceId}&period=${period}`),
+        api.get(`whatsapp/analytics/sla?instanceId=${instanceId}&period=${period}`),
       ]);
       return {
         conversations: convRes.data || null,
@@ -814,7 +814,7 @@ export function useWebhookDeliveries(instanceId: string, limit: number = 50) {
   return useQuery({
     queryKey: ['webhook-deliveries', instanceId],
     queryFn: async () => {
-      const { data } = await api.get(`/whatsapp/webhook/deliveries?instanceId=${instanceId}&limit=${limit}`);
+      const { data } = await api.get(`whatsapp/webhook/deliveries?instanceId=${instanceId}&limit=${limit}`);
       return (data.deliveries || []) as WebhookDelivery[];
     },
     enabled: !!instanceId,
@@ -838,7 +838,7 @@ export function useCurrentUser() {
   return useQuery({
     queryKey: ['current-user'],
     queryFn: async () => {
-      const { data } = await api.get('/auth/me');
+      const { data } = await api.get('auth/me');
       return data.user as UserProfile;
     },
   });
@@ -848,7 +848,7 @@ export function useUpdateUserProfile() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: { name?: string; email?: string }) => {
-      const { data: response } = await api.put('/auth/profile', data);
+      const { data: response } = await api.put('auth/profile', data);
       return response.user || null;
     },
     onSuccess: () => {
@@ -864,7 +864,7 @@ export function useUpdateUserProfile() {
 export function useChangePassword() {
   return useMutation({
     mutationFn: async (credentials: { currentPassword: string; newPassword: string }) => {
-      const { data } = await api.post('/auth/change-password', credentials);
+      const { data } = await api.post('auth/change-password', credentials);
       return data;
     },
     onSuccess: () => {
@@ -914,7 +914,7 @@ export function useUpdateInstance(instanceId: string) {
         payload.settings = settings;
       }
 
-      const { data: response } = await api.put(`/whatsapp/instances/${instanceId}`, payload);
+      const { data: response } = await api.put(`whatsapp/instances/${instanceId}`, payload);
       return response.instance || null;
     },
     onSuccess: () => {
@@ -946,7 +946,7 @@ export function useSendMessage(instanceId: string) {
         payload.media = data.mediaUrl;
         payload.type = data.type || 'document';
       }
-      const { data: response } = await api.post(`/whatsapp/instances/${instanceId}/send`, payload);
+      const { data: response } = await api.post(`whatsapp/instances/${instanceId}/send`, payload);
       return response.message || null;
     },
     onSuccess: (_, variables) => {
@@ -969,7 +969,7 @@ export function useIntegrationGuide(instanceId: string) {
   return useQuery({
     queryKey: ['integration-guide', instanceId],
     queryFn: async () => {
-      const { data } = await api.get(`/whatsapp/instances/${instanceId}/integration-guide`);
+      const { data } = await api.get(`whatsapp/instances/${instanceId}/integration-guide`);
       return data.guide || null;
     },
     enabled: !!instanceId,
