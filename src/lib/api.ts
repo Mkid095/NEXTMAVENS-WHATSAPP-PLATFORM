@@ -41,17 +41,19 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor for logging and error handling
+// Response interceptor - unwrap envelope and handle errors
 api.interceptors.response.use(
   (response) => {
-    // DEBUG: log response status
-    console.log('[API Response]', response.config?.url, response.status);
+    // If backend returned envelope { success: true, data: {...} }, unwrap to data
+    if (response.data && response.data.success && response.data.data !== undefined) {
+      response.data = response.data.data;
+    }
     return response;
   },
   (error) => {
+    // Handle 401 redirects
     if (error.response?.status === 401) {
       const url = error.config?.url || '';
-      // Extract pathname if full URL
       let path = url;
       if (url.startsWith('http')) {
         try {
@@ -61,14 +63,11 @@ api.interceptors.response.use(
         }
       }
 
-      // For reseller API endpoints (except token endpoint), don't automatically logout
-      // Let the component handle the error (e.g., prompt to generate token)
       const isResellerEndpoint = path.includes('/whatsapp/reseller/') && !path.includes('/token');
       if (isResellerEndpoint) {
         return Promise.reject(error);
       }
 
-      // DEBUG: Log the 401 error with details
       console.error('[API Interceptor] 401 error on:', {
         url: error.config?.url,
         method: error.config?.method,
@@ -77,7 +76,6 @@ api.interceptors.response.use(
         data: error.response?.data
       });
 
-      // For all other endpoints (including token endpoint), treat as session expiry
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
       localStorage.removeItem('resellerJwtToken');

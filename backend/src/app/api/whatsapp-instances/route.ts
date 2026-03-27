@@ -158,5 +158,117 @@ export default async function (fastify: FastifyInstance) {
     },
   });
 
+  // Connect to WhatsApp instance (initiate QR flow)
+  fastify.route({
+    method: 'POST',
+    url: '/whatsapp/instances/:id/connect',
+    handler: async (request, reply) => {
+      const orgId = (request as any).currentOrgId;
+      const { id } = request.params as { id: string };
+
+      // Verify instance exists and belongs to org
+      const instance = await prisma.whatsAppInstance.findFirst({
+        where: { id, orgId },
+        select: { id: true, evolutionInstanceName: true, status: true },
+      });
+
+      if (!instance) {
+        reply.code(404);
+        return { success: false, error: 'Instance not found' };
+      }
+
+      if (!instance.evolutionInstanceName) {
+        reply.code(400);
+        return { success: false, error: 'Evolution instance name not configured' };
+      }
+
+      // Update status to CONNECTING
+      await prisma.whatsAppInstance.update({
+        where: { id },
+        data: { status: 'CONNECTING' },
+      });
+
+      // TODO: Call Evolution API to initiate connection (will generate QR)
+      // For now, just return success
+      return { success: true, data: { message: 'Connection initiated', instanceId: id } };
+    },
+  });
+
+  // Get QR code for instance
+  fastify.route({
+    method: 'GET',
+    url: '/whatsapp/instances/:id/qr',
+    handler: async (request, reply) => {
+      const orgId = (request as any).currentOrgId;
+      const { id } = request.params as { id: string };
+
+      const instance = await prisma.whatsAppInstance.findFirst({
+        where: { id, orgId },
+        select: { id: true, qrCode: true, status: true, evolutionInstanceName: true },
+      });
+
+      if (!instance) {
+        reply.code(404);
+        return { success: false, error: 'Instance not found' };
+      }
+
+      // If QR not generated yet, we could fetch from Evolution API
+      // For now, return stored QR code (if any)
+      return { success: true, data: { qrCode: instance.qrCode, status: instance.status } };
+    },
+  });
+
+  // Get instance status
+  fastify.route({
+    method: 'GET',
+    url: '/whatsapp/instances/:id/status',
+    handler: async (request, reply) => {
+      const orgId = (request as any).currentOrgId;
+      const { id } = request.params as { id: string };
+
+      const instance = await prisma.whatsAppInstance.findFirst({
+        where: { id, orgId },
+        select: { id: true, status: true, isOnline: true, battery: true, lastSeen: true },
+      });
+
+      if (!instance) {
+        reply.code(404);
+        return { success: false, error: 'Instance not found' };
+      }
+
+      return { success: true, data: { status: instance.status, isOnline: instance.isOnline, battery: instance.battery, lastSeen: instance.lastSeen } };
+    },
+  });
+
+  // Disconnect instance
+  fastify.route({
+    method: 'POST',
+    url: '/whatsapp/instances/:id/disconnect',
+    handler: async (request, reply) => {
+      const orgId = (request as any).currentOrgId;
+      const { id } = request.params as { id: string };
+
+      const instance = await prisma.whatsAppInstance.findFirst({
+        where: { id, orgId },
+        select: { id: true, status: true },
+      });
+
+      if (!instance) {
+        reply.code(404);
+        return { success: false, error: 'Instance not found' };
+      }
+
+      // Update status to DISCONNECTED
+      await prisma.whatsAppInstance.update({
+        where: { id },
+        data: { status: 'DISCONNECTED', qrCode: null },
+      });
+
+      // TODO: Call Evolution API to logout instance
+
+      return { success: true, data: { message: 'Disconnected', instanceId: id } };
+    },
+  });
+
   // Additional instance-specific endpoints can be added here in future tasks
 }
