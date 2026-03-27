@@ -16,7 +16,7 @@ export default async function (fastify: FastifyInstance) {
     url: '/whatsapp/instances',
     handler: async (request, reply) => {
       // orgGuard sets request.currentOrgId
-      const orgId = (request as any).currentOrgId;
+      const orgId = (request as any).currentOrgId as string;
 
       const instances = await prisma.whatsAppInstance.findMany({
         where: { orgId },
@@ -42,7 +42,7 @@ export default async function (fastify: FastifyInstance) {
     method: 'POST',
     url: '/whatsapp/instances',
     handler: async (request, reply) => {
-      const orgId = (request as any).currentOrgId;
+      const orgId = (request as any).currentOrgId as string;
 
       // Validate body
       const validated = createInstanceSchema.parse(request.body);
@@ -51,7 +51,7 @@ export default async function (fastify: FastifyInstance) {
         data: {
           ...validated,
           orgId,
-        },
+        } as any,
         select: {
           id: true,
           name: true,
@@ -59,7 +59,8 @@ export default async function (fastify: FastifyInstance) {
           phoneNumber: true,
           status: true,
           isPrimary: true,
-          createdAt: true,
+          orgId: true,
+          updatedAt: true,
         },
       });
 
@@ -71,7 +72,7 @@ export default async function (fastify: FastifyInstance) {
     method: 'GET',
     url: '/whatsapp/instances/:id',
     handler: async (request, reply) => {
-      const orgId = (request as any).currentOrgId;
+      const orgId = (request as any).currentOrgId as string;
       const { id } = request.params as { id: string };
 
       const instance = await prisma.whatsAppInstance.findFirst({
@@ -85,6 +86,7 @@ export default async function (fastify: FastifyInstance) {
           isPrimary: true,
           token: true,
           qrCode: true,
+          heartbeatStatus: true,
           createdAt: true,
           updatedAt: true,
           lastSeen: true,
@@ -104,7 +106,7 @@ export default async function (fastify: FastifyInstance) {
     method: 'PUT',
     url: '/whatsapp/instances/:id',
     handler: async (request, reply) => {
-      const orgId = (request as any).currentOrgId;
+      const orgId = (request as any).currentOrgId as string;
       const { id } = request.params as { id: string };
 
       const updateData = request.body;
@@ -119,6 +121,7 @@ export default async function (fastify: FastifyInstance) {
           phoneNumber: true,
           status: true,
           isPrimary: true,
+          orgId: true,
           updatedAt: true,
         },
       });
@@ -137,7 +140,7 @@ export default async function (fastify: FastifyInstance) {
     method: 'DELETE',
     url: '/whatsapp/instances/:id',
     handler: async (request, reply) => {
-      const orgId = (request as any).currentOrgId;
+      const orgId = (request as any).currentOrgId as string;
       const { id } = request.params as { id: string };
 
       // Verify instance exists and belongs to org
@@ -163,7 +166,7 @@ export default async function (fastify: FastifyInstance) {
     method: 'POST',
     url: '/whatsapp/instances/:id/connect',
     handler: async (request, reply) => {
-      const orgId = (request as any).currentOrgId;
+      const orgId = (request as any).currentOrgId as string;
       const { id } = request.params as { id: string };
 
       // Verify instance exists and belongs to org
@@ -199,7 +202,7 @@ export default async function (fastify: FastifyInstance) {
     method: 'GET',
     url: '/whatsapp/instances/:id/qr',
     handler: async (request, reply) => {
-      const orgId = (request as any).currentOrgId;
+      const orgId = (request as any).currentOrgId as string;
       const { id } = request.params as { id: string };
 
       const instance = await prisma.whatsAppInstance.findFirst({
@@ -223,12 +226,12 @@ export default async function (fastify: FastifyInstance) {
     method: 'GET',
     url: '/whatsapp/instances/:id/status',
     handler: async (request, reply) => {
-      const orgId = (request as any).currentOrgId;
+      const orgId = (request as any).currentOrgId as string;
       const { id } = request.params as { id: string };
 
       const instance = await prisma.whatsAppInstance.findFirst({
         where: { id, orgId },
-        select: { id: true, status: true, isOnline: true, battery: true, lastSeen: true },
+        select: { id: true, status: true, heartbeatStatus: true, lastSeen: true },
       });
 
       if (!instance) {
@@ -236,7 +239,7 @@ export default async function (fastify: FastifyInstance) {
         return { success: false, error: 'Instance not found' };
       }
 
-      return { success: true, data: { status: instance.status, isOnline: instance.isOnline, battery: instance.battery, lastSeen: instance.lastSeen } };
+      return { success: true, data: { status: instance.status, heartbeatStatus: instance.heartbeatStatus, lastSeen: instance.lastSeen } };
     },
   });
 
@@ -245,7 +248,7 @@ export default async function (fastify: FastifyInstance) {
     method: 'POST',
     url: '/whatsapp/instances/:id/disconnect',
     handler: async (request, reply) => {
-      const orgId = (request as any).currentOrgId;
+      const orgId = (request as any).currentOrgId as string;
       const { id } = request.params as { id: string };
 
       const instance = await prisma.whatsAppInstance.findFirst({

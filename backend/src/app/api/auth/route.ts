@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import jwt from 'jsonwebtoken';
+import { sign, verify } from 'jsonwebtoken';
 import { prisma } from '../../../lib/prisma';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
@@ -26,10 +26,10 @@ export default async function (fastify: FastifyInstance) {
     // Validate request body first
     const validationResult = loginSchema.safeParse(request.body);
     if (!validationResult.success) {
-      return reply.status(400).json({
+      return reply.status(400).send({
         success: false,
         message: 'Validation error',
-        errors: validationResult.error.errors.map(err => ({
+        errors: validationResult.error.issues.map(err => ({
           field: err.path.join('.'),
           message: err.message,
         })),
@@ -57,7 +57,7 @@ export default async function (fastify: FastifyInstance) {
 
       if (!user) {
         console.log(`[Auth] User not found: ${email}`);
-        return reply.status(401).json({
+        return reply.status(401).send({
           success: false,
           message: 'Invalid email or password',
         });
@@ -65,7 +65,7 @@ export default async function (fastify: FastifyInstance) {
 
       if (!user.isActive) {
         console.log(`[Auth] Inactive user: ${email}`);
-        return reply.status(401).json({
+        return reply.status(401).send({
           success: false,
           message: 'Account is deactivated',
         });
@@ -77,7 +77,7 @@ export default async function (fastify: FastifyInstance) {
 
       if (!isValid) {
         console.log(`[Auth] Invalid password for: ${email}`);
-        return reply.status(401).json({
+        return reply.status(401).send({
           success: false,
           message: 'Invalid email or password',
         });
@@ -91,7 +91,7 @@ export default async function (fastify: FastifyInstance) {
 
       if (memberships.length === 0) {
         console.log(`[Auth] User has no organization: ${email}`);
-        return reply.status(403).json({
+        return reply.status(403).send({
           success: false,
           message: 'No organization assigned. Please contact your administrator.',
         });
@@ -109,8 +109,8 @@ export default async function (fastify: FastifyInstance) {
         orgId: primaryOrg.orgId,
       };
 
-      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRY });
-      const refreshToken = jwt.sign(
+      const token = sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRY });
+      const refreshToken = sign(
         { userId: user.id, orgId: primaryOrg.orgId },
         process.env.JWT_REFRESH_SECRET!,
         { expiresIn: JWT_REFRESH_EXPIRY }
@@ -141,7 +141,7 @@ export default async function (fastify: FastifyInstance) {
       };
     } catch (error) {
       console.error('[Auth] Login error:', error);
-      return reply.status(500).json({
+      return reply.status(500).send({
         success: false,
         message: 'Internal server error',
       });
@@ -154,13 +154,13 @@ export default async function (fastify: FastifyInstance) {
       const { refreshToken } = (request.body as any) || {};
 
       if (!refreshToken) {
-        return reply.status(400).json({
+        return reply.status(400).send({
           success: false,
           message: 'Refresh token required',
         });
       }
 
-      const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as any;
+      const payload = verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as any;
 
       // Get user to verify still exists and get org
       const user = await prisma.user.findUnique({
@@ -169,7 +169,7 @@ export default async function (fastify: FastifyInstance) {
       });
 
       if (!user) {
-        return reply.status(401).json({
+        return reply.status(401).send({
           success: false,
           message: 'Invalid refresh token',
         });
@@ -182,14 +182,14 @@ export default async function (fastify: FastifyInstance) {
       });
 
       if (!membership) {
-        return reply.status(403).json({
+        return reply.status(403).send({
           success: false,
           message: 'No organization assigned',
         });
       }
 
       // Generate new access token
-      const token = jwt.sign(
+      const token = sign(
         {
           userId: user.id,
           email: user.email,
@@ -207,19 +207,19 @@ export default async function (fastify: FastifyInstance) {
       };
     } catch (error: any) {
       if (error.name === 'JsonWebTokenError') {
-        return reply.status(401).json({
+        return reply.status(401).send({
           success: false,
           message: 'Invalid refresh token',
         });
       }
       if (error.name === 'TokenExpiredError') {
-        return reply.status(401).json({
+        return reply.status(401).send({
           success: false,
           message: 'Refresh token expired',
         });
       }
       console.error('[Auth] Refresh error:', error);
-      return reply.status(500).json({
+      return reply.status(500).send({
         success: false,
         message: 'Internal server error',
       });
@@ -237,14 +237,14 @@ export default async function (fastify: FastifyInstance) {
       const authHeader = request.headers.authorization as string | undefined;
 
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return reply.status(401).json({
+        return reply.status(401).send({
           success: false,
           message: 'No token provided',
         });
       }
 
       const token = authHeader.slice(7);
-      const payload = jwt.verify(token, JWT_SECRET) as any;
+      const payload = verify(token, JWT_SECRET) as any;
 
       const user = await prisma.user.findUnique({
         where: { id: payload.userId },
@@ -260,7 +260,7 @@ export default async function (fastify: FastifyInstance) {
       });
 
       if (!user || !user.isActive) {
-        return reply.status(401).json({
+        return reply.status(401).send({
           success: false,
           message: 'User not found or deactivated',
         });
@@ -272,10 +272,10 @@ export default async function (fastify: FastifyInstance) {
       };
     } catch (error: any) {
       if (error.name === 'JsonWebTokenError') {
-        return reply.status(401).json({ success: false, message: 'Invalid token' });
+        return reply.status(401).send({ success: false, message: 'Invalid token' });
       }
       if (error.name === 'TokenExpiredError') {
-        return reply.status(401).json({ success: false, message: 'Token expired' });
+        return reply.status(401).send({ success: false, message: 'Token expired' });
       }
       throw error;
     }

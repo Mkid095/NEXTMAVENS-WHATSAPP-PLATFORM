@@ -264,7 +264,7 @@ export class RedisSlidingWindowRateLimiter {
       // Scan for keys with our prefix
       const cursor = 0;
       const pattern = `${this.config.redisPrefix}:*`;
-      const { keys } = await this.redis.scan(cursor, 'MATCH', pattern, 'COUNT', 1000);
+      const [scannedCursor, keys] = await this.redis.scan(cursor, 'MATCH', pattern, 'COUNT', 1000);
 
       const now = Date.now();
       let cleaned = 0;
