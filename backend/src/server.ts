@@ -322,6 +322,12 @@ async function buildServer() {
   await app.register(authRoutes, { prefix: '/api/v1' });
   console.log('[SERVER] Auth routes registered');
 
+  // Register WhatsApp Instances routes
+  const whatsappInstancesRoutes = await import('./app/api/whatsapp-instances/route.js');
+  // @ts-ignore
+  await app.register(whatsappInstancesRoutes.default || whatsappInstancesRoutes, { prefix: '/api/v1' });
+  console.log('[SERVER] WhatsApp instances routes registered');
+
   // ============================================================================
   // ROUTE REGISTRATIONS - ALL RESTORED
   // ============================================================================
