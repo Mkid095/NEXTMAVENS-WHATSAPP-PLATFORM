@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://whatsappapi.nextmavens.cloud/api/v1';
+const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
 export const api = axios.create({
   baseURL: API_BASE,
@@ -60,6 +60,9 @@ api.interceptors.response.use(
       if (isResellerEndpoint) {
         return Promise.reject(error);
       }
+
+      // DEBUG: Log the 401 error
+      console.error('[API Interceptor] 401 error on:', { url: error.config?.url, method: error.config?.method, path });
 
       // For all other endpoints (including token endpoint), treat as session expiry
       localStorage.removeItem('accessToken');

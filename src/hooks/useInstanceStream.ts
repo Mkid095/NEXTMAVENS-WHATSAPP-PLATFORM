@@ -17,7 +17,7 @@ export function useInstanceStream(
     const token = localStorage.getItem('accessToken');
     if (!token) return;
 
-    const API_BASE = import.meta.env.VITE_API_URL || 'https://whatsappapi.nextmavens.cloud/api/v1/whatsapp';
+    const API_BASE = import.meta.env.VITE_API_URL || '/api/v1/whatsapp';
     const url = `${API_BASE}/instances/${instanceId}/stream?token=${token}`;
     
     const eventSource = new EventSource(url);

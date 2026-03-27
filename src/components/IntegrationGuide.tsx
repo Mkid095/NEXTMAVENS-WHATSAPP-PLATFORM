@@ -13,7 +13,7 @@ interface IntegrationGuideProps {
 
 export function IntegrationGuide({ instanceId, apiKey = 'YOUR_API_KEY', webhookSecret, phoneNumber, status }: IntegrationGuideProps) {
   const [copied, setCopied] = useState<string | null>(null);
-  const baseUrl = import.meta.env.VITE_API_URL || 'https://whatsappapi.nextmavens.cloud/api/v1';
+  const baseUrl = import.meta.env.VITE_API_URL || 'https://whatsapp.nextmavens.cloud/api/v1';
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -824,7 +824,7 @@ print(res.json())`
         <h3 className="text-lg font-bold text-white mb-2">Need More Details?</h3>
         <p className="text-zinc-400 mb-4">Check the complete API reference for all available endpoints and parameters.</p>
         <a
-          href="https://whatsappapi.nextmavens.cloud/docs"
+          href="https://whatsapp.nextmavens.cloud/docs"
           target="_blank"
           rel="noopener noreferrer"
           className="btn-primary inline-flex items-center gap-2"

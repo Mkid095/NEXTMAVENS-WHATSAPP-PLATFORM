@@ -111,35 +111,37 @@ enum Plan {
 // └─────────────────────────────────────────────────────────────┘
 
 model WhatsAppInstance {
-  id          String   @id @default(cuid())
-  orgId       String
-  name        String   // "Support Team"
-  phoneNumber String   @unique // E.164 format: +1234567890
-  qrCode      String?  // Base64 QR code image
-  status      InstanceStatus @default(DISCONNECTED)
-  token       String?  // Evolution API token
-  webhookUrl  String?  // Customer's webhook endpoint
-  isPrimary   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  lastSeen    DateTime?
-  heartbeatStatus HeartbeatStatus? @default(UNKNOWN)
+  id                  String   @id @default(cuid())
+  orgId               String
+  name                String   // "Support Team"
+  evolutionInstanceName String? @unique // Evolution API instance name (e.g., "main")
+  phoneNumber         String   @unique // E.164 format: +1234567890
+  qrCode              String?  // Base64 QR code image
+  status              InstanceStatus @default(DISCONNECTED)
+  token               String?  // Evolution API token
+  webhookUrl          String?  // Customer's webhook endpoint
+  isPrimary           Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  lastSeen            DateTime?
+  heartbeatStatus     HeartbeatStatus? @default(UNKNOWN)
 
   // Relations
-  org        Organization    @relation(fields: [orgId], references: [id])
-  messages   WhatsAppMessage[]
-  chats      WhatsAppChat[]
-  templates  WhatsAppTemplate[]
-  agents     WhatsAppAgent[]  // Agents that can use this instance
-  assignments WhatsAppAssignment[]  // Assignments for chats on this instance
-  webhooks   WebhookSubscription[]
-  deadLetters DeadLetterQueue[]  // DLQ entries for this instance
+  org                 Organization    @relation(fields: [orgId], references: [id])
+  messages            WhatsAppMessage[]
+  chats               WhatsAppChat[]
+  templates           WhatsAppTemplate[]
+  agents              WhatsAppAgent[]  // Agents that can use this instance
+  assignments         WhatsAppAssignment[]  // Assignments for chats on this instance
+  webhooks            WebhookSubscription[]
+  deadLetters         DeadLetterQueue[]  // DLQ entries for this instance
 
   @@map("whatsapp_instances")
   @@index([orgId])
   @@index([phoneNumber])
   @@index([status])
   @@index([heartbeatStatus])
+  @@index([evolutionInstanceName])
 }
 
 enum InstanceStatus {

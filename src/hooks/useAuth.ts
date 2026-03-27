@@ -18,10 +18,6 @@ export function useLogin() {
       const { data } = await api.post<LoginResponse>('/auth/login', credentials);
       return data;
     },
-    onSuccess: (data) => {
-      localStorage.setItem('accessToken', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-    },
   });
 }
 

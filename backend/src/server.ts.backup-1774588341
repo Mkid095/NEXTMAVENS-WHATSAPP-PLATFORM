@@ -44,9 +44,6 @@ import {
 // Metrics (Phase 2 Step 8)
 import { setupMetrics } from './lib/create-comprehensive-metrics-dashboard-(grafana)/index.ts';
 
-// Evolution API Client
-import { initializeEvolutionClient } from './lib/evolution-api-client/instance.ts';
-
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function buildServer() {
@@ -109,18 +106,6 @@ async function buildServer() {
   }
 
   // ============================================================================
-  // EVOLUTION API CLIENT INITIALIZATION
-  // ============================================================================
-  try {
-    await initializeEvolutionClient();
-    console.log('[EvolutionAPI] Client initialized and connection verified');
-  } catch (error) {
-    console.error('[EvolutionAPI] Initialization failed:', error);
-    // Fail open - allow server to start even if Evolution is down
-    // Messages will fail at send time but health check will show degraded
-  }
-
-  // ============================================================================
   // GLOBAL PREHANDLER MIDDLEWARE PIPELINE
   // ============================================================================
   app.addHook('preHandler', async (request, reply) => {
@@ -147,9 +132,6 @@ async function buildServer() {
       '/metrics', // Prometheus metrics endpoint (public)
       '/api/webhooks/evolution', // Evolution API webhook receiver (signature verified in route)
       '/api/instances/', // Instance heartbeat endpoint (uses instance token for auth)
-      '/api/v1/auth/login', // User login
-      '/api/v1/auth/refresh', // Token refresh
-      '/api/v1/auth/logout', // User logout
     ];
     if (publicPaths.some(p => request.url?.startsWith(p))) {
       console.log(`[PREHANDLER] ${request.method} ${request.url} - public, exiting`);
@@ -316,12 +298,6 @@ async function buildServer() {
 
   console.log('[SERVER] Test route /ping registered');
 
-  // Register Authentication routes (NEW - for login)
-  const authRoutes = await import('./app/api/auth/route.js');
-  // @ts-ignore - Fastify plugin type compatibility with dynamic imports
-  await app.register(authRoutes, { prefix: '/api/v1' });
-  console.log('[SERVER] Auth routes registered');
-
   // ============================================================================
   // ROUTE REGISTRATIONS - ALL RESTORED
   // ============================================================================
@@ -367,12 +343,6 @@ async function buildServer() {
   // @ts-ignore
   await app.register(chatPaginationRoutes.default || chatPaginationRoutes);
   console.log('[SERVER] Chat pagination routes registered');
-
-  // Register Messages Send API routes (Phase ? - New)
-  const messagesRoutes = await import('./app/api/messages/index.js');
-  // @ts-ignore - Fastify plugin type compatibility with dynamic imports
-  await app.register(messagesRoutes.default || messagesRoutes, { prefix: '/api/v1/messages' });
-  console.log('[SERVER] Messages send routes registered');
 
   // Register Rate Limiting System API routes (Phase 1 Step 3)
   const rateLimitRoutes = await import('./app/api/rate-limiting-with-redis/route.js');
@@ -447,47 +417,47 @@ async function buildServer() {
   await app.register(invoiceRoutes.default || invoiceRoutes, { prefix: '/admin/invoices' });
   console.log('[SERVER] Invoice generation & download admin routes registered');
 
-////  // Register Usage-Based Billing & Overage API routes (Phase 3 Step 5)
-////  const usageRoutes = await import('./app/api/implement-usage-based-billing-&-overage/route.js');
-////  // @ts-ignore
-////  await app.register(usageRoutes.default || usageRoutes, { prefix: '/api/usage' });
-////  console.log('[SERVER] Usage-based billing routes registered');
-////
-////  // Register Usage-Based Billing Admin API routes (Phase 3 Step 5 - Paystack)
-////  const usageAdminRoutes = await import('./app/api/implement-usage-based-billing-&-overage/admin.route.js');
-////  // @ts-ignore
-////  await app.register(usageAdminRoutes.default || usageAdminRoutes, { prefix: '/admin/usage' });
-////  console.log('[SERVER] Usage-based billing admin routes registered');
-////
-////  // Register Tax Integration API routes (Phase 3 Step 6)
-////  const taxRoutes = await import('./app/api/tax-integration/route.js');
-////  // @ts-ignore
-////  await app.register(taxRoutes.default || taxRoutes, { prefix: '/api/tax' });
-////  console.log('[SERVER] Tax integration routes registered');
-////
-////  // Register Billing Admin Dashboard API routes (Phase 3 Step 7)
-////  const billingAdminRoutes = await import('./app/api/build-billing-admin-dashboard/route.js');
-////  // @ts-ignore
-////  await app.register(billingAdminRoutes.default || billingAdminRoutes, { prefix: '/admin/billing' });
-////  console.log('[SERVER] Billing admin dashboard routes registered');
-////
-////  // Register Feature Management Admin API routes (Phase 3 Step 8.5)
-////  const featureRoutes = await import('./app/api/admin/features/route.js');
-////  // @ts-ignore
-////  await app.register(featureRoutes.default || featureRoutes, { prefix: '/admin/features' });
-////  console.log('[SERVER] Feature management admin routes registered');
-//
-//  // Register Payment Method Management API routes (Phase 3 Step 8)
-//  const paymentMethodRoutes = await import('./app/api/implement-card-updates-&-payment-method-management/route.js');
-//  // @ts-ignore
-//  await app.register(paymentMethodRoutes.default || paymentMethodRoutes, { prefix: '/api/payment-methods' });
-//  console.log('[SERVER] Payment method management routes registered');
-//
-//  // Register Coupon & Discount System API routes (Phase 3 Step 9)
-//  const couponRoutes = await import('./app/api/build-coupon-&-discount-system/route.js');
-//  // @ts-ignore
-//  await app.register(couponRoutes.default || couponRoutes, { prefix: '/api/coupons' });
-//  console.log('[SERVER] Coupon & discount system routes registered');
+  // Register Usage-Based Billing & Overage API routes (Phase 3 Step 5)
+  const usageRoutes = await import('./app/api/implement-usage-based-billing-&-overage/route.js');
+  // @ts-ignore
+  await app.register(usageRoutes.default || usageRoutes, { prefix: '/api/usage' });
+  console.log('[SERVER] Usage-based billing routes registered');
+
+  // Register Usage-Based Billing Admin API routes (Phase 3 Step 5 - Paystack)
+  const usageAdminRoutes = await import('./app/api/implement-usage-based-billing-&-overage/admin.route.js');
+  // @ts-ignore
+  await app.register(usageAdminRoutes.default || usageAdminRoutes, { prefix: '/admin/usage' });
+  console.log('[SERVER] Usage-based billing admin routes registered');
+
+  // Register Tax Integration API routes (Phase 3 Step 6)
+  const taxRoutes = await import('./app/api/tax-integration/route.js');
+  // @ts-ignore
+  await app.register(taxRoutes.default || taxRoutes, { prefix: '/api/tax' });
+  console.log('[SERVER] Tax integration routes registered');
+
+  // Register Billing Admin Dashboard API routes (Phase 3 Step 7)
+  const billingAdminRoutes = await import('./app/api/build-billing-admin-dashboard/route.js');
+  // @ts-ignore
+  await app.register(billingAdminRoutes.default || billingAdminRoutes, { prefix: '/admin/billing' });
+  console.log('[SERVER] Billing admin dashboard routes registered');
+
+  // Register Feature Management Admin API routes (Phase 3 Step 8.5)
+  const featureRoutes = await import('./app/api/admin/features/route.js');
+  // @ts-ignore
+  await app.register(featureRoutes.default || featureRoutes, { prefix: '/admin/features' });
+  console.log('[SERVER] Feature management admin routes registered');
+
+  // Register Payment Method Management API routes (Phase 3 Step 8)
+  const paymentMethodRoutes = await import('./app/api/implement-card-updates-&-payment-method-management/route.js');
+  // @ts-ignore
+  await app.register(paymentMethodRoutes.default || paymentMethodRoutes, { prefix: '/api/payment-methods' });
+  console.log('[SERVER] Payment method management routes registered');
+
+  // Register Coupon & Discount System API routes (Phase 3 Step 9)
+  const couponRoutes = await import('./app/api/build-coupon-&-discount-system/route.js');
+  // @ts-ignore
+  await app.register(couponRoutes.default || couponRoutes, { prefix: '/api/coupons' });
+  console.log('[SERVER] Coupon & discount system routes registered');
 
   // Error handler
   app.setErrorHandler((error, request, reply) => {

@@ -15,7 +15,10 @@ export function Login() {
     e.preventDefault();
     setError(null);
     try {
-      await login.mutateAsync({ email, password });
+      const data = await login.mutateAsync({ email, password });
+      // Store auth data immediately before navigation
+      localStorage.setItem('accessToken', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Invalid email or password. Please try again.');

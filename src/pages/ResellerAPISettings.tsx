@@ -257,7 +257,7 @@ export function ResellerAPISettings() {
                 Copy Token
               </button>
               <button
-                onClick={() => window.open('https://whatsappapi.nextmavens.cloud/docs', '_blank')}
+                onClick={() => window.open('https://whatsapp.nextmavens.cloud/docs', '_blank')}
                 className="w-full flex items-center gap-3 px-4 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-all text-sm font-medium text-zinc-300"
               >
                 <FileText className="w-4 h-4" />

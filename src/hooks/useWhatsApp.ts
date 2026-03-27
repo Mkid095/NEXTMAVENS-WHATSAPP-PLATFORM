@@ -990,7 +990,7 @@ export interface PublicApiConfig {
 
 export function createPublicApiClient(instanceId: string, apiKey: string) {
   return axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
+    baseURL: import.meta.env.VITE_API_URL || '/api/v1',
     headers: {
       'apikey': apiKey,
       'Content-Type': 'application/json'
@@ -1003,7 +1003,8 @@ export function usePublicStatus(instanceId: string, apiKey: string) {
     queryKey: ['public-status', instanceId],
     queryFn: async () => {
       // Use fetch directly with instance API key
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/whatsapp/public/status/${instanceId}`, {
+      const baseUrl = import.meta.env.VITE_API_URL || '/api/v1';
+      const response = await fetch(`${baseUrl}/whatsapp/public/status/${instanceId}`, {
         headers: { 'apikey': apiKey }
       });
       if (!response.ok) throw new Error('Failed to fetch status');

@@ -40,7 +40,7 @@ export function Sidebar() {
     { to: '/webhooks', icon: Webhook, label: 'Integrations' },
     { to: '/reseller-api', icon: Key, label: 'Reseller API' },
     { to: '/settings', icon: Settings, label: 'Settings' },
-    { to: 'https://whatsappapi.nextmavens.cloud/docs', icon: BookOpen, label: 'API Docs', external: true },
+    { to: 'https://whatsapp.nextmavens.cloud/docs', icon: BookOpen, label: 'API Docs', external: true },
   ];
 
   return (
