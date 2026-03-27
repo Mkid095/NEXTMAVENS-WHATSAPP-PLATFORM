@@ -14,7 +14,6 @@ export default async function (fastify: FastifyInstance) {
   fastify.route({
     method: 'GET',
     url: '/whatsapp/instances',
-    preHandler: [fastify.auth()],
     handler: async (request, reply) => {
       // orgGuard sets request.currentOrgId
       const orgId = (request as any).currentOrgId;
@@ -42,7 +41,6 @@ export default async function (fastify: FastifyInstance) {
   fastify.route({
     method: 'POST',
     url: '/whatsapp/instances',
-    preHandler: [fastify.auth()],
     handler: async (request, reply) => {
       const orgId = (request as any).currentOrgId;
 
@@ -72,7 +70,6 @@ export default async function (fastify: FastifyInstance) {
   fastify.route({
     method: 'GET',
     url: '/whatsapp/instances/:id',
-    preHandler: [fastify.auth()],
     handler: async (request, reply) => {
       const orgId = (request as any).currentOrgId;
       const { id } = request.params as { id: string };
@@ -106,7 +103,6 @@ export default async function (fastify: FastifyInstance) {
   fastify.route({
     method: 'PUT',
     url: '/whatsapp/instances/:id',
-    preHandler: [fastify.auth()],
     handler: async (request, reply) => {
       const orgId = (request as any).currentOrgId;
       const { id } = request.params as { id: string };
@@ -140,7 +136,6 @@ export default async function (fastify: FastifyInstance) {
   fastify.route({
     method: 'DELETE',
     url: '/whatsapp/instances/:id',
-    preHandler: [fastify.auth()],
     handler: async (request, reply) => {
       const orgId = (request as any).currentOrgId;
       const { id } = request.params as { id: string };
