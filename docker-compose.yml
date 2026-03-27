@@ -88,6 +88,8 @@ services:
     restart: unless-stopped
     networks:
       - nextmavens_net
+    ports:
+      - "127.0.0.1:5433:5432"  # Publish to localhost:5433 for host access
     environment:
       POSTGRES_USER: nextmavens
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
