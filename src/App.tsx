@@ -27,9 +27,13 @@ const queryClient = new QueryClient({
 });
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  if (!isAuthenticated()) {
+  const auth = isAuthenticated();
+  console.log('[ProtectedRoute] isAuthenticated():', auth, 'path:', window.location.pathname);
+  if (!auth) {
+    console.log('[ProtectedRoute] Redirecting to /login');
     return <Navigate to="/login" replace />;
   }
+  console.log('[ProtectedRoute] Rendering protected content');
   return <>{children}</>;
 }
 

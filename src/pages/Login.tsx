@@ -14,13 +14,18 @@ export function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    console.log('[Login] Submit clicked', { email });
     try {
+      console.log('[Login] Calling mutateAsync...');
       const data = await login.mutateAsync({ email, password });
+      console.log('[Login] mutateAsync resolved, storing tokens...');
       // Store auth data immediately before navigation
       localStorage.setItem('accessToken', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
+      console.log('[Login] Tokens stored, navigating to /');
       navigate('/');
     } catch (err: any) {
+      console.error('[Login] mutateAsync failed:', err);
       setError(err.response?.data?.message || 'Invalid email or password. Please try again.');
     }
   };

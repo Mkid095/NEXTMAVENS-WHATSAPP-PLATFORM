@@ -35,12 +35,19 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token.trim()}`;
   }
 
+  // DEBUG: log outgoing requests
+  console.log('[API Request]', config.method?.toUpperCase(), config.url, 'hasAuth:', !!config.headers.Authorization);
+
   return config;
 });
 
-// Response interceptor for error handling
+// Response interceptor for logging and error handling
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // DEBUG: log response status
+    console.log('[API Response]', response.config?.url, response.status);
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       const url = error.config?.url || '';
@@ -61,8 +68,14 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      // DEBUG: Log the 401 error
-      console.error('[API Interceptor] 401 error on:', { url: error.config?.url, method: error.config?.method, path });
+      // DEBUG: Log the 401 error with details
+      console.error('[API Interceptor] 401 error on:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        path,
+        status: error.response?.status,
+        data: error.response?.data
+      });
 
       // For all other endpoints (including token endpoint), treat as session expiry
       localStorage.removeItem('accessToken');
