@@ -63,6 +63,12 @@ export function useInstances() {
       const { data } = await api.get('whatsapp/instances');
       return (data.instances || []) as WhatsAppInstance[];
     },
+    // Cache instances for 30 seconds to avoid excessive API calls
+    staleTime: 30000,
+    // Keep cache for 5 minutes after unmount
+    cacheTime: 300000,
+    // Don't refetch on window focus (handled by instance status polling)
+    refetchOnWindowFocus: false,
   });
 }
 
