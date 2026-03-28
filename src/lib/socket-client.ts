@@ -123,6 +123,13 @@ export function onInstanceStatus(callback: (status: { instanceId: string; status
 }
 
 /**
+ * Listen for QR code updates (refresh/renewal)
+ */
+export function onQRCodeUpdate(callback: (data: { instanceId: string; qrCode: string; status?: string; timestamp?: number }) => void): void {
+  socket?.on('whatsapp:instance:qr:update', callback);
+}
+
+/**
  * Remove all listeners (cleanup)
  */
 export function removeAllListeners(): void {

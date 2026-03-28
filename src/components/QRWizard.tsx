@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQRCode, useCachedQR, useInstanceStatus } from '../hooks/useWhatsApp';
+import { getSocket, onQRCodeUpdate, subscribeToInstance, unsubscribeFromInstance } from '../lib/socket-client';
+import { useQueryClient } from '@tanstack/react-query';
 import { QrCode, Loader2, CheckCircle2, AlertCircle, Timer, Code2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -12,7 +14,8 @@ interface QRWizardProps {
 export function QRWizard({ instanceId, onConnected }: QRWizardProps) {
   const [step, setStep] = useState<'idle' | 'generating' | 'scanning' | 'connected'>('idle');
   const navigate = useNavigate();
-  
+  const queryClient = useQueryClient();
+
   const generateQR = useQRCode(instanceId);
   const { data: qrData, isLoading: isLoadingQR } = useCachedQR(instanceId, step === 'scanning');
   const { data: statusData } = useInstanceStatus(instanceId, step === 'scanning');
@@ -27,6 +30,52 @@ export function QRWizard({ instanceId, onConnected }: QRWizardProps) {
       console.error('Failed to generate QR:', error);
     }
   };
+
+  // Listen for socket events for real-time QR updates
+  useEffect(() => {
+    if (step !== 'scanning') return;
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    // Subscribe to instance room
+    const socket = getSocket();
+    if (socket && socket.connected) {
+      subscribeToInstance(instanceId);
+    }
+
+    const handleQRUpdate = (data: { instanceId: string; qrCode: string; status?: string; timestamp?: number }) => {
+      if (data.instanceId === instanceId) {
+        // Update the query cache with fresh QR data
+        queryClient.setQueryData(['whatsapp-instance-qr', instanceId], {
+          qrCode: data.qrCode,
+          status: statusData?.status || data.status,
+        });
+      }
+    };
+
+    const handleStatusUpdate = (data: { instanceId: string; status: string }) => {
+      if (data.instanceId === instanceId) {
+        // If status becomes CONNECTED, move to connected step
+        if (data.status === 'CONNECTED' && step !== 'connected') {
+          setStep('connected');
+          onConnected?.();
+        }
+      }
+    };
+
+    onQRCodeUpdate(handleQRUpdate);
+    onInstanceStatus(handleStatusUpdate);
+
+    return () => {
+      // Cleanup: remove listeners and unsubscribe
+      socket?.off('whatsapp:instance:qr:update', handleQRUpdate);
+      socket?.off('whatsapp:instance:status', handleStatusUpdate);
+      if (socket?.connected) {
+        unsubscribeFromInstance(instanceId);
+      }
+    };
+  }, [instanceId, step, onConnected, queryClient, statusData]);
 
   useEffect(() => {
     if (statusData?.status === 'CONNECTED' && step !== 'connected') {

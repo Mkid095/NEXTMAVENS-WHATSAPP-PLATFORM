@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRef } from 'react';
 import axios from 'axios';
 import { api } from '../lib/api';
 import toast from 'react-hot-toast';
+import { calculateBackoff, shouldContinuePolling } from '../lib/cachedQRBackoff';
 
 export interface WhatsAppInstance {
   id: string;
@@ -101,13 +103,31 @@ export function useQRCode(instanceId: string) {
 }
 
 export function useCachedQR(instanceId: string, enabled: boolean = true) {
+  const retryCountRef = useRef(0);
+
   return useQuery({
     queryKey: ['whatsapp-instance-qr', instanceId],
     queryFn: async () => {
       const { data } = await api.get(`whatsapp/instances/${instanceId}/qr`);
       return data || null;
     },
-    refetchInterval: 2000,
+    refetchInterval: (query) => {
+      if (!enabled) return false;
+      const data = query.state.data as any;
+      const status = data?.status;
+
+      // Check if we should stop polling (terminal status)
+      if (!shouldContinuePolling(status)) {
+        retryCountRef.current = 0;
+        return false;
+      }
+
+      // Still polling - use current retry count for this interval
+      const interval = calculateBackoff(retryCountRef.current);
+      // Increment retry count for the next poll
+      retryCountRef.current += 1;
+      return interval;
+    },
     enabled,
   });
 }
