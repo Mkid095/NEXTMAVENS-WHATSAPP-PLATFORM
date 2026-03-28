@@ -119,6 +119,10 @@ export class EvolutionApiClient {
     return this.request<{ base64: string }>('get', `/instance/qrcode/${instanceName}`);
   }
 
+  async connect(instanceName: string): Promise<{ base64: string }> {
+    return this.request<{ base64: string }>('get', `/instance/connect/${instanceName}`);
+  }
+
   async setWebhook(instanceName: string, webhookUrl: string, enabled: boolean = true): Promise<void> {
     return this.request<void>('post', `/webhook/set/${instanceName}`, {
       url: webhookUrl,

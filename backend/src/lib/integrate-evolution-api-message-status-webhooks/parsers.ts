@@ -88,6 +88,8 @@ export interface ParsedWebhookEvent {
   type?: string;
   content?: Record<string, unknown>;
   timestamp?: number; // Unix timestamp (milliseconds) from webhook
+  // QR code update specific
+  qrCode?: string; // Base64 QR code from QRCODE_UPDATED webhook
 }
 
 function parseMessageUpsert(
@@ -169,6 +171,7 @@ function parseQRCodeUpdate(
     instanceId,
     orgId: null,
     message: `QR code status: ${data.status}`,
+    qrCode: data.qrcode, // Include the QR code base64 from webhook
     timestamp,
   };
 }

@@ -1,6 +1,8 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../../../lib/prisma';
+import { getEvolutionClient } from '../../../lib/evolution-api-client/instance';
+import { getSocketService } from '../../../lib/build-real-time-messaging-with-socket.io';
 
 // Zod schemas for validation
 const createInstanceSchema = z.object({
@@ -185,15 +187,37 @@ export default async function (fastify: FastifyInstance) {
         return { success: false, error: 'Evolution instance name not configured' };
       }
 
-      // Update status to CONNECTING
-      await prisma.whatsAppInstance.update({
-        where: { id },
-        data: { status: 'CONNECTING' },
-      });
+      try {
+        // Call Evolution API to get fresh QR code
+        const evo = getEvolutionClient();
+        const qrResult = await evo.connect(instance.evolutionInstanceName);
 
-      // TODO: Call Evolution API to initiate connection (will generate QR)
-      // For now, just return success
-      return { success: true, data: { message: 'Connection initiated', instanceId: id } };
+        // Store QR in DB and set status to CONNECTING
+        await prisma.whatsAppInstance.update({
+          where: { id },
+          data: {
+            status: 'CONNECTING',
+            qrCode: qrResult.base64,
+          },
+        });
+
+        // Broadcast QR update via Socket.IO
+        const socketService = getSocketService();
+        if (socketService) {
+          socketService.broadcastToInstance(id, 'whatsapp:instance:qr:update', {
+            instanceId: id,
+            qrCode: qrResult.base64,
+            status: 'CONNECTING',
+            timestamp: Date.now(),
+          });
+        }
+
+        return { success: true, data: { message: 'Connection initiated', instanceId: id } };
+      } catch (error: any) {
+        console.error('Evolution connect error:', error);
+        reply.code(500);
+        return { success: false, error: 'Failed to connect to Evolution API', details: error.message };
+      }
     },
   });
 
@@ -207,7 +231,7 @@ export default async function (fastify: FastifyInstance) {
 
       const instance = await prisma.whatsAppInstance.findFirst({
         where: { id, orgId },
-        select: { id: true, qrCode: true, status: true, evolutionInstanceName: true },
+        select: { id: true, qrCode: true, status: true, evolutionInstanceName: true, updatedAt: true },
       });
 
       if (!instance) {
@@ -215,9 +239,50 @@ export default async function (fastify: FastifyInstance) {
         return { success: false, error: 'Instance not found' };
       }
 
-      // If QR not generated yet, we could fetch from Evolution API
-      // For now, return stored QR code (if any)
-      return { success: true, data: { qrCode: instance.qrCode, status: instance.status } };
+      // If we have a QR code and it's recent (within last 60 seconds), return it
+      // Otherwise, fetch fresh QR from Evolution API
+      const needsFreshQR = !instance.qrCode ||
+        !instance.updatedAt ||
+        (Date.now() - new Date(instance.updatedAt).getTime()) > 60000; // 60 seconds
+
+      if (needsFreshQR && instance.evolutionInstanceName) {
+        try {
+          const evo = getEvolutionClient();
+          const qrResult = await evo.connect(instance.evolutionInstanceName);
+
+          // Update DB with fresh QR
+          await prisma.whatsAppInstance.update({
+            where: { id },
+            data: { qrCode: qrResult.base64 },
+          });
+
+          // Broadcast QR refresh
+          const socketService = getSocketService();
+          if (socketService) {
+            socketService.broadcastToInstance(id, 'whatsapp:instance:qr:update', {
+              instanceId: id,
+              qrCode: qrResult.base64,
+              status: instance.status,
+              timestamp: Date.now(),
+            });
+          }
+
+          // Return fresh QR with computed expiry (60s from now)
+          const expiresAt = new Date(Date.now() + 60000).toISOString();
+          return { success: true, data: { qrCode: qrResult.base64, status: instance.status, expiresAt } };
+        } catch (error) {
+          console.error('Failed to fetch fresh QR from Evolution:', error);
+          // Return stale QR if available, otherwise error
+          if (!instance.qrCode) {
+            reply.code(500);
+            return { success: false, error: 'Failed to fetch QR code' };
+          }
+        }
+      }
+
+      // Return stored QR with computed expiry
+      const expiresAt = instance.updatedAt ? new Date(new Date(instance.updatedAt).getTime() + 60000).toISOString() : undefined;
+      return { success: true, data: { qrCode: instance.qrCode, status: instance.status, expiresAt } };
     },
   });
 
@@ -253,7 +318,7 @@ export default async function (fastify: FastifyInstance) {
 
       const instance = await prisma.whatsAppInstance.findFirst({
         where: { id, orgId },
-        select: { id: true, status: true },
+        select: { id: true, evolutionInstanceName: true, status: true },
       });
 
       if (!instance) {
@@ -261,13 +326,35 @@ export default async function (fastify: FastifyInstance) {
         return { success: false, error: 'Instance not found' };
       }
 
-      // Update status to DISCONNECTED
+      if (!instance.evolutionInstanceName) {
+        reply.code(400);
+        return { success: false, error: 'Evolution instance name not configured' };
+      }
+
+      try {
+        // Call Evolution API to logout
+        const evo = getEvolutionClient();
+        await evo.logoutInstance(instance.evolutionInstanceName);
+      } catch (error) {
+        console.error('Evolution logout error:', error);
+        // Continue even if Evolution logout fails (instance might already be logged out)
+      }
+
+      // Update status to DISCONNECTED and clear QR
       await prisma.whatsAppInstance.update({
         where: { id },
         data: { status: 'DISCONNECTED', qrCode: null },
       });
 
-      // TODO: Call Evolution API to logout instance
+      // Broadcast status change
+      const socketService = getSocketService();
+      if (socketService) {
+        socketService.broadcastToInstance(id, 'whatsapp:instance:status', {
+          instanceId: id,
+          status: 'DISCONNECTED',
+          timestamp: Date.now(),
+        });
+      }
 
       return { success: true, data: { message: 'Disconnected', instanceId: id } };
     },

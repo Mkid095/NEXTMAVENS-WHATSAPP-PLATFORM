@@ -316,11 +316,42 @@ async function handleQRCodeUpdate(
   event: ParsedWebhookEvent,
   orgId: string
 ): Promise<{ success: boolean; result?: string; error?: string }> {
-  const { instanceId } = event;
-  // QR code updates typically require no action on our side
-  // Just log for audit purposes (webhook delivery log will capture)
-  console.log(`QR code updated for instance ${instanceId}`);
-  return { success: true, result: `QR code update acknowledged` };
+  const { instanceId, qrCode, status } = event;
+
+  if (!qrCode) {
+    return {
+      success: false,
+      error: 'QR code data missing in webhook payload',
+    };
+  }
+
+  try {
+    // Update the instance with the new QR code
+    // Note: Connection status is handled separately by CONNECTION_UPDATE
+    await prisma.whatsAppInstance.update({
+      where: { id: instanceId },
+      data: { qrCode },
+    });
+
+    // Broadcast QR update to connected clients via Socket.IO
+    await broadcastToInstance(instanceId, 'whatsapp:instance:qr:update', {
+      instanceId,
+      qrCode,
+      status: status || 'pending',
+      timestamp: event.timestamp || Date.now(),
+    });
+
+    return {
+      success: true,
+      result: `QR code updated for instance ${instanceId}`,
+    };
+  } catch (error: any) {
+    console.error(`Error updating QR code for instance ${instanceId}:`, error);
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
 }
 
 /**
