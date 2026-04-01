@@ -18,6 +18,7 @@ services:
       EVOLUTION_API_URL: "http://evolution-api:8080"
       JWT_SECRET: "${JWT_SECRET}"
       JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET}"
+      CORS_ORIGIN: "https://whatsapp.nextmavens.cloud"
       EVOLUTION_API_KEY: "${EVOLUTION_API_KEY}"
       EVOLUTION_WEBHOOK_SECRET: "${EVOLUTION_WEBHOOK_SECRET}"
       APP_URL: "https://whatsapp.nextmavens.cloud"
