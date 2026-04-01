@@ -1,4 +1,65 @@
 services:
+  whatsapp-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nextmavens-whatsapp-backend
+    restart: unless-stopped
+    networks:
+      - nextmavens_net
+    ports:
+      - "127.0.0.1:4930:3000"  # Expose to host for direct access
+    environment:
+      NODE_ENV: "production"
+      DATABASE_URL: "postgresql://nextmavens:${POSTGRES_PASSWORD}@whatsapp-postgres:5432/nextmavens_platform"
+      REDIS_URL: "redis://whatsapp-redis:6379"
+      REDIS_HOST: "whatsapp-redis"
+      REDIS_PORT: "6379"
+      EVOLUTION_API_URL: "http://evolution-api:8080"
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_REFRESH_SECRET: "${JWT_REFRESH_SECRET}"
+      EVOLUTION_API_KEY: "${EVOLUTION_API_KEY}"
+      EVOLUTION_WEBHOOK_SECRET: "${EVOLUTION_WEBHOOK_SECRET}"
+      APP_URL: "https://whatsapp.nextmavens.cloud"
+      PAYSTACK_SECRET_KEY: "${PAYSTACK_SECRET_KEY}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY}"
+      PORT: "3000"
+      LOG_LEVEL: "info"
+      ENABLE_RETRY_DLQ: "true"
+      MESSAGE_RETRY_MAX_ATTEMPTS: "5"
+      MESSAGE_RETRY_BASE_DELAY_MS: "1000"
+      MESSAGE_RETRY_MAX_DELAY_MS: "300000"
+      MESSAGE_RETRY_JITTER: "0.15"
+      DLQ_RETENTION_DAYS: "30"
+      DLQ_STREAM_PREFIX: "dlq:whatsapp"
+      QUEUE_CONCURRENCY: "10"
+      ENABLE_WORKFLOW_ORCHESTRATION: "true"
+      WORKFLOW_MAX_RETRIES: "3"
+      WORKFLOW_BASE_RETRY_DELAY_MS: "1000"
+      WORKFLOW_TIMEOUT_DEFAULT_MS: "3600000"
+    depends_on:
+      whatsapp-postgres:
+        condition: service_healthy
+      whatsapp-redis:
+        condition: service_healthy
+      evolution-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    mem_limit: 512m
+    mem_reservation: 256m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
   whatsapp-frontend:
     image: nginx:alpine
     container_name: nextmavens-whatsapp-frontend
@@ -6,10 +67,12 @@ services:
     networks:
       - nextmavens_net
     ports:
-      - "127.0.0.1:6429:80"
+      - "127.0.0.1:6429:80"  # Host access on 6429; use host nginx to proxy port 80 to 6429
     volumes:
       - ./dist:/usr/share/nginx/html:ro
       - ./nginx-frontend.conf:/etc/nginx/conf.d/default.conf:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost"]
       interval: 30s
@@ -41,9 +104,9 @@ services:
       EVOLUTION_AUTH_JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       EVOLUTION_WEBHOOK_SECRET_KEY: ${EVOLUTION_WEBHOOK_SECRET}
       EVOLUTION_WEBHOOK_ENABLED: "true"
-      EVOLUTION_WEBHOOK_URL: https://api.nextmavens.cloud/webhooks/whatsapp
+      EVOLUTION_WEBHOOK_URL: https://whatsapp.nextmavens.cloud/webhooks/whatsapp
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/', r=>{if(r.statusCode!==200)process.exit(1)})"]
       interval: 30s
       timeout: 10s
       retries: 3
