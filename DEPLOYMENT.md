@@ -9,9 +9,9 @@
 | PostgreSQL | 🟢 Healthy | `localhost:5433` |
 | Redis | 🟢 Healthy | `localhost:6379` |
 | Evolution API | 🟢 Connected | `http://evolution-api:8080` (Docker network) |
-| Nginx Proxy | 🟢 Configured | Rate limiting + logging enabled |
-| SSL/TLS | ⚠️ Not yet | See "HTTPS Setup" below |
-| Domain DNS | ⚠️ Not yet | Point to server IP |
+| Nginx Proxy | 🟢 Configured | Rate limiting + logging + WebSocket |
+| SSL/TLS | 🟢 Live | Let's Encrypt on whatsapp.nextmavens.cloud |
+| Domain DNS | ⚠️ Manual | Point A record → 72.61.89.110 (if not done) |
 
 ---
 
@@ -25,6 +25,9 @@
 6. **✅ Rate Limiting** – Added to nginx: `10 r/s with burst 20`
 7. **✅ Logging** – Nginx access/error logs enabled
 8. **✅ Environment Security** – `.env*` gitignored; secrets via Docker .env
+9. **✅ WebSocket Proxy** – Added `/socket.io/` location with upgrade headers
+10. **✅ HTTPS** – Let's Encrypt SSL configured via host nginx
+11. **✅ Health/Metrics** – Exposed and proxied for monitoring
 
 ---
 
@@ -170,6 +173,8 @@ docker compose exec whatsapp-backend sh
 | Groups API error `column g.created_at does not exist` | Fixed; rebuild backend if still seeing error: `docker compose build whatsapp-backend && docker compose up -d whatsapp-backend` |
 | Evolution connection fails | Verify `EVOLUTION_API_KEY` set and `EVOLUTION_API_URL=http://evolution-api:8080` |
 | Port 80 already in use | Use Option A (host nginx proxy) or stop existing nginx service |
+| WebSocket connection error | Ensure `/socket.io/` location block in nginx; check backend Socket.IO initialized; verify `Upgrade` and `Connection` headers passed |
+| HTTPS cert not renewing | Test with `sudo certbot renew --dry-run`; ensure DNS points correctly |
 
 ---
 
@@ -177,6 +182,7 @@ docker compose exec whatsapp-backend sh
 
 - **Backend metrics**: `GET /metrics` (Prometheus format) on port 4930
 - **Health checks**: `/health` on backend and frontend
+- **WebSocket endpoint**: `wss://whatsapp.nextmavens.cloud/socket.io/` (Socket.IO realtime)
 - **Docker logs**: `docker compose logs -f <service>`
 - **Resource usage**: `docker stats`
 
@@ -193,11 +199,11 @@ Password: Elishiba@95
 
 ## 🔄 Next Steps
 
-1. **Set up HTTPS** (see above)
-2. **Configure DNS**: Add A record for `whatsapp.nextmavens.cloud` → `72.61.89.110`
-3. **Create Evolution instances** manually via Evolution admin UI or API, then link in our platform
+1. **Configure DNS**: Add A record for `whatsapp.nextmavens.cloud` → `72.61.89.110` (if not done)
+2. **Create Evolution "main" instance** manually via Evolution admin UI (`http://localhost:3001`) to enable QR code connection
+3. **Verify webhook delivery**: After DNS propagates, test Evolution → our `/webhooks/whatsapp` endpoint
 4. **Set up monitoring** (Grafana + Prometheus already integrated in backend)
-5. **Optional**: Refactor `useInstances.ts` further if needed
+5. **Optional**: Auto-provision Evolution instances when created in our platform
 
 ---
 
