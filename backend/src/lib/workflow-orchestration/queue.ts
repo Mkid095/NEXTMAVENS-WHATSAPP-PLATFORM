@@ -3,8 +3,7 @@
  * Enqueues workflow step jobs to the main BullMQ queue
  */
 
-import { MessagePriority } from '../message-queue-priority-system/types';
-import { messageQueue, getQueueMetrics } from '../message-queue-priority-system';
+import { MessagePriority, messageQueue, getQueueMetrics } from '../message-queue-priority-system';
 import type { WorkflowStepJobData } from './types';
 
 // ============================================================================

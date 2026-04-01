@@ -1,9 +1,14 @@
+/**
+ * Messaging Page - Real-time chat interface
+ */
+
 import React, { useState, useEffect } from 'react';
-import { useInstances, useChats, WhatsAppChat } from '../hooks/useWhatsApp';
+import { useInstances, useChats, useMessages } from '../hooks';
 import { ChatList } from '../components/ChatList';
 import { ChatWindow } from '../components/ChatWindow';
 import { Loader2, MessageSquare, Smartphone, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { WhatsAppChat } from '../types';
 
 export function Messaging() {
   const { data: instances, isLoading: isLoadingInstances } = useInstances();
@@ -12,6 +17,7 @@ export function Messaging() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: chats, isLoading: isLoadingChats } = useChats(selectedInstanceId);
+  const { data: messages } = useMessages(selectedInstanceId, selectedChat?.id || null);
 
   // Auto-select first connected instance
   useEffect(() => {
@@ -42,12 +48,12 @@ export function Messaging() {
         </div>
         <h3 className="text-2xl font-bold text-white">No Connected Instances</h3>
         <p className="text-zinc-400 mt-2 max-w-md mx-auto">
-          You need at least one connected WhatsApp instance to use the messaging features. 
+          You need at least one connected WhatsApp instance to use the messaging features.
           Please go to the Instances page and connect an account.
         </p>
-        <a 
-          href="/instances" 
-          className="btn-primary mt-8"
+        <a
+          href="/instances"
+          className="btn-primary mt-8 flex items-center gap-2"
         >
           <Smartphone className="w-5 h-5" />
           Go to Instances
@@ -64,11 +70,11 @@ export function Messaging() {
           <MessageSquare className="w-5 h-5 text-emerald-500" />
           <h2 className="text-lg font-bold text-white">Messages</h2>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <span className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Instance:</span>
-          <select 
-            value={selectedInstanceId || ''} 
+          <select
+            value={selectedInstanceId || ''}
             onChange={(e) => {
               setSelectedInstanceId(e.target.value);
               setSelectedChat(null);
@@ -86,9 +92,9 @@ export function Messaging() {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar - Chat List */}
-        <div className="w-full md:w-80 lg:w-96 flex-shrink-0">
-          <ChatList 
-            chats={chats || []} 
+        <div className="w-full md:w-80 lg:w-96 flex-shrink-0 border-r border-zinc-800">
+          <ChatList
+            chats={chats || []}
             selectedChatId={selectedChat?.id || null}
             onSelectChat={setSelectedChat}
             searchQuery={searchQuery}
@@ -98,9 +104,10 @@ export function Messaging() {
 
         {/* Main Area - Chat Window */}
         <div className="flex-1 hidden md:block">
-          <ChatWindow 
-            instanceId={selectedInstanceId || ''} 
-            chat={selectedChat} 
+          <ChatWindow
+            instanceId={selectedInstanceId || ''}
+            chat={selectedChat}
+            messages={messages || []}
           />
         </div>
       </div>

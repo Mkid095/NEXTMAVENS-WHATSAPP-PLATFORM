@@ -49,7 +49,7 @@ async function createUser() {
     // Verify
     const verify = await prisma.user.findUnique({
       where: { id: user.id },
-      include: { members: true }
+      include: { memberships: true }
     });
 
     console.log('\n📋 User created successfully:');

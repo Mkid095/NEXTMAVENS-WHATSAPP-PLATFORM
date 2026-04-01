@@ -1,0 +1,334 @@
+src/app.ts(8,10): error TS2305: Module '"./shared/config.js"' has no exported member 'config'.
+src/app.ts(31,46): error TS2503: Cannot find namespace 'Fastify'.
+src/app.ts(107,13): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(plugin: FastifyPluginCallback<RawBodyPluginOptions, RawServerDefault, FastifyTypeProviderDefault, FastifyBaseLogger>, opts?: FastifyRegisterOptions<...>): FastifyInstance<...> & PromiseLike<...>', gave the following error.
+    Object literal may only specify known properties, and 'bodyLimit' does not exist in type 'FastifyRegisterOptions<RawBodyPluginOptions>'.
+  Overload 2 of 3, '(plugin: FastifyPluginAsync<RawBodyPluginOptions, RawServerDefault, FastifyTypeProviderDefault, FastifyBaseLogger>, opts?: FastifyRegisterOptions<...>): FastifyInstance<...> & PromiseLike<...>', gave the following error.
+    Argument of type 'FastifyRawBody' is not assignable to parameter of type 'FastifyPluginAsync<RawBodyPluginOptions, RawServerDefault, FastifyTypeProviderDefault, FastifyBaseLogger>'.
+      Target signature provides too few arguments. Expected 3 or more, but got 2.
+  Overload 3 of 3, '(plugin: FastifyPluginCallback<RawBodyPluginOptions, RawServerDefault, FastifyTypeProviderDefault, FastifyBaseLogger> | FastifyPluginAsync<...> | Promise<...> | Promise<...>, opts?: FastifyRegisterOptions<...>): FastifyInstance<...> & PromiseLike<...>', gave the following error.
+    Object literal may only specify known properties, and 'bodyLimit' does not exist in type 'FastifyRegisterOptions<RawBodyPluginOptions>'.
+src/app.ts(118,29): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(request: FastifyRequest<RouteGenericInterface, RawServerDefault, IncomingMessage, FastifySchema, FastifyTypeProviderDefault, unknown, FastifyBaseLogger, ResolveFastifyRequestType<...>>, reply: FastifyReply<...>, done: (err?: Error) => void) => Promise<...>' is not assignable to parameter of type 'preHandlerAsyncHookHandler<RawServerDefault, IncomingMessage, ServerResponse<IncomingMessage>, RouteGenericInterface, unknown, FastifySchema, FastifyTypeProviderDefault, FastifyBaseLogger>'.
+      Target signature provides too few arguments. Expected 3 or more, but got 2.
+src/app.ts(119,29): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(request: FastifyRequest<RouteGenericInterface, RawServerDefault, IncomingMessage, FastifySchema, FastifyTypeProviderDefault, unknown, FastifyBaseLogger, ResolveFastifyRequestType<...>>, reply: FastifyReply<...>, done: (err?: Error) => void) => Promise<...>' is not assignable to parameter of type 'preHandlerAsyncHookHandler<RawServerDefault, IncomingMessage, ServerResponse<IncomingMessage>, RouteGenericInterface, unknown, FastifySchema, FastifyTypeProviderDefault, FastifyBaseLogger>'.
+      Target signature provides too few arguments. Expected 3 or more, but got 2.
+src/app.ts(120,29): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(request: FastifyRequest<RouteGenericInterface, RawServerDefault, IncomingMessage, FastifySchema, FastifyTypeProviderDefault, unknown, FastifyBaseLogger, ResolveFastifyRequestType<...>>, reply: FastifyReply<...>, done: (err?: FastifyError) => void) => Promise<...>' is not assignable to parameter of type 'preHandlerAsyncHookHandler<RawServerDefault, IncomingMessage, ServerResponse<IncomingMessage>, RouteGenericInterface, unknown, FastifySchema, FastifyTypeProviderDefault, FastifyBaseLogger>'.
+      Target signature provides too few arguments. Expected 3 or more, but got 2.
+src/app.ts(121,29): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(request: FastifyRequest<RouteGenericInterface, RawServerDefault, IncomingMessage, FastifySchema, FastifyTypeProviderDefault, unknown, FastifyBaseLogger, ResolveFastifyRequestType<...>>, reply: FastifyReply<...>, done: (err?: FastifyError) => void) => Promise<...>' is not assignable to parameter of type 'preHandlerAsyncHookHandler<RawServerDefault, IncomingMessage, ServerResponse<IncomingMessage>, RouteGenericInterface, unknown, FastifySchema, FastifyTypeProviderDefault, FastifyBaseLogger>'.
+      Target signature provides too few arguments. Expected 3 or more, but got 2.
+src/app.ts(122,29): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '(request: FastifyRequest<RouteGenericInterface, RawServerDefault, IncomingMessage, FastifySchema, FastifyTypeProviderDefault, unknown, FastifyBaseLogger, ResolveFastifyRequestType<...>>, reply: FastifyReply<...>, done: (err?: FastifyError) => void) => Promise<...>' is not assignable to parameter of type 'preHandlerAsyncHookHandler<RawServerDefault, IncomingMessage, ServerResponse<IncomingMessage>, RouteGenericInterface, unknown, FastifySchema, FastifyTypeProviderDefault, FastifyBaseLogger>'.
+      Target signature provides too few arguments. Expected 3 or more, but got 2.
+src/app.ts(142,47): error TS2339: Property 'toJSON' does not exist on type 'FastifyError'.
+src/app.ts(157,7): error TS2339: Property 'setInvalidBodyHandler' does not exist on type 'FastifyInstance<Server<typeof IncomingMessage, typeof ServerResponse>, IncomingMessage, ServerResponse<IncomingMessage>, FastifyBaseLogger, FastifyTypeProviderDefault> & PromiseLike<...>'.
+src/app.ts(172,36): error TS2503: Cannot find namespace 'Fastify'.
+src/app.ts(222,55): error TS2345: Argument of type 'string' is not assignable to parameter of type 'Record<string, any>'.
+src/app/api/build-coupon-&-discount-system/route.ts(21,32): error TS2307: Cannot find module '../../../middleware/featureCheck' or its corresponding type declarations.
+src/app/api/implement-message-deduplication-system/route.ts(17,29): error TS2307: Cannot find module '../../../lib/message-queue-priority-system/types' or its corresponding type declarations.
+src/app/api/implement-message-deduplication-system/route.ts(25,32): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: readonly string[], params?: string | { error?: string | $ZodErrorMap<$ZodIssueInvalidValue<unknown>>; message?: string; }): ZodEnum<{ [x: string]: string; }>', gave the following error.
+    Argument of type 'unknown[]' is not assignable to parameter of type 'readonly string[]'.
+      Type 'unknown' is not assignable to type 'string'.
+  Overload 2 of 2, '(entries: Readonly<Record<string, EnumValue>>, params?: string | { error?: string | $ZodErrorMap<$ZodIssueInvalidValue<unknown>>; message?: string; }): ZodEnum<...>', gave the following error.
+    Argument of type 'unknown[]' is not assignable to parameter of type 'Readonly<Record<string, EnumValue>>'.
+      Index signature for type 'string' is missing in type 'unknown[]'.
+src/app/api/implement-message-deduplication-system/route.ts(51,17): error TS2538: Type 'unknown' cannot be used as an index type.
+src/app/api/implement-message-deduplication-system/route.ts(51,59): error TS2538: Type 'unknown' cannot be used as an index type.
+src/app/api/implement-message-queue-priority-system/route.ts(17,3): error TS2305: Module '"../../../lib/message-queue-priority-system"' has no exported member 'messageQueue'.
+src/app/api/implement-quota-enforcement-middleware/route.ts(75,41): error TS2339: Property 'getUsage' does not exist on type 'QuotaLimiter'.
+src/app/api/implement-quota-enforcement-middleware/route.ts(110,43): error TS2339: Property 'getUsage' does not exist on type 'QuotaLimiter'.
+src/app/api/implement-quota-enforcement-middleware/route.ts(228,41): error TS2339: Property 'getNearLimitOrgs' does not exist on type 'QuotaLimiter'.
+src/app/api/integrate-evolution-api-message-status-webhooks/route.ts(29,29): error TS2307: Cannot find module '../../../lib/integrate-evolution-api-message-status-webhooks/validator' or its corresponding type declarations.
+src/app/api/message-retry-and-dlq/handlers/bulk-delete-dlq-messages.handler.ts(8,37): error TS2307: Cannot find module '../schemas' or its corresponding type declarations.
+src/app/api/message-retry-and-dlq/handlers/bulk-delete-dlq-messages.handler.ts(14,8): error TS2307: Cannot find module '../../../lib/message-retry-and-dlq-system/dlq' or its corresponding type declarations.
+src/app/api/message-retry-and-dlq/handlers/clear-dlq-stream.handler.ts(7,49): error TS2307: Cannot find module '../../../lib/message-retry-and-dlq-system/dlq' or its corresponding type declarations.
+src/app/api/message-retry-and-dlq/handlers/delete-dlq-message.handler.ts(7,49): error TS2307: Cannot find module '../../../lib/message-retry-and-dlq-system/dlq' or its corresponding type declarations.
+src/app/api/message-retry-and-dlq/handlers/get-dlq-message.handler.ts(7,46): error TS2307: Cannot find module '../../../lib/message-retry-and-dlq-system/dlq' or its corresponding type declarations.
+src/app/api/message-retry-and-dlq/handlers/get-dlq-metrics.handler.ts(7,31): error TS2307: Cannot find module '../../../lib/message-retry-and-dlq-system/dlq' or its corresponding type declarations.
+src/app/api/message-retry-and-dlq/handlers/list-dlq-messages.handler.ts(8,32): error TS2307: Cannot find module '../schemas' or its corresponding type declarations.
+src/app/api/message-retry-and-dlq/handlers/list-dlq-messages.handler.ts(9,32): error TS2307: Cannot find module '../../../lib/message-retry-and-dlq-system/dlq' or its corresponding type declarations.
+src/app/api/message-retry-and-dlq/handlers/list-dlq-streams.handler.ts(7,37): error TS2307: Cannot find module '../../../lib/message-retry-and-dlq-system/dlq' or its corresponding type declarations.
+src/app/api/message-retry-and-dlq/handlers/list-dlq-streams.handler.ts(16,49): error TS2307: Cannot find module '../../../lib/message-retry-and-dlq-system/dlq' or its corresponding type declarations.
+src/app/api/message-retry-and-dlq/handlers/retry-all-dlq-messages.handler.ts(8,33): error TS2307: Cannot find module '../schemas' or its corresponding type declarations.
+src/app/api/message-retry-and-dlq/handlers/retry-all-dlq-messages.handler.ts(14,8): error TS2307: Cannot find module '../../../lib/message-retry-and-dlq-system/dlq' or its corresponding type declarations.
+src/app/api/message-retry-and-dlq/handlers/retry-all-dlq-messages.handler.ts(15,30): error TS2307: Cannot find module '../../../lib/message-queue-priority-system' or its corresponding type declarations.
+src/app/api/message-retry-and-dlq/handlers/retry-dlq-message.handler.ts(7,49): error TS2307: Cannot find module '../../../lib/message-retry-and-dlq-system/dlq' or its corresponding type declarations.
+src/app/api/message-retry-and-dlq/handlers/retry-dlq-message.handler.ts(8,30): error TS2307: Cannot find module '../../../lib/message-queue-priority-system' or its corresponding type declarations.
+src/app/api/message-retry-and-dlq/schemas/dlq.schemas.ts(6,31): error TS2307: Cannot find module '../../../lib/message-retry-and-dlq-system/types' or its corresponding type declarations.
+src/app/api/workflow-orchestration/handlers/cancel-workflow-instance.handler.ts(9,32): error TS2307: Cannot find module '../../../lib/workflow-orchestration' or its corresponding type declarations.
+src/app/api/workflow-orchestration/handlers/create-workflow.handler.ts(12,8): error TS2307: Cannot find module '../../../lib/workflow-orchestration' or its corresponding type declarations.
+src/app/api/workflow-orchestration/handlers/delete-workflow.handler.ts(7,42): error TS2307: Cannot find module '../../../lib/workflow-orchestration' or its corresponding type declarations.
+src/app/api/workflow-orchestration/handlers/get-workflow-instance-health.handler.ts(7,37): error TS2307: Cannot find module '../../../lib/workflow-orchestration' or its corresponding type declarations.
+src/app/api/workflow-orchestration/handlers/get-workflow-instance.handler.ts(7,35): error TS2307: Cannot find module '../../../lib/workflow-orchestration' or its corresponding type declarations.
+src/app/api/workflow-orchestration/handlers/get-workflow.handler.ts(7,39): error TS2307: Cannot find module '../../../lib/workflow-orchestration' or its corresponding type declarations.
+src/app/api/workflow-orchestration/handlers/list-workflow-instances.handler.ts(9,39): error TS2307: Cannot find module '../../../lib/workflow-orchestration' or its corresponding type declarations.
+src/app/api/workflow-orchestration/handlers/list-workflows.handler.ts(9,41): error TS2307: Cannot find module '../../../lib/workflow-orchestration' or its corresponding type declarations.
+src/app/api/workflow-orchestration/handlers/start-workflow-instance.handler.ts(9,31): error TS2307: Cannot find module '../../../lib/workflow-orchestration' or its corresponding type declarations.
+src/app/api/workflow-orchestration/handlers/update-workflow.handler.ts(9,42): error TS2307: Cannot find module '../../../lib/workflow-orchestration' or its corresponding type declarations.
+src/infrastructure/feature-flags/global.flags.ts(6,24): error TS2307: Cannot find module '../prisma.js' or its corresponding type declarations.
+src/infrastructure/feature-flags/org.overrides.ts(6,24): error TS2307: Cannot find module '../prisma.js' or its corresponding type declarations.
+src/infrastructure/index.ts(10,10): error TS2305: Module '"../lib/rate-limiting-with-redis/index.js"' has no exported member 'initialize'.
+src/infrastructure/index.ts(14,10): error TS2305: Module '"../lib/implement-quota-enforcement-middleware/index.js"' has no exported member 'initialize'.
+src/infrastructure/index.ts(22,10): error TS2305: Module '"../lib/implement-idempotency-key-system/index.js"' has no exported member 'initialize'.
+src/infrastructure/index.ts(30,10): error TS2305: Module '"../lib/feature-management/index.js"' has no exported member 'initialize'.
+src/infrastructure/metrics/redis.metrics.ts(19,41): error TS2304: Cannot find name 'Histogram'.
+src/infrastructure/rate-limiter/index.ts(31,31): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/infrastructure/rate-limiter/rate-limiter.class.ts(8,37): error TS2307: Cannot find module './check.operations' or its corresponding type declarations.
+src/infrastructure/rate-limiter/rate-limiter.class.ts(9,41): error TS2307: Cannot find module './status.operations' or its corresponding type declarations.
+src/infrastructure/retry-dlq/index.ts(21,8): error TS2300: Duplicate identifier 'RetryPolicy'.
+src/infrastructure/retry-dlq/index.ts(22,3): error TS2300: Duplicate identifier 'DEFAULT_RETRY_POLICIES'.
+src/infrastructure/retry-dlq/index.ts(45,8): error TS2300: Duplicate identifier 'RetryPolicy'.
+src/infrastructure/retry-dlq/index.ts(46,3): error TS2300: Duplicate identifier 'DEFAULT_RETRY_POLICIES'.
+src/infrastructure/retry-dlq/index.ts(77,3): error TS2305: Module '"./dlq.config"' has no exported member 'getDlqStreamKey'.
+src/infrastructure/retry-dlq/list.operations.ts(70,10): error TS2305: Module '"./dlq.config"' has no exported member 'getDlqStreamKey'.
+src/infrastructure/retry-dlq/replay.operations.ts(1,48): error TS2307: Cannot find module './dlq.operations' or its corresponding type declarations.
+src/infrastructure/retry-dlq/retry-delay.calculator.ts(1,28): error TS2305: Module '"./retry-policy.types"' has no exported member 'RetryDelayResult'.
+src/infrastructure/retry-dlq/retry-evaluator.ts(2,31): error TS2307: Cannot find module './types' or its corresponding type declarations.
+src/infrastructure/retry-dlq/retry-metrics.ts(1,31): error TS2307: Cannot find module './types' or its corresponding type declarations.
+src/infrastructure/retry-dlq/worker.management.ts(2,34): error TS2307: Cannot find module '../message-queue-priority-system/types' or its corresponding type declarations.
+src/infrastructure/retry-dlq/worker.management.ts(6,49): error TS2307: Cannot find module '../message-queue-priority-system' or its corresponding type declarations.
+src/infrastructure/retry-dlq/worker.management.ts(30,17): error TS2304: Cannot find name 'Job'.
+src/infrastructure/retry-dlq/worker.management.ts(39,40): error TS2304: Cannot find name 'Job'.
+src/infrastructure/retry-dlq/worker.management.ts(43,37): error TS2304: Cannot find name 'Job'.
+src/infrastructure/retry-dlq/worker.management.ts(55,39): error TS2304: Cannot find name 'Job'.
+src/infrastructure/retry-dlq/worker.processor.ts(2,34): error TS2307: Cannot find module '../message-queue-priority-system/types' or its corresponding type declarations.
+src/infrastructure/retry-dlq/worker.processor.ts(14,8): error TS2307: Cannot find module '../create-comprehensive-metrics-dashboard-(grafana)/index' or its corresponding type declarations.
+src/infrastructure/websocket.ts(170,73): error TS2339: Property 'status' does not exist on type '{ id: string; orgId: string; }'.
+src/lib/add-whatsapp-message-throttling/index.ts(40,36): error TS2305: Module '"./throttle.engine"' has no exported member 'resetThrottle'.
+src/lib/add-whatsapp-message-throttling/index.ts(43,10): error TS2305: Module '"./config.manager"' has no exported member 'loadConfigs'.
+src/lib/build-billing-admin-dashboard/overview.service.ts(11,53): error TS2304: Cannot find name 'BillingOverview'.
+src/lib/build-coupon-&-discount-system/coupon.application.ts(117,24): error TS2552: Cannot find name 'getCoupon'. Did you mean 'coupon'?
+src/lib/create-comprehensive-health-check-endpoint/index.ts(12,10): error TS2305: Module '"../message-queue-priority-system"' has no exported member 'messageQueue'.
+src/lib/feature-management/org.overrides.ts(30,5): error TS2322: Type 'string' is not assignable to type 'FeatureFlagKey'.
+src/lib/feature-management/org.overrides.ts(75,5): error TS2322: Type 'string' is not assignable to type 'FeatureFlagKey'.
+src/lib/feature-management/org.overrides.ts(89,3): error TS2322: Type '{ orgId: string; featureKey: string; enabled: boolean; }[]' is not assignable to type '{ orgId: string; featureKey: FeatureFlagKey; enabled: boolean; }[]'.
+  Type '{ orgId: string; featureKey: string; enabled: boolean; }' is not assignable to type '{ orgId: string; featureKey: FeatureFlagKey; enabled: boolean; }'.
+    Types of property 'featureKey' are incompatible.
+      Type 'string' is not assignable to type 'FeatureFlagKey'.
+src/lib/implement-instance-heartbeat-monitoring/index.ts(69,3): error TS2304: Cannot find name 'startHeartbeatScheduler'.
+src/lib/implement-instance-heartbeat-monitoring/index.ts(77,9): error TS2304: Cannot find name 'stopHeartbeatScheduler'.
+src/lib/implement-instance-heartbeat-monitoring/index.ts(78,9): error TS2304: Cannot find name 'shutdownRedisClient'.
+src/lib/implement-instance-heartbeat-monitoring/index.ts(86,9): error TS2304: Cannot find name 'recordHeartbeat'.
+src/lib/implement-instance-heartbeat-monitoring/index.ts(94,10): error TS2304: Cannot find name 'getAllInstancesWithStatus'.
+src/lib/implement-instance-heartbeat-monitoring/index.ts(101,9): error TS2304: Cannot find name 'triggerSync'.
+src/lib/implement-instance-heartbeat-monitoring/scheduler.ts(3,38): error TS2307: Cannot find module './storage' or its corresponding type declarations.
+src/lib/implement-message-deduplication-system/index.ts(10,29): error TS2307: Cannot find module '../message-queue-priority-system/types' or its corresponding type declarations.
+src/lib/implement-message-deduplication-system/index.ts(152,17): error TS2538: Type 'unknown' cannot be used as an index type.
+src/lib/implement-message-deduplication-system/index.ts(187,40): error TS2538: Type 'unknown' cannot be used as an index type.
+src/lib/implement-message-deduplication-system/index.ts(188,16): error TS2538: Type 'unknown' cannot be used as an index type.
+src/lib/implement-message-deduplication-system/index.ts(206,19): error TS2538: Type 'unknown' cannot be used as an index type.
+src/lib/implement-message-deduplication-system/types.ts(6,29): error TS2307: Cannot find module '../message-queue-priority-system/types' or its corresponding type declarations.
+src/lib/implement-quota-enforcement-middleware/admin-queries.service.ts(10,26): error TS2307: Cannot find module './usage-queries' or its corresponding type declarations.
+src/lib/implement-quota-enforcement-middleware/admin-queries.service.ts(40,42): error TS1361: 'QuotaMetric' cannot be used as a value because it was imported using 'import type'.
+src/lib/implement-quota-enforcement-middleware/admin-queries.service.ts(41,64): error TS1361: 'QuotaPeriod' cannot be used as a value because it was imported using 'import type'.
+src/lib/implement-quota-enforcement-middleware/quota-limiter.class.ts(46,46): error TS1361: 'QuotaMetric' cannot be used as a value because it was imported using 'import type'.
+src/lib/implement-quota-enforcement-middleware/quota-limiter.class.ts(46,74): error TS1361: 'QuotaPeriod' cannot be used as a value because it was imported using 'import type'.
+src/lib/implement-quota-enforcement-middleware/quota-limiter.class.ts(46,94): error TS1361: 'QuotaPeriod' cannot be used as a value because it was imported using 'import type'.
+src/lib/implement-quota-enforcement-middleware/quota-limiter.class.ts(133,27): error TS1361: 'QuotaPeriod' cannot be used as a value because it was imported using 'import type'.
+src/lib/implement-quota-enforcement-middleware/types.ts(35,17): error TS2304: Cannot find name 'QuotaLimiter'.
+src/lib/implement-quota-enforcement-middleware/usage-queries.service.ts(18,25): error TS1361: 'QuotaPeriod' cannot be used as a value because it was imported using 'import type'.
+src/lib/implement-usage-based-billing-&-overage/customer.client.ts(26,48): error TS2339: Property 'length' does not exist on type '{ data: PaystackCustomer[]; }'.
+src/lib/implement-usage-based-billing-&-overage/customer.client.ts(51,18): error TS2339: Property 'id' does not exist on type '{ data: PaystackCustomer; }'.
+src/lib/implement-usage-based-billing-&-overage/customer.client.ts(52,29): error TS2339: Property 'customer_code' does not exist on type '{ data: PaystackCustomer; }'.
+src/lib/implement-usage-based-billing-&-overage/customer.client.ts(53,21): error TS2339: Property 'email' does not exist on type '{ data: PaystackCustomer; }'.
+src/lib/implement-usage-based-billing-&-overage/usage.invoicer.ts(104,61): error TS2353: Object literal may only specify known properties, and 'error' does not exist in type 'Partial<Record<"meter_name", string | number>>'.
+src/lib/implement-usage-based-billing-&-overage/usage.recorder.ts(98,39): error TS2339: Property 'currentAfter' does not exist on type 'QuotaCheckResult'.
+src/lib/implement-usage-based-billing-&-overage/usage.recorder.ts(98,53): error TS2345: Argument of type '{ org_id: string; meter_name: string; }' is not assignable to parameter of type 'number'.
+src/lib/implement-usage-based-billing-&-overage/usage.recorder.ts(102,29): error TS2559: Type 'number' has no properties in common with type 'Partial<Record<"org_id" | "meter_name", string | number>>'.
+src/lib/implement-usage-based-billing-&-overage/usage.recorder.ts(102,53): error TS2339: Property 'remaining' does not exist on type 'QuotaCheckResult'.
+src/lib/implement-usage-based-billing-&-overage/usage.recorder.ts(108,28): error TS2339: Property 'record' does not exist on type 'Histogram<"meter_name">'.
+src/lib/implement-usage-based-billing-&-overage/usage.recorder.ts(112,7): error TS2353: Object literal may only specify known properties, and 'usageEventId' does not exist in type 'RecordUsageResult'.
+src/lib/implement-usage-based-billing-&-overage/usage.recorder.ts(114,30): error TS2339: Property 'remaining' does not exist on type 'QuotaCheckResult'.
+src/lib/implement-usage-based-billing-&-overage/usage.recorder.ts(115,39): error TS2551: Property 'overageAmountCents' does not exist on type 'QuotaCheckResult'. Did you mean 'overageRateCents'?
+src/lib/implement-usage-based-billing-&-overage/usage.recorder.ts(119,28): error TS2339: Property 'record' does not exist on type 'Histogram<"meter_name">'.
+src/lib/implement-usage-based-billing-&-overage/usage.recorder.ts(123,7): error TS2353: Object literal may only specify known properties, and 'error' does not exist in type 'RecordUsageResult'.
+src/lib/integrate-evolution-api-message-status-webhooks/config-manager.ts(54,46): error TS2344: Type '{ id: string; name: string; maxAttempts: number; initialDelayMs: number; backoffFactor: number; maxDelayMs: number; }' does not satisfy the constraint '(...args: any) => any'.
+  Type '{ id: string; name: string; maxAttempts: number; initialDelayMs: number; backoffFactor: number; maxDelayMs: number; }' provides no match for the signature '(...args: any): any'.
+src/lib/integrate-evolution-api-message-status-webhooks/dispatcher.ts(7,10): error TS2459: Module '"./parsers"' declares 'ParsedWebhookEvent' locally, but it is not exported.
+src/lib/integrate-evolution-api-message-status-webhooks/handlers/connection-update.ts(6,32): error TS2307: Cannot find module './utils/broadcast' or its corresponding type declarations.
+src/lib/integrate-evolution-api-message-status-webhooks/handlers/message-delete.ts(6,37): error TS2307: Cannot find module './utils/broadcast' or its corresponding type declarations.
+src/lib/integrate-evolution-api-message-status-webhooks/handlers/message-update.ts(6,34): error TS2307: Cannot find module '../build-real-time-messaging-with-socket.io' or its corresponding type declarations.
+src/lib/integrate-evolution-api-message-status-webhooks/handlers/message-update.ts(7,37): error TS2307: Cannot find module './utils/broadcast' or its corresponding type declarations.
+src/lib/integrate-evolution-api-message-status-webhooks/handlers/message-update.ts(8,39): error TS2307: Cannot find module './utils/message-helpers' or its corresponding type declarations.
+src/lib/integrate-evolution-api-message-status-webhooks/handlers/message-upsert.ts(9,34): error TS2307: Cannot find module '../build-real-time-messaging-with-socket.io' or its corresponding type declarations.
+src/lib/integrate-evolution-api-message-status-webhooks/handlers/message-upsert.ts(10,53): error TS2307: Cannot find module './utils/broadcast' or its corresponding type declarations.
+src/lib/integrate-evolution-api-message-status-webhooks/handlers/message-upsert.ts(11,57): error TS2307: Cannot find module './utils/message-helpers' or its corresponding type declarations.
+src/lib/integrate-evolution-api-message-status-webhooks/handlers/qrcode-update.ts(6,37): error TS2307: Cannot find module './utils/broadcast' or its corresponding type declarations.
+src/lib/integrate-evolution-api-message-status-webhooks/handlers/qrcode-update.ts(27,15): error TS2304: Cannot find name 'status'.
+src/lib/integrate-evolution-api-message-status-webhooks/handlers/send-message.ts(5,37): error TS2307: Cannot find module './utils/broadcast' or its corresponding type declarations.
+src/lib/integrate-evolution-api-message-status-webhooks/index.ts(14,15): error TS2307: Cannot find module './schemas' or its corresponding type declarations.
+src/lib/integrate-evolution-api-message-status-webhooks/parsers.helpers.ts(18,11): error TS2339: Property 'messageId' does not exist on type 'MessageUpsertData'.
+src/lib/integrate-evolution-api-message-status-webhooks/parsers.helpers.ts(18,22): error TS2339: Property 'chatId' does not exist on type 'MessageUpsertData'.
+src/lib/integrate-evolution-api-message-status-webhooks/parsers.helpers.ts(18,46): error TS2339: Property 'content' does not exist on type 'MessageUpsertData'.
+src/lib/integrate-evolution-api-message-status-webhooks/parsers.helpers.ts(18,55): error TS2339: Property 'status' does not exist on type 'MessageUpsertData'.
+src/lib/integrate-evolution-api-message-status-webhooks/parsers.helpers.ts(29,5): error TS2322: Type 'number' is not assignable to type 'string'.
+src/lib/integrate-evolution-api-message-status-webhooks/parsers.helpers.ts(48,5): error TS2322: Type 'number' is not assignable to type 'string'.
+src/lib/integrate-evolution-api-message-status-webhooks/parsers.helpers.ts(66,5): error TS2322: Type 'number' is not assignable to type 'string'.
+src/lib/integrate-evolution-api-message-status-webhooks/parsers.helpers.ts(82,19): error TS2339: Property 'message' does not exist on type 'ConnectionUpdateData'.
+src/lib/integrate-evolution-api-message-status-webhooks/parsers.helpers.ts(83,5): error TS2322: Type 'number' is not assignable to type 'string'.
+src/lib/integrate-evolution-api-message-status-webhooks/parsers.helpers.ts(102,5): error TS2322: Type 'number' is not assignable to type 'string'.
+src/lib/integrate-evolution-api-message-status-webhooks/parsers.helpers.ts(121,5): error TS2322: Type 'number' is not assignable to type 'string'.
+src/lib/integrate-evolution-api-message-status-webhooks/parsers.ts(50,9): error TS2322: Type 'number' is not assignable to type 'string'.
+src/lib/integrate-evolution-api-message-status-webhooks/parsers.ts(59,9): error TS2322: Type 'number' is not assignable to type 'string'.
+src/lib/integrate-evolution-api-message-status-webhooks/types/base.types.ts(47,5): error TS2304: Cannot find name 'ConnectionUpdateData'.
+src/lib/integrate-evolution-api-message-status-webhooks/types/base.types.ts(48,5): error TS2304: Cannot find name 'MessageUpsertData'.
+src/lib/integrate-evolution-api-message-status-webhooks/types/base.types.ts(49,5): error TS2304: Cannot find name 'MessageUpdateData'.
+src/lib/integrate-evolution-api-message-status-webhooks/types/base.types.ts(50,5): error TS2304: Cannot find name 'MessageDeleteData'.
+src/lib/integrate-evolution-api-message-status-webhooks/types/base.types.ts(51,5): error TS2304: Cannot find name 'SendMessageData'.
+src/lib/integrate-evolution-api-message-status-webhooks/types/base.types.ts(52,5): error TS2304: Cannot find name 'QRCodeUpdateData'.
+src/lib/integrate-evolution-api-message-status-webhooks/types/base.types.ts(53,5): error TS2304: Cannot find name 'ApplicationStartupData'.
+src/lib/integrate-evolution-api-message-status-webhooks/types/base.types.ts(54,5): error TS2304: Cannot find name 'ContactData'.
+src/lib/integrate-evolution-api-message-status-webhooks/types/base.types.ts(55,5): error TS2304: Cannot find name 'ChatData'.
+src/lib/integrate-evolution-api-message-status-webhooks/types/base.types.ts(56,5): error TS2304: Cannot find name 'GroupData'.
+src/lib/integrate-evolution-api-message-status-webhooks/types/base.types.ts(57,5): error TS2304: Cannot find name 'PresenceData'.
+src/lib/integrate-evolution-api-message-status-webhooks/types/base.types.ts(58,5): error TS2304: Cannot find name 'NewTokenData'.
+src/lib/integrate-evolution-api-message-status-webhooks/types/base.types.ts(59,5): error TS2304: Cannot find name 'TypebotStartData'.
+src/lib/integrate-evolution-api-message-status-webhooks/types/base.types.ts(60,5): error TS2304: Cannot find name 'TypebotStatusData'.
+src/lib/integrate-evolution-api-message-status-webhooks/utils/broadcast.ts(6,34): error TS2307: Cannot find module '../build-real-time-messaging-with-socket.io' or its corresponding type declarations.
+src/lib/message-queue-priority-system/index.ts(55,10): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(59,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(60,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(61,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(73,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(74,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(85,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(86,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(97,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(98,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(109,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(110,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(111,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(112,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(113,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(114,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(115,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(116,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(117,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(118,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(119,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/index.ts(120,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-queue-priority-system/processors/instance-status-update.processor.ts(10,15): error TS2724: '"@prisma/client"' has no exported member named 'PrismaInstanceStatus'. Did you mean 'InstanceStatus'?
+src/lib/message-queue-priority-system/processors/message-status-update.processor.ts(8,15): error TS2724: '"@prisma/client"' has no exported member named 'PrismaMessageStatus'. Did you mean 'MessageStatus'?
+src/lib/message-queue-priority-system/processors/message-upsert.processor.ts(8,15): error TS2724: '"@prisma/client"' has no exported member named 'PrismaMessageStatus'. Did you mean 'MessageStatus'?
+src/lib/message-queue-priority-system/processors/message-upsert.processor.ts(8,36): error TS2305: Module '"@prisma/client"' has no exported member 'PrismaMessageType'.
+src/lib/message-queue-priority-system/worker.processor.ts(24,10): error TS2305: Module '"../message-retry-and-dlq-system/dlq"' has no exported member 'addToDlq'.
+src/lib/message-retry-and-dlq-system/dlq.health.ts(7,10): error TS2305: Module '"./dlq"' has no exported member 'getRedisClient'.
+src/lib/message-retry-and-dlq-system/dlq.health.ts(7,26): error TS2305: Module '"./dlq"' has no exported member 'getAllDlqStreamKeys'.
+src/lib/message-retry-and-dlq-system/dlq.replay.ts(7,10): error TS2305: Module '"./types"' has no exported member 'getDlqStreamKey'.
+src/lib/message-retry-and-dlq-system/dlq.replay.ts(21,11): error TS2339: Property 'listDlqEntries' does not exist on type 'typeof import("/home/ken/NEXTMAVENS-WHATSAPP-PLATFORM/backend/src/lib/message-retry-and-dlq-system/dlq")'.
+src/lib/message-retry-and-dlq-system/dlq.replay.ts(35,15): error TS2339: Property 'requeueFromDlq' does not exist on type 'typeof import("/home/ken/NEXTMAVENS-WHATSAPP-PLATFORM/backend/src/lib/message-retry-and-dlq-system/dlq")'.
+src/lib/message-retry-and-dlq-system/dlq.scheduler.ts(7,10): error TS2305: Module '"./dlq"' has no exported member 'cleanOldDlqEntries'.
+src/lib/message-retry-and-dlq-system/dlq/consumer.ts(6,10): error TS2724: '"./config"' has no exported member named 'getAllDlqStreamKeys'. Did you mean 'getDlqStreamKey'?
+src/lib/message-retry-and-dlq-system/dlq/maintenance.operations.ts(7,27): error TS2305: Module '"./config"' has no exported member 'DLQ_STETURN_MS'.
+src/lib/message-retry-and-dlq-system/dlq/maintenance.operations.ts(54,35): error TS2304: Cannot find name 'DLQ_RETENTION_MS'.
+src/lib/message-retry-and-dlq-system/dlq/query.operations.ts(8,10): error TS2440: Import declaration conflicts with local declaration of 'getAllDlqStreamKeys'.
+src/lib/message-retry-and-dlq-system/dlq/query.operations.ts(49,10): error TS2304: Cannot find name 'DLQ_STREAM_PREFIX'.
+src/lib/message-retry-and-dlq-system/dlq/query.operations.ts(94,25): error TS2749: 'DlqMetadata' refers to a value, but is being used as a type here. Did you mean 'typeof DlqMetadata'?
+src/lib/message-retry-and-dlq-system/dlq/stream.operations.ts(62,52): error TS2345: Argument of type '"LENGTH"' is not assignable to parameter of type '"FULL"'.
+src/lib/message-retry-and-dlq-system/dlq/stream.operations.ts(64,20): error TS2339: Property 'length' does not exist on type 'unknown'.
+src/lib/message-retry-and-dlq-system/dlq/stream.operations.ts(65,26): error TS2339: Property 'first' does not exist on type 'unknown'.
+src/lib/message-retry-and-dlq-system/dlq/stream.operations.ts(66,25): error TS2339: Property 'last' does not exist on type 'unknown'.
+src/lib/message-retry-and-dlq-system/dlq/write.operations.ts(31,5): error TS2322: Type 'string' is not assignable to type 'ErrorCategory'.
+src/lib/message-retry-and-dlq-system/enhanced.processor.ts(8,34): error TS2307: Cannot find module '../message-queue-priority-system/types' or its corresponding type declarations.
+src/lib/message-retry-and-dlq-system/enhanced.processor.ts(18,10): error TS2305: Module '"./dlq"' has no exported member 'addToDlq'.
+src/lib/message-retry-and-dlq-system/index.ts(49,3): error TS2305: Module '"./dlq"' has no exported member 'addToDlq'.
+src/lib/message-retry-and-dlq-system/index.ts(50,3): error TS2305: Module '"./dlq"' has no exported member 'getDlqEntry'.
+src/lib/message-retry-and-dlq-system/index.ts(51,3): error TS2305: Module '"./dlq"' has no exported member 'listDlqEntries'.
+src/lib/message-retry-and-dlq-system/index.ts(52,3): error TS2305: Module '"./dlq"' has no exported member 'getDlqMetrics'.
+src/lib/message-retry-and-dlq-system/index.ts(53,3): error TS2305: Module '"./dlq"' has no exported member 'deleteDlqEntry'.
+src/lib/message-retry-and-dlq-system/index.ts(54,3): error TS2305: Module '"./dlq"' has no exported member 'deleteDlqEntries'.
+src/lib/message-retry-and-dlq-system/index.ts(55,3): error TS2305: Module '"./dlq"' has no exported member 'requeueFromDlq'.
+src/lib/message-retry-and-dlq-system/index.ts(56,3): error TS2305: Module '"./dlq"' has no exported member 'clearDlqStream'.
+src/lib/message-retry-and-dlq-system/index.ts(57,3): error TS2305: Module '"./dlq"' has no exported member 'getAllDlqStreamKeys'.
+src/lib/message-retry-and-dlq-system/index.ts(58,3): error TS2305: Module '"./dlq"' has no exported member 'initializeDlqConsumerGroups'.
+src/lib/message-retry-and-dlq-system/index.ts(59,3): error TS2305: Module '"./dlq"' has no exported member 'cleanOldDlqEntries'.
+src/lib/message-retry-and-dlq-system/index.ts(60,3): error TS2305: Module '"./dlq"' has no exported member 'getDlqStreamKey'.
+src/lib/message-retry-and-dlq-system/index.ts(61,3): error TS2305: Module '"./dlq"' has no exported member 'getRedisClient'.
+src/lib/message-retry-and-dlq-system/index.ts(62,3): error TS2305: Module '"./dlq"' has no exported member 'closeRedisClient'.
+src/lib/message-retry-and-dlq-system/index.ts(63,3): error TS2305: Module '"./dlq"' has no exported member 'redisConnectionOptions'.
+src/lib/message-retry-and-dlq-system/index.ts(85,10): error TS2305: Module '"./dlq"' has no exported member 'getRedisClient'.
+src/lib/message-retry-and-dlq-system/index.ts(85,26): error TS2305: Module '"./dlq"' has no exported member 'initializeDlqConsumerGroups'.
+src/lib/message-retry-and-dlq-system/retry-logic.operations.ts(48,4): error TS2304: Cannot find name 'RetryDelayResult'.
+src/lib/message-retry-and-dlq-system/retry-logic.operations.ts(156,15): error TS2304: Cannot find name 'RetryDelayResult'.
+src/lib/message-retry-and-dlq-system/retry-logic.operations.ts(164,18): error TS2304: Cannot find name 'RetryDelayResult'.
+src/lib/message-retry-and-dlq-system/retry-policy.ts(26,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-retry-and-dlq-system/retry-policy.ts(27,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-retry-and-dlq-system/types.ts(10,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-retry-and-dlq-system/types.ts(23,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-retry-and-dlq-system/types.ts(24,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-retry-and-dlq-system/types.ts(25,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-retry-and-dlq-system/types.ts(26,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-retry-and-dlq-system/types.ts(31,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/lib/message-retry-and-dlq-system/worker.manager.ts(12,10): error TS2305: Module '"./dlq"' has no exported member 'redisConnectionOptions'.
+src/lib/message-retry-and-dlq-system/worker.manager.ts(13,34): error TS2307: Cannot find module '../message-queue-priority-system/types' or its corresponding type declarations.
+src/lib/message-retry-and-dlq-system/worker.manager.ts(14,10): error TS2305: Module '"./dlq"' has no exported member 'initializeDlqConsumerGroups'.
+src/lib/message-retry-and-dlq-system/worker.manager.ts(15,10): error TS2305: Module '"./dlq"' has no exported member 'closeRedisClient'.
+src/lib/message-status-tracking/index.ts(26,3): error TS2305: Module '"./services"' has no exported member 'setSocketService'.
+src/lib/message-status-tracking/index.ts(27,3): error TS2305: Module '"./services"' has no exported member 'recordStatusChangeFromReceipt'.
+src/lib/message-status-tracking/index.ts(28,3): error TS2305: Module '"./services"' has no exported member 'recordDlqTransfer'.
+src/lib/message-status-tracking/index.ts(29,3): error TS2305: Module '"./services"' has no exported member 'createStatusHistoryEntry'.
+src/lib/message-status-tracking/services/metrics.service.ts(50,61): error TS2345: Argument of type '{ status: number; }' is not assignable to parameter of type 'number'.
+src/lib/message-status-tracking/services/status-update.service.ts(145,3): error TS2304: Cannot find name 'emitStatusChangeEvent'.
+src/lib/message-status-tracking/status-manager.ts(23,3): error TS2305: Module '"./services"' has no exported member 'setSocketService'.
+src/lib/message-status-tracking/status-manager.ts(24,3): error TS2305: Module '"./services"' has no exported member 'recordStatusChangeFromReceipt'.
+src/lib/message-status-tracking/status-manager.ts(25,3): error TS2305: Module '"./services"' has no exported member 'recordDlqTransfer'.
+src/lib/message-status-tracking/status-manager.ts(26,3): error TS2305: Module '"./services"' has no exported member 'createStatusHistoryEntry'.
+src/lib/message-status-tracking/system/integration.hooks.ts(8,10): error TS2459: Module '"../types"' declares 'MessageStatus' locally, but it is not exported.
+src/lib/message-status-tracking/utils/history.utils.ts(24,7): error TS2322: Type 'string' is not assignable to type 'MessageStatus'.
+src/lib/message-status-tracking/utils/socket.utils.ts(7,10): error TS2459: Module '"../types"' declares 'MessageStatus' locally, but it is not exported.
+src/lib/rate-limiting-with-redis/factory.ts(8,47): error TS2307: Cannot find module './limiter.class' or its corresponding type declarations.
+src/lib/rate-limiting-with-redis/index.ts(35,47): error TS2307: Cannot find module './limiter.class' or its corresponding type declarations.
+src/lib/rate-limiting-with-redis/instance.class.ts(7,47): error TS2307: Cannot find module './limiter.class' or its corresponding type declarations.
+src/lib/rate-limiting-with-redis/middleware.ts(7,10): error TS2305: Module '"./utils"' has no exported member 'generateIdentifier'.
+src/lib/workflow-orchestration/engine.ts(7,10): error TS2303: Circular definition of import alias 'getWorkflowEngine'.
+src/lib/workflow-orchestration/engine.ts(7,29): error TS2303: Circular definition of import alias 'WorkflowEngine'.
+src/lib/workflow-orchestration/engine/index.ts(9,1): error TS2308: Module './workflow-persistence.repository' has already exported a member named 'recordStepSkipped'. Consider explicitly re-exporting to resolve the ambiguity.
+src/lib/workflow-orchestration/engine/operations/advancer.operations.ts(7,89): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+src/lib/workflow-orchestration/engine/operations/advancer.operations.ts(12,8): error TS2307: Cannot find module './workflow-persistence.repository' or its corresponding type declarations.
+src/lib/workflow-orchestration/engine/operations/health.operations.ts(7,39): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+src/lib/workflow-orchestration/engine/operations/health.operations.ts(8,54): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+src/lib/workflow-orchestration/engine/operations/health.operations.ts(9,30): error TS2307: Cannot find module './workflow-persistence.repository' or its corresponding type declarations.
+src/lib/workflow-orchestration/engine/operations/starter.operations.ts(7,80): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+src/lib/workflow-orchestration/engine/operations/starter.operations.ts(8,54): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+src/lib/workflow-orchestration/engine/operations/starter.operations.ts(9,36): error TS2307: Cannot find module '../queue' or its corresponding type declarations.
+src/lib/workflow-orchestration/engine/operations/starter.operations.ts(14,8): error TS2307: Cannot find module './workflow-persistence.repository' or its corresponding type declarations.
+src/lib/workflow-orchestration/engine/operations/terminator.operations.ts(7,46): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+src/lib/workflow-orchestration/engine/operations/terminator.operations.ts(12,8): error TS2307: Cannot find module './workflow-persistence.repository' or its corresponding type declarations.
+src/lib/workflow-orchestration/engine/workflow-instance.repository.ts(24,7): error TS2322: Type 'string' is not assignable to type 'WorkflowStatus'.
+src/lib/workflow-orchestration/engine/workflow-instance.repository.ts(26,7): error TS2322: Type 'Record<string, unknown>' is not assignable to type 'JsonNull | InputJsonValue'.
+  Type 'Record<string, unknown>' is missing the following properties from type 'readonly InputJsonValue[]': length, concat, join, slice, and 20 more.
+src/lib/workflow-orchestration/engine/workflow-instance.repository.ts(45,13): error TS2322: Type 'string' is not assignable to type 'WorkflowStatus | EnumWorkflowStatusFieldUpdateOperationsInput'.
+src/lib/workflow-orchestration/engine/workflow-persistence.repository.ts(17,3): error TS2305: Module '"./workflow-instance.repository"' has no exported member 'loadInstance'.
+src/lib/workflow-orchestration/index.ts(37,1): error TS2308: Module './compensation' has already exported a member named 'compensateWorkflow'. Consider explicitly re-exporting to resolve the ambiguity.
+src/lib/workflow-orchestration/index.ts(41,36): error TS2305: Module '"./system.service"' has no exported member 'startWorkflow'.
+src/lib/workflow-orchestration/index.ts(41,51): error TS2305: Module '"./system.service"' has no exported member 'getWorkflowStatus'.
+src/lib/workflow-orchestration/index.ts(41,70): error TS2305: Module '"./system.service"' has no exported member 'cancelWorkflow'.
+src/lib/workflow-orchestration/processor.ts(8,10): error TS2303: Circular definition of import alias 'processWorkflowStep'.
+src/lib/workflow-orchestration/processor/actions/api-call.action.ts(7,64): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+src/lib/workflow-orchestration/processor/actions/custom.action.ts(7,64): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+src/lib/workflow-orchestration/processor/actions/delay.action.ts(7,64): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+src/lib/workflow-orchestration/processor/actions/message.action.ts(7,64): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+src/lib/workflow-orchestration/processor/actions/message.action.ts(8,37): error TS2307: Cannot find module '../message-queue-priority-system' or its corresponding type declarations.
+src/lib/workflow-orchestration/processor/actions/message.action.ts(9,33): error TS2307: Cannot find module '../message-queue-priority-system/types' or its corresponding type declarations.
+src/lib/workflow-orchestration/processor/actions/message.action.ts(21,35): error TS2307: Cannot find module '../message-queue-priority-system' or its corresponding type declarations.
+src/lib/workflow-orchestration/processor/actions/queue-job.action.ts(7,64): error TS2307: Cannot find module '../types' or its corresponding type declarations.
+src/lib/workflow-orchestration/processor/actions/queue-job.action.ts(8,37): error TS2307: Cannot find module '../message-queue-priority-system' or its corresponding type declarations.
+src/lib/workflow-orchestration/processor/actions/queue-job.action.ts(9,33): error TS2307: Cannot find module '../message-queue-priority-system/types' or its corresponding type declarations.
+src/lib/workflow-orchestration/processor/actions/queue-job.action.ts(21,35): error TS2307: Cannot find module '../message-queue-priority-system' or its corresponding type declarations.
+src/lib/workflow-orchestration/processor/step-failure.handler.ts(9,37): error TS2307: Cannot find module '../message-queue-priority-system' or its corresponding type declarations.
+src/lib/workflow-orchestration/processor/step-failure.handler.ts(10,33): error TS2307: Cannot find module '../message-queue-priority-system/types' or its corresponding type declarations.
+src/lib/workflow-orchestration/processor/step-failure.handler.ts(48,66): error TS2345: Argument of type '"FAILED"' is not assignable to parameter of type 'WorkflowStepStatus'.
+src/lib/workflow-orchestration/processor/step-success.handler.ts(40,66): error TS1361: 'WorkflowStepStatus' cannot be used as a value because it was imported using 'import type'.
+src/lib/workflow-orchestration/queue.ts(6,33): error TS2307: Cannot find module '../message-queue-priority-system/types' or its corresponding type declarations.
+src/lib/workflow-orchestration/queue.ts(7,10): error TS2305: Module '"../message-queue-priority-system"' has no exported member 'messageQueue'.
+src/lib/workflow-orchestration/system.service.ts(6,78): error TS2307: Cannot find module '../message-queue-priority-system/consumer' or its corresponding type declarations.
+src/shared/config.ts(94,13): error TS2339: Property 'errors' does not exist on type 'ZodError<unknown>'.

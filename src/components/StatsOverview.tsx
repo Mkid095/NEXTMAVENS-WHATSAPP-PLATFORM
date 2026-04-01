@@ -1,6 +1,6 @@
 import React from 'react';
 import { Phone, LayoutGrid, Send } from 'lucide-react';
-import { WhatsAppInstance } from '../hooks/useWhatsApp';
+import { WhatsAppInstance } from '../types';
 
 interface StatsOverviewProps {
   instances: WhatsAppInstance[] | undefined;

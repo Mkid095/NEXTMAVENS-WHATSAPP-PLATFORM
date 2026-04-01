@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { WhatsAppInstance, useDisconnectInstance } from '../hooks/useWhatsApp';
+import { WhatsAppInstance } from '../types';
+import { useDisconnectInstance } from '../hooks';
 import { Smartphone, Battery, Signal, Power, Trash2, ExternalLink, MessageSquare, Loader2, Code2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';

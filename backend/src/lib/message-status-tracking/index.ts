@@ -10,38 +10,26 @@
  * - Get metrics: await getStatusMetrics(orgId)
  */
 
-export {
-  // Types and enums
-  StatusChangeReason,
-  type StatusHistoryEntry,
-  type PaginatedStatusHistory,
-  type StatusUpdateRequest,
-  type StatusUpdateResponse,
-  type StatusMetrics,
-  type StatusDistribution,
-  type StatusTransitionMetrics,
-  type StatusChangeEvent,
-  formatTransitionKey,
-  getStatusColor,
-  getStatusLabel,
-  isSuccessStatus,
-  isFailureStatus,
-  getAllowedTransitions
-} from './types';
+export * from './types';
 
 export {
-  // Core Status Manager
+  // Core services
   updateMessageStatus,
+  validateTransition,
+  // Query services
   getStatusHistory,
   getLatestStatus,
+  // Metrics services
   getStatusMetrics,
   updateStatusMetrics,
-  validateTransition,
+  // System integration
   setSocketService,
   recordStatusChangeFromReceipt,
   recordDlqTransfer,
   createStatusHistoryEntry
-} from './status-manager';
+} from './services';
+
+export { emitStatusChangeEvent } from './utils';
 
 // Re-export types for convenience
 export { MessageStatus } from '@prisma/client';

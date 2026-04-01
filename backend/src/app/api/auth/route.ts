@@ -109,11 +109,11 @@ export default async function (fastify: FastifyInstance) {
         orgId: primaryOrg.orgId,
       };
 
-      const token = sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRY });
+      const token = sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRY as any });
       const refreshToken = sign(
         { userId: user.id, orgId: primaryOrg.orgId },
         process.env.JWT_REFRESH_SECRET!,
-        { expiresIn: JWT_REFRESH_EXPIRY }
+        { expiresIn: JWT_REFRESH_EXPIRY as any }
       );
 
       // Update last login
@@ -198,7 +198,7 @@ export default async function (fastify: FastifyInstance) {
           orgId: membership.orgId,
         },
         JWT_SECRET,
-        { expiresIn: JWT_EXPIRY }
+        { expiresIn: JWT_EXPIRY as any }
       );
 
       return {

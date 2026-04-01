@@ -5,8 +5,8 @@
  * used by useCachedQR hook.
  */
 
-const BASE_INTERVAL = 1000; // 1 second
-const MAX_INTERVAL = 30000; // 30 seconds
+const BASE_INTERVAL = 2000; // 2 seconds - reduced polling frequency
+const MAX_INTERVAL = 60000; // 60 seconds - more relaxed maximum
 
 /**
  * Calculate the polling interval based on retry count.

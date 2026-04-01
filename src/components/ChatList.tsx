@@ -1,5 +1,5 @@
 import React from 'react';
-import { WhatsAppChat } from '../hooks/useWhatsApp';
+import { WhatsAppChat } from '../types';
 import { cn } from '../lib/utils';
 import { Search, User, Users } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';

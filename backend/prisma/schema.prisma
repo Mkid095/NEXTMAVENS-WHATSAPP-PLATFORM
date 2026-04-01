@@ -44,6 +44,8 @@ model Organization {
   usageEvents  UsageEvent[]       // Usage-based billing events
   featureFlags OrganizationFeatureFlag[] // Feature flag overrides
   coupons      Coupon[]           // Coupon management for Step 9
+  groups       WhatsAppGroup[]    // Groups created by this org
+  billingSettings BillingSettings? // Billing configuration
 
   @@map("organizations")
   @@index([slug])
@@ -113,9 +115,10 @@ enum Plan {
 model WhatsAppInstance {
   id                  String   @id @default(cuid())
   orgId               String
+  parentInstanceId    String?  // For reseller sub-instances (self-reference)
   name                String   // "Support Team"
   evolutionInstanceName String? @unique // Evolution API instance name (e.g., "main")
-  phoneNumber         String   @unique // E.164 format: +1234567890
+  phoneNumber         String?  @unique // E.164 format: +1234567890
   qrCode              String?  // Base64 QR code image
   status              InstanceStatus @default(DISCONNECTED)
   token               String?  // Evolution API token
@@ -128,6 +131,8 @@ model WhatsAppInstance {
 
   // Relations
   org                 Organization    @relation(fields: [orgId], references: [id])
+  parentInstance      WhatsAppInstance? @relation("ParentInstance", fields: [parentInstanceId], references: [id])
+  subInstances        WhatsAppInstance[] @relation("ParentInstance")
   messages            WhatsAppMessage[]
   chats               WhatsAppChat[]
   templates           WhatsAppTemplate[]
@@ -135,6 +140,7 @@ model WhatsAppInstance {
   assignments         WhatsAppAssignment[]  // Assignments for chats on this instance
   webhooks            WebhookSubscription[]
   deadLetters         DeadLetterQueue[]  // DLQ entries for this instance
+  groups              WhatsAppGroup[]  // Groups for this instance
 
   @@map("whatsapp_instances")
   @@index([orgId])
@@ -283,6 +289,50 @@ model WhatsAppChat {
 }
 
 // ┌─────────────────────────────────────────────────────────────┐
+// │ Group Models                                               │
+// └─────────────────────────────────────────────────────────────┘
+
+model WhatsAppGroup {
+  id                String   @id @default(cuid())
+  orgId             String
+  instanceId        String
+  jid               String   @unique // Group WhatsApp ID (e.g., group@g.us)
+  subject           String   // Group name
+  subjectTime       Int      // Unix timestamp
+  description       String?
+  ownerJid          String?  // Group owner JID
+  participantsCount Int      @default(0)
+  creation          Int      // Unix timestamp
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  org        Organization        @relation(fields: [orgId], references: [id])
+  instance   WhatsAppInstance   @relation(fields: [instanceId], references: [id])
+  participants WhatsAppGroupParticipant[]
+
+  @@map("whatsapp_groups")
+  @@index([orgId])
+  @@index([instanceId])
+}
+
+model WhatsAppGroupParticipant {
+  id         String   @id @default(cuid())
+  groupJid   String
+  phoneNumber String
+  isAdmin    Boolean  @default(false)
+  joinedAt   DateTime @default(now())
+
+  // Relations
+  group WhatsAppGroup @relation(fields: [groupJid], references: [jid], onDelete: Cascade)
+
+  @@map("whatsapp_group_participants")
+  @@index([groupJid])
+  @@index([phoneNumber])
+  @@unique([groupJid, phoneNumber])
+}
+
+// ┌─────────────────────────────────────────────────────────────┐
 // │ Template Models                                            │
 // └─────────────────────────────────────────────────────────────┘
 
@@ -394,6 +444,7 @@ model WebhookSubscription {
   isActive    Boolean  @default(true)
   retryCount  Int      @default(3)
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
   org       Organization    @relation(fields: [orgId], references: [id])
@@ -499,6 +550,51 @@ enum QuotaPeriod {
   hourly
   daily
   monthly
+}
+
+// ┌─────────────────────────────────────────────────────────────┐
+// │ Billing Settings & Overage Rates                            │
+// └─────────────────────────────────────────────────────────────┘
+
+model BillingSettings {
+  id                String   @id @default(cuid())
+  orgId             String   @unique // One settings record per org
+  billingCycleDay   Int      @default(1) // Day of month for billing (1-28)
+  currency          String   @default("USD")
+  taxEnabled        Boolean  @default(false)
+  taxRate           Float?   // Percentage (e.g., 7.5 for 7.5%)
+  taxName           String?  // "VAT", "GST", "Sales Tax"
+  gracePeriodDays   Int      @default(3) // Days after due date before late fees
+  autoApplyOverage  Boolean  @default(true) // Automatically charge overage
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  org          Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  overageRates OverageRate[]
+
+  @@map("billing_settings")
+  @@index([orgId])
+}
+
+model OverageRate {
+  id                String   @id @default(cuid())
+  settingsId        String
+  metric            QuotaMetric // Which quota metric this rate applies to
+  plan              Plan?      // null = applies to all plans, or specific plan override
+  includedUnits     Int        // How many units are included in base plan
+  ratePerUnitCents  Int        // Price per unit over the included amount (in cents)
+  isActive          Boolean    @default(true)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  // Relations
+  settings BillingSettings @relation(fields: [settingsId], references: [id], onDelete: Cascade)
+
+  @@unique([settingsId, metric, plan])
+  @@map("overage_rates")
+  @@index([settingsId])
+  @@index([metric])
 }
 
 // ┌─────────────────────────────────────────────────────────────┐
@@ -792,12 +888,17 @@ model OrganizationFeatureFlag {
 // │ Coupon & Discount Models (Phase 3 Step 9)                  │
 // └─────────────────────────────────────────────────────────────┘
 
+enum DiscountType {
+  percentage
+  fixed
+}
+
 model Coupon {
   id                String   @id @default(cuid())
   code              String   @unique
   name              String
   description       String?
-  discountType      String   // "percentage" | "fixed"
+  discountType      DiscountType
   discountValue     Float
   maxUses           Int?
   usedCount         Int      @default(0)

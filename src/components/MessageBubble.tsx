@@ -1,5 +1,5 @@
 import React from 'react';
-import { WhatsAppMessage } from '../hooks/useWhatsApp';
+import { WhatsAppMessage } from '../types';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
 import { Check, CheckCheck, FileText, Image as ImageIcon, Music, Video } from 'lucide-react';

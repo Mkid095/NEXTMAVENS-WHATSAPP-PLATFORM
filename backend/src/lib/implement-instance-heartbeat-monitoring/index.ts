@@ -12,30 +12,54 @@
  * - Admin API for viewing instance status
  */
 
+// ============================================================================
+// Re-exports from split modules
+// ============================================================================
+
+// Types
 export * from './types';
-// Status exports (utility functions)
+
+// Status utilities
 export {
   calculateInstanceStatus,
   isInstanceOnline as checkInstanceOnline,
 } from './status';
-// Storage exports (excluding isInstanceOnline to avoid conflict with status.ts)
+
+// Redis client management
+export {
+  setRedisClient,
+  shutdownRedisClient,
+  getRedisClient,
+} from './redis.client';
+
+// Heartbeat operations
 export {
   recordHeartbeat,
+  getInstanceLastSeen,
+} from './heartbeat.operations';
+
+// Status queries
+export {
   getAllInstancesWithStatus,
+} from './status.queries';
+
+// Sync service
+export {
   syncInstanceStatuses,
-  shutdownRedisClient,
-  setRedisClient,
-  getInstanceLastSeen
-} from './storage';
-// Scheduler exports
+} from './sync.service';
+
+// Scheduler
 export {
   startHeartbeatScheduler,
   stopHeartbeatScheduler,
   triggerSync,
 } from './scheduler';
 
-import { recordHeartbeat, getAllInstancesWithStatus, shutdownRedisClient } from './storage';
-import { startHeartbeatScheduler, stopHeartbeatScheduler, triggerSync } from './scheduler';
+// ============================================================================
+// Public API convenience functions
+// ============================================================================
+
+// Functions referenced below are in scope via re-exports above
 
 /**
  * Initialize the heartbeat monitoring system.
@@ -57,9 +81,6 @@ export async function shutdownHeartbeatMonitoring(): Promise<void> {
 /**
  * Record a heartbeat from an instance.
  * This is the main function called by the heartbeat endpoint.
- *
- * @param instanceId - The WhatsApp instance ID
- * @param metrics - Optional metrics (CPU, memory, queue size, uptime)
  */
 export async function heartbeat(instanceId: string, metrics?: any): Promise<void> {
   await recordHeartbeat(instanceId, metrics);
@@ -68,17 +89,13 @@ export async function heartbeat(instanceId: string, metrics?: any): Promise<void
 /**
  * Get all instances with their current health status.
  * Used by the admin dashboard.
- *
- * @param filterOrgId - Optional org ID to filter by
- * @param filterStatus - Optional status filter (ONLINE, OFFLINE, UNKNOWN)
- * @returns Array of instance status views
  */
 export async function getInstancesStatus(filterOrgId?: string, filterStatus?: string): Promise<any[]> {
   return getAllInstancesWithStatus(filterOrgId, filterStatus);
 }
 
 /**
- * Manually trigger a status sync (usually done by background job).
+ * Manually trigger a status sync.
  */
 export async function syncStatuses(): Promise<void> {
   await triggerSync();

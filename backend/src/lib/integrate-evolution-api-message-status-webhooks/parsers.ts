@@ -1,25 +1,22 @@
 /**
  * Webhook Event Parsers
  *
- * Parses Evolution API webhook payloads into structured data for processing
+ * Main entry point for parsing Evolution API webhook payloads.
  */
 
+import type { EvolutionWebhookPayload, ParsedWebhookEvent } from './types';
 import {
-  EvolutionWebhookPayload,
   EvolutionEventData,
   MessageUpsertData,
   MessageUpdateData,
   MessageDeleteData,
   ConnectionUpdateData,
   QRCodeUpdateData,
-  EVOLUTION_TO_PRISMA_STATUS,
 } from './types';
+import * as helpers from './parsers.helpers';
 
 /**
- * Parse a webhook payload and dispatch to appropriate handler
- *
- * @param payload - Raw webhook JSON from Evolution API
- * @returns Parsed event data with standardized structure
+ * Parse a webhook payload into structured event data
  */
 export function parseWebhookPayload(
   payload: EvolutionWebhookPayload
@@ -29,267 +26,38 @@ export function parseWebhookPayload(
 
   switch (event) {
     case 'MESSAGES_UPSERT':
-      return parseMessageUpsert(instanceId, data as MessageUpsertData, timestampMs);
+      return helpers.parseMessageUpsert(instanceId, data as MessageUpsertData, timestampMs);
 
     case 'MESSAGES_UPDATE':
-      return parseMessageUpdate(instanceId, data as MessageUpdateData, timestampMs);
+      return helpers.parseMessageUpdate(instanceId, data as MessageUpdateData, timestampMs);
 
     case 'MESSAGES_DELETE':
-      return parseMessageDelete(instanceId, data as MessageDeleteData, timestampMs);
+      return helpers.parseMessageDelete(instanceId, data as MessageDeleteData, timestampMs);
 
     case 'CONNECTION_UPDATE':
-      return parseConnectionUpdate(instanceId, data as ConnectionUpdateData, timestampMs);
+      return helpers.parseConnectionUpdate(instanceId, data as ConnectionUpdateData, timestampMs);
 
     case 'QRCODE_UPDATED':
-      return parseQRCodeUpdate(instanceId, data as QRCodeUpdateData, timestampMs);
+      return helpers.parseQRCodeUpdate(instanceId, data as QRCodeUpdateData, timestampMs);
 
     case 'SEND_MESSAGE':
-      return parseSendMessage(instanceId, data, timestampMs);
+      return helpers.parseSendMessage(instanceId, data, timestampMs);
 
     case 'APPLICATION_STARTUP':
       return {
-        event,
+        event: 'APPLICATION_STARTUP',
         instanceId,
-        orgId: null, // Will be looked up later
-        message: `Instance ${instanceId} startup detected`,
         timestamp: timestampMs,
+        data: data as any,
       };
 
     default:
+      // Return generic parsed event for unknown types
       return {
         event,
         instanceId,
-        orgId: null,
-        message: `Unhandled event type: ${event}`,
-        unhandled: true,
-        rawData: data,
         timestamp: timestampMs,
+        data: data as EvolutionEventData,
       };
   }
-}
-
-// ============================================================================
-// Individual Event Parsers
-// ============================================================================
-
-export interface ParsedWebhookEvent {
-  event: string;
-  instanceId: string;
-  orgId: string | null; // Filled in by instance lookup
-  message?: string;
-  unhandled?: boolean;
-  rawData?: EvolutionEventData;
-  // Message-specific fields (when applicable)
-  messageId?: string;
-  status?: string; // For MESSAGES_UPDATE
-  chatId?: string;
-  from?: string;
-  to?: string;
-  type?: string;
-  content?: Record<string, unknown>;
-  timestamp?: number; // Unix timestamp (milliseconds) from webhook
-  // QR code update specific
-  qrCode?: string; // Base64 QR code from QRCODE_UPDATED webhook
-}
-
-function parseMessageUpsert(
-  instanceId: string,
-  data: MessageUpsertData,
-  timestamp?: number
-): ParsedWebhookEvent {
-  const messageContent = buildMessageContent(data);
-
-  return {
-    event: 'MESSAGES_UPSERT',
-    instanceId,
-    orgId: null, // To be resolved
-    messageId: data.id,
-    chatId: extractChatId(data),
-    from: data.from,
-    to: data.to,
-    type: data.type,
-    content: messageContent,
-    status: 'PENDING', // New messages start pending
-    timestamp,
-  };
-}
-
-function parseMessageUpdate(
-  instanceId: string,
-  data: MessageUpdateData,
-  timestamp?: number
-): ParsedWebhookEvent {
-  return {
-    event: 'MESSAGES_UPDATE',
-    instanceId,
-    orgId: null,
-    messageId: data.id,
-    status: mapMessageStatus(data.status),
-    timestamp,
-  };
-}
-
-function parseMessageDelete(
-  instanceId: string,
-  data: MessageDeleteData,
-  timestamp?: number
-): ParsedWebhookEvent {
-  return {
-    event: 'MESSAGES_DELETE',
-    instanceId,
-    orgId: null,
-    messageId: data.id,
-    from: data.from,
-    to: data.to,
-    type: data.type,
-    message: `Message deleted`,
-    timestamp,
-  };
-}
-
-function parseConnectionUpdate(
-  instanceId: string,
-  data: ConnectionUpdateData,
-  timestamp?: number
-): ParsedWebhookEvent {
-  return {
-    event: 'CONNECTION_UPDATE',
-    instanceId,
-    orgId: null,
-    message: `Connection status changed to: ${data.status}`,
-    timestamp,
-  };
-}
-
-function parseQRCodeUpdate(
-  instanceId: string,
-  data: QRCodeUpdateData,
-  timestamp?: number
-): ParsedWebhookEvent {
-  return {
-    event: 'QRCODE_UPDATED',
-    instanceId,
-    orgId: null,
-    message: `QR code status: ${data.status}`,
-    qrCode: data.qrcode, // Include the QR code base64 from webhook
-    timestamp,
-  };
-}
-
-function parseSendMessage(
-  instanceId: string,
-  data: EvolutionEventData,
-  timestamp?: number
-): ParsedWebhookEvent {
-  const sendData = data as Record<string, unknown>;
-  return {
-    event: 'SEND_MESSAGE',
-    instanceId,
-    orgId: null,
-    messageId: sendData.messageId as string,
-    status: sendData.status === 'success' ? 'SENT' : 'FAILED',
-    message: `Send message ${sendData.status}`,
-    timestamp,
-  };
-}
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-/**
- * Build internal content object from Evolution message data
- */
-function buildMessageContent(data: MessageUpsertData): Record<string, unknown> {
-  const content: Record<string, unknown> = {
-    type: data.type,
-  };
-
-  if (data.body) {
-    content.body = data.body;
-  }
-
-  if (data.base64) {
-    content.base64 = data.base64;
-  }
-
-  if (data.quotedMessage) {
-    content.quotedMessage = data.quotedMessage;
-  }
-
-  if (data.forwarded) {
-    content.forwarded = data.forwarded;
-  }
-
-  if (data.forwardCount) {
-    content.forwardCount = data.forwardCount;
-  }
-
-  if (data.context) {
-    content.context = data.context;
-  }
-
-  if (data.key) {
-    content.key = data.key;
-  }
-
-  if (data.messageTimestamp) {
-    content.messageTimestamp = data.messageTimestamp;
-  }
-
-  return content;
-}
-
-/**
- * Extract chat ID from message data
- * Evolution API may provide key.remoteJid or chatId directly
- */
-function extractChatId(data: MessageUpsertData): string {
-  // Try to get from key if available
-  if (data.key?.remoteJid) {
-    return data.key.remoteJid;
-  }
-
-  // Fallback: construct from 'to' field (for incoming) or 'from' (for outgoing)
-  // WhatsApp chat ID format: phone@c.us (individual) or group-id@g.us (group)
-  const fromMe = data.key?.fromMe;
-  const phone = fromMe ? data.to : data.from;
-  return `${phone}@c.us`; // Assume individual chat for now
-}
-
-/**
- * Map Evolution message status to our Prisma enum values
- */
-function mapMessageStatus(evolutionStatus: string): string {
-  const mapped = EVOLUTION_TO_PRISMA_STATUS[evolutionStatus.toLowerCase()];
-  if (mapped) {
-    return mapped;
-  }
-
-  // Default fallback
-  console.warn(`Unknown Evolution status: ${evolutionStatus}`);
-  return 'PENDING';
-}
-
-/**
- * Convert Evolution event data to match our database schema fields
- */
-export function mapToDatabaseFields(
-  event: ParsedWebhookEvent,
-  orgId: string
-): Record<string, unknown> {
-  const base: Record<string, unknown> = {
-    orgId,
-    instanceId: event.instanceId,
-    messageId: event.messageId,
-    status: event.status,
-  };
-
-  if (event.chatId) base.chatId = event.chatId;
-  if (event.from) base.from = event.from;
-  if (event.to) base.to = event.to;
-  if (event.type) base.type = event.type;
-  if (event.content) base.content = event.content;
-
-  return base;
 }

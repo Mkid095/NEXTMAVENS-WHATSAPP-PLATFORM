@@ -1,33 +1,45 @@
 import React, { useEffect, useRef } from 'react';
-import { WhatsAppChat, WhatsAppMessage, useChatMessages, useSendMessage, useMarkRead } from '../hooks/useWhatsApp';
+import { WhatsAppChat, WhatsAppMessage } from '../types';
+import { useSendMessage, useMarkRead } from '../hooks/useMessages';
+import { useMessages } from '../hooks/useMessages'; // Real-time hook with WebSocket
 import { MessageBubble } from './MessageBubble';
 import { MessageInput } from './MessageInput';
-import { Loader2, Phone, Video, MoreVertical, Search, User, Users } from 'lucide-react';
+import { Loader2, Phone, Video, MoreVertical, Search, User, Users, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface ChatWindowProps {
   instanceId: string;
   chat: WhatsAppChat | null;
+  messages?: WhatsAppMessage[]; // Optional: passed from parent
 }
 
-export function ChatWindow({ instanceId, chat }: ChatWindowProps) {
-  const { data: messages, isLoading } = useChatMessages(instanceId, chat?.id || null);
-  const sendMessage = useSendMessage(instanceId);
-  const markRead = useMarkRead(instanceId);
+export function ChatWindow({ instanceId, chat, messages: propMessages }: ChatWindowProps) {
+  const { data: hookMessages, isLoading } = useMessages(instanceId, chat?.id || null);
+  const sendMessage = useSendMessage();
+  const markRead = useMarkRead();
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Use prop messages if provided, otherwise use hook messages
+  const messages = propMessages || hookMessages;
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
     if (chat?.unreadCount && chat.unreadCount > 0) {
-      markRead.mutate(chat.id);
+      markRead.mutate({
+        instanceId,
+        keys: [{ remoteJid: chat.id, fromMe: false }]
+      });
     }
-  }, [messages, chat, markRead]);
+  }, [messages, chat, markRead, instanceId]);
 
   const handleSendMessage = async (text: string) => {
     if (!chat) return;
-    await sendMessage.mutateAsync({ chatJid: chat.id, message: text });
+    await sendMessage.mutateAsync({
+      instanceId,
+      payload: { chatJid: chat.id, message: text }
+    });
   };
 
   if (!chat) {
@@ -115,5 +127,3 @@ export function ChatWindow({ instanceId, chat }: ChatWindowProps) {
     </div>
   );
 }
-
-import { MessageSquare } from 'lucide-react';

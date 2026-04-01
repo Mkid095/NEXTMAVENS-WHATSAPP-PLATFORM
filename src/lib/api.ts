@@ -1,6 +1,8 @@
 import axios from 'axios';
+import { normalizeError } from './errors/appError';
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
+// Use relative path; nginx proxies /api/v1 to backend
+const API_BASE = '/api/v1';
 
 export const api = axios.create({
   baseURL: API_BASE,
@@ -65,7 +67,7 @@ api.interceptors.response.use(
 
       const isResellerEndpoint = path.includes('/whatsapp/reseller/') && !path.includes('/token');
       if (isResellerEndpoint) {
-        return Promise.reject(error);
+        return Promise.reject(normalizeError(error));
       }
 
       console.error('[API Interceptor] 401 error on:', {
@@ -83,6 +85,6 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
-    return Promise.reject(error);
+    return Promise.reject(normalizeError(error));
   }
 );
