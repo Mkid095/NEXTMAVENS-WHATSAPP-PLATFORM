@@ -6,8 +6,10 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import type { QuotaLimiterOptions, QuotaResult, QuotaMetric, QuotaPeriod } from './types';
+import type { QuotaLimiterOptions, QuotaResult } from './types';
+import { QuotaMetric, QuotaPeriod } from './types';
 import { getPlanLimit, calculatePeriodStart, calculateResetAt } from './utils';
+import { PLAN_QUOTAS } from './constants';
 
 export class QuotaLimiter {
   private prisma: PrismaClient;
@@ -143,6 +145,83 @@ export class QuotaLimiter {
     } catch (error: any) {
       console.error('Quota reset error:', error);
       return false;
+    }
+  }
+
+  /**
+   * Get current usage value without incrementing
+   */
+  async getUsage(
+    orgId: string,
+    metric: QuotaMetric,
+    period: QuotaPeriod = QuotaPeriod.DAILY,
+    now: Date = new Date()
+  ): Promise<number> {
+    try {
+      const periodStart = calculatePeriodStart(period, now);
+      const usage = await this.prisma.quotaUsage.findFirst({
+        where: {
+          orgId,
+          metric,
+          period,
+          periodStart
+        },
+        select: { value: true }
+      });
+      return usage ? Number(usage.value) : 0;
+    } catch (error: any) {
+      console.error('Quota getUsage error:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get organizations approaching their limit (admin health check)
+   */
+  async getNearLimitOrgs(
+    thresholdPercent: number = 0.1
+  ): Promise<Array<{
+    orgId: string;
+    metric: QuotaMetric;
+    current: number;
+    limit: number;
+    remaining: number;
+    percentUsed: number;
+  }>> {
+    try {
+      const nearLimit: any[] = [];
+
+      // Fetch all orgs with their plans
+      const orgs = await this.prisma.organization.findMany({
+        select: { id: true, plan: true }
+      });
+
+      for (const org of orgs) {
+        const planLimits = PLAN_QUOTAS[org.plan as keyof typeof PLAN_QUOTAS];
+        if (!planLimits) continue;
+
+        for (const metric of Object.values(QuotaMetric)) {
+          const current = await this.getUsage(org.id, metric, QuotaPeriod.DAILY);
+          const limit = planLimits[metric];
+          const percentUsed = limit > 0 ? current / limit : 0;
+
+          if (percentUsed >= (1 - thresholdPercent)) {
+            nearLimit.push({
+              orgId: org.id,
+              metric,
+              current,
+              limit,
+              remaining: Math.max(0, limit - current),
+              percentUsed
+            });
+          }
+        }
+      }
+
+      return nearLimit;
+    } catch (error: any) {
+      console.error('getNearLimitOrgs error:', error);
+      return [];
     }
   }
 }

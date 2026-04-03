@@ -11,17 +11,30 @@ export * from './system';
 export * from './utils';
 export * from './types';
 
-// Also re-export the specific items that were previously imported
-// (these are already covered by the above, but explicit for clarity)
+// Re-export core services (from services)
 export {
   updateMessageStatus,
   validateTransition,
+} from './services';
+
+// Re-export query services
+export {
   getStatusHistory,
   getLatestStatus,
+} from './services';
+
+// Re-export metrics services
+export {
   getStatusMetrics,
   updateStatusMetrics,
-  setSocketService,
+} from './services';
+
+// Re-export system integration functions (from system)
+export {
   recordStatusChangeFromReceipt,
   recordDlqTransfer,
-  createStatusHistoryEntry
-} from './services';
+  createStatusHistoryEntry,
+} from './system';
+
+// Re-export socket utilities
+export { setSocketService, emitStatusChangeEvent } from './utils/socket.utils';

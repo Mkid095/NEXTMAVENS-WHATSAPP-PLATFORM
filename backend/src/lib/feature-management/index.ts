@@ -32,3 +32,16 @@ export type {
   FeatureCheckResult,
   FeatureFlagKey,
 } from './types';
+
+// ============================================================================
+// Singleton / Initialization
+// ============================================================================
+
+/**
+ * Initialize feature management system.
+ * Currently a no-op but exists for consistency and future extensibility.
+ */
+export async function initializeFeatureFlags(): Promise<void> {
+  // No initialization needed yet - prisma client is lazily instantiated
+  return Promise.resolve();
+}

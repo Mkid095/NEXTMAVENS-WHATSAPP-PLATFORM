@@ -3,7 +3,7 @@
  * CRUD operations for global feature flags
  */
 
-import { prisma } from '../prisma.js';
+import { prisma } from '../../shared/database';
 import type { FeatureFlag, FeatureFlagKey } from './types';
 
 /**

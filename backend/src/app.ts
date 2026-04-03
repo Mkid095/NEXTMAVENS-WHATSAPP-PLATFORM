@@ -5,30 +5,32 @@
  */
 
 import Fastify from 'fastify';
-import { config } from './shared/config.js';
-import logger from './shared/logger.js';
-import { getPrisma } from './shared/database.js';
+import type { FastifyInstance } from 'fastify';
+import { config } from './shared/config';
+import logger from './shared/logger';
+import { getPrisma } from './shared/database';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rawBody from 'fastify-raw-body';
 
 // Infrastructure initialization functions
-import { initializeRateLimiter } from './lib/rate-limiting-with-redis/index.js';
-import { initializeQuotaLimiter } from './lib/implement-quota-enforcement-middleware/index.js';
-import { setupMetrics } from './lib/create-comprehensive-metrics-dashboard-(grafana)/index.js';
-import { initializeIdempotency, registerOnSendHook } from './lib/implement-idempotency-key-system/index.js';
-import { initializeRetryDlqSystem } from './lib/message-retry-and-dlq-system/index.js';
-import { initializeFeatureFlags } from './lib/feature-management/index.js';
-import { initializeEvolutionClient } from './lib/evolution-api-client/instance.js';
+import { initializeRateLimiter } from './lib/rate-limiting-with-redis';
+import { initializeQuotaLimiter } from './lib/implement-quota-enforcement-middleware';
+import { setupMetrics } from './lib/create-comprehensive-metrics-dashboard-(grafana)';
+import { initializeIdempotency, registerOnSendHook } from './lib/implement-idempotency-key-system';
+import { initializeRetryDlqSystem } from './lib/message-retry-and-dlq-system';
+import { initializeFeatureFlags } from './lib/feature-management';
+import { initializeEvolutionClient } from './lib/evolution-api-client/instance';
 
 // Middleware (from shared/middleware)
-import { authMiddleware } from './shared/middleware/auth.js';
-import { orgGuard } from './shared/middleware/orgGuard.js';
-import { rateLimitCheck } from './shared/middleware/rateLimit.js';
-import { quotaCheck } from './shared/middleware/quota.js';
-import { throttleCheck } from './shared/middleware/throttle.js';
+import { authMiddleware } from './shared/middleware/auth';
+import { orgGuard } from './shared/middleware/orgGuard';
+import { rateLimitCheck } from './shared/middleware/rateLimit';
+import { quotaCheck } from './shared/middleware/quota';
+import { throttleCheck } from './shared/middleware/throttle';
+import { AppError } from './shared/errors';
 
-export async function buildServer(): Promise<Fastify.FastifyInstance> {
+export async function buildServer(): Promise<FastifyInstance> {
   const app = Fastify({
     logger: { level: config.LOG_LEVEL },
     disableRequestLogging: false,
@@ -104,22 +106,22 @@ export async function buildServer(): Promise<Fastify.FastifyInstance> {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
 
-  await app.register(rawBody, {
+  await app.register(rawBody as any, {
     global: true,
     bodyLimit: 1024 * 1024,
     ParseOptions: { limit: '1MB' },
-  });
+  } as any);
 
   // ============================================================================
   // GLOBAL MIDDLEWARE (order matters)
   // ============================================================================
 
   // Auth must be first to set request.user
-  app.addHook('preHandler', authMiddleware);
-  app.addHook('preHandler', orgGuard);
-  app.addHook('preHandler', rateLimitCheck);
-  app.addHook('preHandler', quotaCheck);
-  app.addHook('preHandler', throttleCheck);
+  app.addHook('preHandler', authMiddleware as any);
+  app.addHook('preHandler', orgGuard as any);
+  app.addHook('preHandler', rateLimitCheck as any);
+  app.addHook('preHandler', quotaCheck as any);
+  app.addHook('preHandler', throttleCheck as any);
 
   // ============================================================================
   // ERROR HANDLING
@@ -133,7 +135,6 @@ export async function buildServer(): Promise<Fastify.FastifyInstance> {
   });
 
   app.setErrorHandler((error, request, reply) => {
-    const { AppError } = require('./shared/errors.js');
     if (error instanceof AppError) {
       logger.warn(`[Error] ${error.code}: ${error.message}`, {
         url: request.url,
@@ -154,10 +155,7 @@ export async function buildServer(): Promise<Fastify.FastifyInstance> {
     });
   });
 
-  app.setInvalidBodyHandler((request, reply, payload) => {
-    logger.warn('[InvalidBody] Bad JSON', { payload });
-    reply.code(400).send({ error: 'VALIDATION_ERROR', message: 'Invalid JSON payload' });
-  });
+  // setInvalidBodyHandler removed (Fastify v4 uses default error handling)
 
   // ============================================================================
   // ROUTE REGISTRATION
@@ -169,46 +167,46 @@ export async function buildServer(): Promise<Fastify.FastifyInstance> {
   return app;
 }
 
-async function registerRoutes(app: Fastify.FastifyInstance): Promise<void> {
+async function registerRoutes(app: FastifyInstance): Promise<void> {
   const routeModules = [
     // Public
-    { mod: './app/api/create-comprehensive-health-check-endpoint/route.js', prefix: '' },
-    { mod: './app/api/auth/route.js', prefix: '/api/v1/auth' },
-    { mod: './app/api/integrate-evolution-api-message-status-webhooks/route.js', prefix: '/api/v1/webhooks' },
+    { mod: './app/api/create-comprehensive-health-check-endpoint/route', prefix: '' },
+    { mod: './app/api/auth/route', prefix: '/api/v1/auth' },
+    { mod: './app/api/integrate-evolution-api-message-status-webhooks/route', prefix: '/api/v1/webhooks' },
 
     // Core features
-    { mod: './app/api/whatsapp-instances/index.js', prefix: '/api/v1/whatsapp' },
-    { mod: './app/api/whatsapp-groups/route.js', prefix: '/api/v1/whatsapp' },
-    { mod: './app/api/whatsapp-templates/route.js', prefix: '/api/v1/whatsapp' },
-    { mod: './app/api/messages/route.js', prefix: '/api/v1' },
-    { mod: './app/api/whatsapp-analytics/route.js', prefix: '/api/v1/analytics' },
+    { mod: './app/api/whatsapp-instances/index', prefix: '/api/v1/whatsapp/instances' },
+    { mod: './app/api/whatsapp-groups/route', prefix: '/api/v1/whatsapp/groups' },
+    { mod: './app/api/whatsapp-templates/route', prefix: '/api/v1/whatsapp/templates' },
+    { mod: './app/api/messages/route', prefix: '/api/v1' },
+    { mod: './app/api/whatsapp-analytics/route', prefix: '/api/v1/whatsapp/analytics' },
 
     // Billing
-    { mod: './app/api/build-billing-admin-dashboard/route.js', prefix: '/api/v1/billing' },
-    { mod: './app/api/implement-usage-based-billing-&-overage/route.js', prefix: '/api/v1/billing' },
-    { mod: './app/api/build-coupon-&-discount-system/route.js', prefix: '/api/v1/billing' },
-    { mod: './app/api/tax-integration/route.js', prefix: '/api/v1/billing' },
-    { mod: './app/api/implement-card-updates-&-payment-method-management/route.js', prefix: '/api/v1/billing' },
-    { mod: './app/api/build-invoice-generation-&-download/route.js', prefix: '/api/v1/admin' },
+    { mod: './app/api/build-billing-admin-dashboard/route', prefix: '/api/v1/billing' },
+    { mod: './app/api/implement-usage-based-billing-&-overage/route', prefix: '/api/v1/billing' },
+    { mod: './app/api/build-coupon-&-discount-system/route', prefix: '/api/v1/billing' },
+    { mod: './app/api/tax-integration/route', prefix: '/api/v1/billing' },
+    { mod: './app/api/implement-card-updates-&-payment-method-management/route', prefix: '/api/v1/billing' },
+    { mod: './app/api/build-invoice-generation-&-download/route', prefix: '/api/v1/admin/invoices' },
 
     // Admin
-    { mod: './app/api/admin/route.js', prefix: '/api/v1/admin' },
-    { mod: './app/api/admin/features/route.js', prefix: '/api/v1/admin' },
-    { mod: './app/api/enforce-2fa-for-privileged-roles/route.js', prefix: '/api/v1/admin' },
-    { mod: './app/api/rate-limiting-with-redis/route.js', prefix: '/api/v1/admin' },
-    { mod: './app/api/create-comprehensive-metrics-dashboard-(grafana)/route.js', prefix: '/api/v1/admin' },
-    { mod: './app/api/message-status-tracking/route.js', prefix: '/api/v1' },
-    { mod: './app/api/implement-instance-heartbeat-monitoring/instance.route.js', prefix: '/api/v1/whatsapp' },
-    { mod: './app/api/implement-instance-heartbeat-monitoring/admin.route.js', prefix: '/api/v1/admin' },
-    { mod: './app/api/implement-message-deduplication-system/route.js', prefix: '/api/v1' },
-    { mod: './app/api/chat-pagination/route.js', prefix: '/api/v1' },
-    { mod: './app/api/message-retry-and-dlq/route.js', prefix: '/api/v1' },
-    { mod: './app/api/add-advanced-phone-number-validation/route.js', prefix: '/api/v1' },
-    { mod: './app/api/workflow-orchestration/route.js', prefix: '/api/v1' },
-    { mod: './app/api/whatsapp-agents/route.js', prefix: '/api/v1/whatsapp' },
-    { mod: './app/api/whatsapp-assignments/route.js', prefix: '/api/v1/whatsapp' },
-    { mod: './app/api/whatsapp-reseller/route.js', prefix: '/api/v1/whatsapp' },
-    { mod: './app/api/whatsapp-webhook-deliveries/route.js', prefix: '/api/v1/whatsapp' },
+    { mod: './app/api/admin/route', prefix: '/api/v1/admin' },
+    { mod: './app/api/admin/features/route', prefix: '/api/v1/admin' },
+    { mod: './app/api/enforce-2fa-for-privileged-roles/route', prefix: '/api/v1/admin/2fa' },
+    { mod: './app/api/rate-limiting-with-redis/route', prefix: '/api/v1/admin/rate-limiting' },
+    { mod: './app/api/create-comprehensive-metrics-dashboard-(grafana)/route', prefix: '/api/v1/admin' },
+    { mod: './app/api/message-status-tracking/route', prefix: '/api/v1' },
+    { mod: './app/api/implement-instance-heartbeat-monitoring/instance.route', prefix: '/api/v1/whatsapp/instances' },
+    { mod: './app/api/implement-instance-heartbeat-monitoring/admin.route', prefix: '/api/v1/admin/instances' },
+    { mod: './app/api/implement-message-deduplication-system/route', prefix: '/api/v1' },
+    { mod: './app/api/chat-pagination/route', prefix: '/api/v1' },
+    { mod: './app/api/message-retry-and-dlq/route', prefix: '/api/v1' },
+    { mod: './app/api/add-advanced-phone-number-validation/route', prefix: '/api/v1' },
+    { mod: './app/api/workflow-orchestration/route', prefix: '/api/v1' },
+    { mod: './app/api/whatsapp-agents/route', prefix: '/api/v1/whatsapp/agents' },
+    { mod: './app/api/whatsapp-assignments/route', prefix: '/api/v1/whatsapp/assignments' },
+    { mod: './app/api/whatsapp-reseller/route', prefix: '/api/v1/whatsapp/reseller' },
+    { mod: './app/api/whatsapp-webhook-deliveries/route', prefix: '/api/v1/whatsapp/webhook-deliveries' },
   ];
 
   for (const { mod, prefix } of routeModules) {
@@ -219,7 +217,7 @@ async function registerRoutes(app: Fastify.FastifyInstance): Promise<void> {
       logger.info('[Routes] Registered', { mod, prefix });
     } catch (error: any) {
       if (error.code === 'ERR_MODULE_NOT_FOUND') {
-        logger.warn('[Routes] Skipping (not found):', mod);
+        logger.warn('[Routes] Skipping (not found):', { mod });
       } else {
         logger.error('[Routes] Failed to load:', { mod, error: error.message });
       }

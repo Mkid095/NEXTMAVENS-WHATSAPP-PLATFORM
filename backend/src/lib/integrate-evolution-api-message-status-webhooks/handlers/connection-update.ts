@@ -3,7 +3,7 @@
  */
 
 import { prisma } from '../../prisma';
-import { broadcastToOrg } from './utils/broadcast';
+import { broadcastToOrg } from '../utils/broadcast';
 
 export async function handleConnectionUpdate(
   event: { instanceId: string; message?: string },

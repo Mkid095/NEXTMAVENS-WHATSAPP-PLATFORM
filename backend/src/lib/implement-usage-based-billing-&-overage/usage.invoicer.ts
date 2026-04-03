@@ -101,7 +101,7 @@ export async function generatePeriodInvoice(orgId: string, meterName: string): P
   } catch (error: any) {
     paymentApiCallsTotal.inc({ endpoint: 'paymentrequest.create', status: 'error' });
     const duration = (performance.now() - startTime) / 1000;
-    usageRecordingDuration.observe({ meter_name: meterName, error: error.message }, duration);
+    usageRecordingDuration.observe({ meter_name: meterName }, duration);
     throw error;
   }
 }

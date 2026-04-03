@@ -4,7 +4,7 @@
  */
 
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { getDlqMetrics } from '../../../lib/message-retry-and-dlq-system/dlq';
+import { getDlqMetrics } from '../../../../lib/message-retry-and-dlq-system/dlq';
 
 export async function getDlqMetricsHandler(request: FastifyRequest, reply: FastifyReply) {
   try {

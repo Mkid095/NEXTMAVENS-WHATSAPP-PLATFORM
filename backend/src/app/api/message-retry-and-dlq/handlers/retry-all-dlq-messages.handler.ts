@@ -11,8 +11,8 @@ import {
   getAllDlqStreamKeys,
   requeueFromDlq,
   getDlqStreamKey
-} from '../../../lib/message-retry-and-dlq-system/dlq';
-import { messageQueue } from '../../../lib/message-queue-priority-system';
+} from '../../../../lib/message-retry-and-dlq-system/dlq';
+import { messageQueue } from '../../../../lib/message-queue-priority-system';
 
 export async function retryAllDlqMessagesHandler(request: FastifyRequest, reply: FastifyReply) {
   try {

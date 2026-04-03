@@ -27,8 +27,11 @@ export { RateLimiterInstance } from './rate-limiter-instance.class';
 // Re-export factory
 export { createRateLimiter } from './rate-limiter-factory';
 
-// Re-export middleware
-export { rateLimitMiddleware, RateLimitMiddlewareOptions, generateIdentifier } from './middleware';
+// Re-export middleware (values)
+export { rateLimitMiddleware, generateIdentifier } from './middleware';
+
+// Re-export middleware types
+export type { RateLimitMiddlewareOptions } from './middleware';
 
 // Re-export singleton management
 export { initializeRateLimiter, getRateLimiter, shutdownRateLimiter } from './singleton';

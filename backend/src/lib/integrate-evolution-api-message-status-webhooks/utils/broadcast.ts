@@ -3,7 +3,7 @@
  * Helpers for sending Socket.IO events
  */
 
-import { getSocketService } from '../build-real-time-messaging-with-socket.io';
+import { getSocketService } from '../../build-real-time-messaging-with-socket.io';
 
 /**
  * Broadcast event to instance room (if socket service is available)

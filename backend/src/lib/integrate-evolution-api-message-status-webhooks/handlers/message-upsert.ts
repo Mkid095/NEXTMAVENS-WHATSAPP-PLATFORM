@@ -6,9 +6,9 @@
  */
 
 import { prisma } from '../../prisma';
-import { getSocketService } from '../build-real-time-messaging-with-socket.io';
-import { broadcastToInstance, broadcastToOrg } from './utils/broadcast';
-import { extractMessagePreview, ensureChatExists } from './utils/message-helpers';
+import { getSocketService } from '../../build-real-time-messaging-with-socket.io';
+import { broadcastToInstance, broadcastToOrg } from '../utils/broadcast';
+import { extractMessagePreview, ensureChatExists } from '../utils/message-helpers';
 
 export async function handleMessageUpsert(
   event: { messageId: string; chatId: string; from?: string; to?: string; type: string; content?: any; status?: string; instanceId: string; timestamp?: any },

@@ -5,60 +5,14 @@
  * Uses compound cursor (createdAt + id) for stable, performant queries.
  */
 
-import { PrismaClient } from '@prisma/client';
-import { decodeCursor, encodeCursor } from './cursor';
-import { getOrderBy, reverseItemsIfNeeded } from './order';
-import type { ChatCursor, PaginationDirection, ChatPaginationOptions, ChatPage } from './types';
 import { prisma } from '../prisma';
+import { decodeCursor } from './cursor';
+import { getOrderBy, reverseItemsIfNeeded } from './order';
+import type { ChatPaginationOptions, ChatPage } from './types';
+import { buildCursorWhere, buildStartAfterWhere, buildCursors } from './pagination.helpers';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
-
-/**
- * Build WHERE clause for cursor-based pagination.
- * Uses compound key (createdAt, id) for stable ordering.
- *
- * For 'next' (older chats): WHERE (createdAt < lastCreatedAt) OR (createdAt = lastCreatedAt AND id < lastId)
- * For 'prev' (newer chats): WHERE (createdAt > lastCreatedAt) OR (createdAt = lastCreatedAt AND id > lastId)
- */
-function buildCursorWhere(
-  cursor: ChatCursor,
-  direction: PaginationDirection,
-  orgId: string,
-  instanceId: string
-): any {
-  const { createdAt, id } = cursor;
-
-  if (direction === 'next') {
-    return {
-      orgId,
-      instanceId,
-      OR: [
-        { createdAt: { lt: new Date(createdAt) } },
-        {
-          AND: [
-            { createdAt: new Date(createdAt) },
-            { id: { lt: id } }
-          ]
-        }
-      ]
-    };
-  } else {
-    return {
-      orgId,
-      instanceId,
-      OR: [
-        { createdAt: { gt: new Date(createdAt) } },
-        {
-          AND: [
-            { createdAt: new Date(createdAt) },
-            { id: { gt: id } }
-          ]
-        }
-      ]
-    };
-  }
-}
 
 /**
  * Paginate chat messages for an organization and instance.
@@ -112,29 +66,7 @@ export async function paginateChats(
     whereClause = {
       orgId,
       instanceId,
-      ...(direction === 'next'
-        ? {
-            OR: [
-              { createdAt: { lt: referenceChat.createdAt } },
-              {
-                AND: [
-                  { createdAt: referenceChat.createdAt },
-                  { id: { lt: referenceChat.id } }
-                ]
-              }
-            ]
-          }
-        : {
-            OR: [
-              { createdAt: { gt: referenceChat.createdAt } },
-              {
-                AND: [
-                  { createdAt: referenceChat.createdAt },
-                  { id: { gt: referenceChat.id } }
-                ]
-              }
-            ]
-          })
+      ...(buildStartAfterWhere(startAfterChatId, direction, orgId, instanceId, referenceChat))
     };
   }
 
@@ -171,65 +103,12 @@ export async function paginateChats(
   const orderedItems = reverseItemsIfNeeded(pageItems, direction);
 
   // Build cursors
-  const firstItem = orderedItems[0];
-  const lastItem = orderedItems[orderedItems.length - 1];
-
-  let nextCursor: string | null = null;
-  let prevCursor: string | null = null;
-
-  if (hasMore && lastItem) {
-    const nextCursorObj: ChatCursor = {
-      createdAt: lastItem.createdAt.toISOString(),
-      id: lastItem.id
-    };
-    nextCursor = encodeCursor(nextCursorObj);
-  }
-
-  if (firstItem) {
-    // For 'prev' direction, we also need to check if there's data before this page
-    const hasPrevData = direction === 'prev' && hasMore;
-    if (hasPrevData) {
-      const prevCursorObj: ChatCursor = {
-        createdAt: firstItem.createdAt.toISOString(),
-        id: firstItem.id
-      };
-      prevCursor = encodeCursor(prevCursorObj);
-    } else if (direction === 'next' && cursor) {
-      const prevCursorObj: ChatCursor = {
-        createdAt: firstItem.createdAt.toISOString(),
-        id: firstItem.id
-      };
-      prevCursor = encodeCursor(prevCursorObj);
-    }
-  }
-
-  // Refine prev cursor for 'prev' direction when there are newer items
-  if (direction === 'prev' && cursor) {
-    if (hasMore) {
-      const newestItem = orderedItems[orderedItems.length - 1];
-      if (newestItem) {
-        const prevCursorObj: ChatCursor = {
-          createdAt: newestItem.createdAt.toISOString(),
-          id: newestItem.id
-        };
-        prevCursor = encodeCursor(prevCursorObj);
-      }
-    }
-  }
-
-  // For 'next' direction, prevCursor is simply the first item of current page
-  if (direction === 'next' && firstItem && !startAfterChatId) {
-    const prevCursorObj: ChatCursor = {
-      createdAt: firstItem.createdAt.toISOString(),
-      id: firstItem.id
-    };
-    prevCursor = encodeCursor(prevCursorObj);
-  }
+  const { nextCursor, prevCursor } = buildCursors(orderedItems, direction, cursor, startAfterChatId, hasMore);
 
   return {
     data: orderedItems,
-    nextCursor: hasMore ? nextCursor : null,
-    prevCursor: prevCursor && (direction === 'prev' ? hasMore : prevCursor !== null) ? prevCursor : null,
+    nextCursor,
+    prevCursor,
     hasMore
   };
 }

@@ -37,19 +37,19 @@ export {
 } from './admin.service';
 
 // singleton instance
-import { checkThrottle, getStatus, resetThrottle } from './throttle.engine';
+import { checkThrottle, getStatus } from './throttle.engine';
 import { configManager } from './config.manager';
-import { getMetrics, resetMetrics, getMetrics as _getMetrics, resetMetrics as _resetMetrics } from './admin.service';
-import { loadConfigs } from './config.manager';
+import { getMetrics, resetMetrics } from './admin.service';
+import { resetThrottle } from './admin.service';
 
 const whatsAppMessageThrottle = {
   check: checkThrottle,
   getStatus,
   setConfig: configManager.setConfig.bind(configManager),
   reset: resetThrottle,
-  getMetrics: _getMetrics,
-  resetMetrics: _resetMetrics,
-  loadConfigs,
+  getMetrics,
+  resetMetrics,
+  loadConfigs: configManager.loadConfigs.bind(configManager),
 };
 
 export { whatsAppMessageThrottle };
@@ -58,8 +58,8 @@ export { whatsAppMessageThrottle };
 if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
   (whatsAppMessageThrottle as any)._internal = {
     configManager,
-    getMetrics: _getMetrics,
-    resetMetrics: _resetMetrics,
+    getMetrics,
+    resetMetrics,
     resetForTests: () => {
       configManager.getAllConfigs().clear();
       // re-init default

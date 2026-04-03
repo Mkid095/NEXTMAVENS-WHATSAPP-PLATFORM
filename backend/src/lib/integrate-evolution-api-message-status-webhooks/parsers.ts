@@ -4,7 +4,7 @@
  * Main entry point for parsing Evolution API webhook payloads.
  */
 
-import type { EvolutionWebhookPayload, ParsedWebhookEvent } from './types';
+import type { ParsedWebhookEvent, EvolutionWebhookPayload } from './types';
 import {
   EvolutionEventData,
   MessageUpsertData,
@@ -12,6 +12,7 @@ import {
   MessageDeleteData,
   ConnectionUpdateData,
   QRCodeUpdateData,
+  SendMessageData,
 } from './types';
 import * as helpers from './parsers.helpers';
 
@@ -41,7 +42,7 @@ export function parseWebhookPayload(
       return helpers.parseQRCodeUpdate(instanceId, data as QRCodeUpdateData, timestampMs);
 
     case 'SEND_MESSAGE':
-      return helpers.parseSendMessage(instanceId, data, timestampMs);
+      return helpers.parseSendMessage(instanceId, data as SendMessageData, timestampMs);
 
     case 'APPLICATION_STARTUP':
       return {

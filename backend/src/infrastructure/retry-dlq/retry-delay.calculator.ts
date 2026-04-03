@@ -27,7 +27,8 @@ export function calculateRetryDelay(
   return {
     delayMs: Math.floor(delayMs),
     attempt,
-    jitter: jitterAmount * jitterSign
+    jitter: jitterAmount * jitterSign,
+    maxAttempts: policy.maxRetries
   };
 }
 

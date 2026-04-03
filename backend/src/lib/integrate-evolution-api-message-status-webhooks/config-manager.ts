@@ -51,7 +51,7 @@ export function ensureInitialized(): void {
 /**
  * Get the retry policy from configuration or use default
  */
-export function getRetryPolicy(): ReturnType<typeof DEFAULT_RETRY_POLICY> {
+export function getRetryPolicy(): typeof DEFAULT_RETRY_POLICY {
   if (config?.retryPolicy) {
     return {
       id: 'webhook-configured',

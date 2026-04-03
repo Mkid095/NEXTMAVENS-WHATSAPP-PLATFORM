@@ -6,7 +6,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { ZodError } from 'zod';
 import { dlqQuerySchema } from '../schemas';
-import { listDlqEntries } from '../../../lib/message-retry-and-dlq-system/dlq';
+import { listDlqEntries } from '../../../../lib/message-retry-and-dlq-system/dlq';
 
 export async function listDlqMessagesHandler(request: FastifyRequest, reply: FastifyReply) {
   try {

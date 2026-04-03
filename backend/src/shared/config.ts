@@ -91,7 +91,7 @@ export function getConfig(): Config {
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error('[Config] Environment validation failed:');
-      error.errors.forEach(err => {
+      error.issues.forEach(err => {
         console.error(`  ${err.path.join('.')}: ${err.message}`);
       });
       throw new Error('Invalid environment configuration');
@@ -99,6 +99,9 @@ export function getConfig(): Config {
     throw error;
   }
 }
+
+// Export config as a singleton for convenience (matches existing usage pattern)
+export const config = getConfig();
 
 export function getSocketPath(): string {
   const config = getConfig();

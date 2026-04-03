@@ -3,7 +3,7 @@
  * CRUD operations for org-specific feature flag overrides
  */
 
-import { prisma } from '../prisma.js';
+import { prisma } from '../../shared/database';
 import type { OrganizationFeatureFlag, FeatureFlagKey } from './types';
 
 /**

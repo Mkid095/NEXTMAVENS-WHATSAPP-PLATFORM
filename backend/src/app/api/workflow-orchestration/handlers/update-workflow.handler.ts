@@ -6,7 +6,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { ZodError } from 'zod';
 import { workflowDefinitionSchema } from '../schemas';
-import { updateWorkflowDefinition } from '../../../lib/workflow-orchestration';
+import { updateWorkflowDefinition } from '../../../../lib/workflow-orchestration';
 
 export async function updateWorkflowHandler(request: FastifyRequest, reply: FastifyReply) {
   try {

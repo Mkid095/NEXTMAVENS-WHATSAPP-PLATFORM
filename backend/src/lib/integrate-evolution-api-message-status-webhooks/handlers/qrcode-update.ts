@@ -3,13 +3,13 @@
  */
 
 import { prisma } from '../../prisma';
-import { broadcastToInstance } from './utils/broadcast';
+import { broadcastToInstance } from '../utils/broadcast';
 
 export async function handleQRCodeUpdate(
   event: { instanceId: string; qrCode: string; status?: string },
   orgId: string
 ): Promise<{ success: boolean; result?: string; error?: string }> {
-  const { instanceId, qrCode } = event;
+  const { instanceId, qrCode, status } = event;
 
   if (!qrCode) {
     return { success: false, error: 'QR code data missing in webhook payload' };

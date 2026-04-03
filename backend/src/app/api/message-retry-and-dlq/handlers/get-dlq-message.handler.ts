@@ -4,7 +4,7 @@
  */
 
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { getDlqEntry, getDlqStreamKey } from '../../../lib/message-retry-and-dlq-system/dlq';
+import { getDlqEntry, getDlqStreamKey } from '../../../../lib/message-retry-and-dlq-system/dlq';
 
 export async function getDlqMessageHandler(request: FastifyRequest, reply: FastifyReply) {
   try {

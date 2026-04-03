@@ -13,47 +13,53 @@
  */
 
 // ============================================================================
-// Re-exports from split modules
+// Imports for local use and re-exports
 // ============================================================================
 
-// Types
-export * from './types';
+// Types - re-export all
+export * from './types.ts';
 
 // Status utilities
-export {
+import {
   calculateInstanceStatus,
-  isInstanceOnline as checkInstanceOnline,
-} from './status';
+  isInstanceOnline as isInstanceOnlineAlias,
+} from './status.ts';
+export { calculateInstanceStatus, isInstanceOnlineAlias as checkInstanceOnline };
 
 // Redis client management
-export {
+import {
   setRedisClient,
   shutdownRedisClient,
   getRedisClient,
-} from './redis.client';
+} from './redis.client.ts';
+export { setRedisClient, shutdownRedisClient, getRedisClient };
 
 // Heartbeat operations
-export {
+import {
   recordHeartbeat,
   getInstanceLastSeen,
-} from './heartbeat.operations';
+} from './heartbeat.operations.ts';
+export { recordHeartbeat, getInstanceLastSeen };
 
 // Status queries
-export {
+import {
   getAllInstancesWithStatus,
-} from './status.queries';
+} from './status.queries.ts';
+export { getAllInstancesWithStatus };
 
 // Sync service
-export {
+import {
   syncInstanceStatuses,
-} from './sync.service';
+} from './sync.service.ts';
+export { syncInstanceStatuses };
 
 // Scheduler
-export {
+import {
   startHeartbeatScheduler,
   stopHeartbeatScheduler,
   triggerSync,
-} from './scheduler';
+} from './scheduler.ts';
+export { startHeartbeatScheduler, stopHeartbeatScheduler, triggerSync };
 
 // ============================================================================
 // Public API convenience functions

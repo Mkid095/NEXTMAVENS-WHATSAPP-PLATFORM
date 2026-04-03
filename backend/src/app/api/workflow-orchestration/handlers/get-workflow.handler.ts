@@ -4,7 +4,7 @@
  */
 
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { getWorkflowDefinition } from '../../../lib/workflow-orchestration';
+import { getWorkflowDefinition } from '../../../../lib/workflow-orchestration';
 
 export async function getWorkflowHandler(request: FastifyRequest, reply: FastifyReply) {
   try {

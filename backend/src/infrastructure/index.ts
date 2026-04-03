@@ -7,11 +7,11 @@
 
 // Rate Limiting
 export * from '../lib/rate-limiting-with-redis/index.js';
-export { initialize as initializeRateLimiter } from '../lib/rate-limiting-with-redis/index.js';
+export { initializeRateLimiter } from '../lib/rate-limiting-with-redis/index.js';
 
 // Quota Enforcement
 export * from '../lib/implement-quota-enforcement-middleware/index.js';
-export { initialize as initializeQuotaLimiter } from '../lib/implement-quota-enforcement-middleware/index.js';
+export { initializeQuotaLimiter } from '../lib/implement-quota-enforcement-middleware/index.js';
 
 // Metrics (Grafana/Prometheus)
 export * from '../lib/create-comprehensive-metrics-dashboard-(grafana)/index.js';
@@ -19,7 +19,7 @@ export { setupMetrics } from '../lib/create-comprehensive-metrics-dashboard-(gra
 
 // Idempotency
 export * from '../lib/implement-idempotency-key-system/index.js';
-export { initialize as initializeIdempotency, registerOnSendHook } from '../lib/implement-idempotency-key-system/index.js';
+export { initializeIdempotency, registerOnSendHook } from '../lib/implement-idempotency-key-system/index.js';
 
 // Retry & DLQ
 export * as RetryDlq from '../lib/message-retry-and-dlq-system/index.js';
@@ -27,7 +27,7 @@ export { initializeRetryDlqSystem } from '../lib/message-retry-and-dlq-system/in
 
 // Feature Flags
 export * from '../lib/feature-management/index.js';
-export { initialize as initializeFeatureFlags } from '../lib/feature-management/index.js';
+export { initializeFeatureFlags } from '../lib/feature-management/index.js';
 
 // Evolution API Client
 export * from '../lib/evolution-api-client/index.js';

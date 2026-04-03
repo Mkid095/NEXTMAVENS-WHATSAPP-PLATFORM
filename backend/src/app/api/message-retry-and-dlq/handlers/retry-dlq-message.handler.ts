@@ -4,8 +4,8 @@
  */
 
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { requeueFromDlq, getDlqStreamKey } from '../../../lib/message-retry-and-dlq-system/dlq';
-import { messageQueue } from '../../../lib/message-queue-priority-system';
+import { requeueFromDlq, getDlqStreamKey } from '../../../../lib/message-retry-and-dlq-system/dlq';
+import { messageQueue } from '../../../../lib/message-queue-priority-system';
 
 export async function retryDlqMessageHandler(request: FastifyRequest, reply: FastifyReply) {
   try {

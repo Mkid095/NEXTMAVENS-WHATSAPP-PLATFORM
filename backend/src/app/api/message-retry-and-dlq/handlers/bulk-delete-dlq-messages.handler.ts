@@ -11,7 +11,7 @@ import {
   getAllDlqStreamKeys,
   deleteDlqEntries,
   getDlqStreamKey
-} from '../../../lib/message-retry-and-dlq-system/dlq';
+} from '../../../../lib/message-retry-and-dlq-system/dlq';
 
 export async function bulkDeleteDlqMessagesHandler(request: FastifyRequest, reply: FastifyReply) {
   try {

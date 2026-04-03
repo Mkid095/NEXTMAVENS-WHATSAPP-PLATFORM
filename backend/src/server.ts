@@ -7,11 +7,11 @@
 
 import 'dotenv/config';
 
-import { buildServer } from './app.js';
-import { getConfig } from './shared/config.js';
-import { getPrismaSingleton, disconnectDatabase } from './shared/database.js';
-import logger from './shared/logger.js';
-import { initializeSocket, getSocketService } from './infrastructure/websocket.js';
+import { buildServer } from './app';
+import { getConfig } from './shared/config';
+import { getPrismaSingleton, disconnectDatabase } from './shared/database';
+import logger from './shared/logger';
+import { initializeSocket, getSocketService } from './infrastructure/websocket';
 
 async function main() {
   const config = getConfig();
@@ -33,7 +33,7 @@ async function main() {
 
   // Initialize Socket.IO with the HTTP server
   try {
-    await initializeSocket(server);
+    await initializeSocket(server as any);
     logger.info(`🔌 WebSocket endpoint: ${config.APP_URL.replace(/^https?/, 'ws')}/socket.io/`);
   } catch (error) {
     logger.error('[SocketIO] Initialization failed:', error);

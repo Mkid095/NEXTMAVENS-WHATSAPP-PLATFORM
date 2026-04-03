@@ -132,7 +132,7 @@ class SocketService {
         try {
           const instance = await prisma.whatsAppInstance.findUnique({
             where: { id: instanceId },
-            select: { id: true, orgId: true },
+            select: { id: true, orgId: true, status: true },
           });
 
           if (!instance) {

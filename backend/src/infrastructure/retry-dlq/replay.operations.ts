@@ -1,4 +1,5 @@
-import { listDlqEntries, requeueFromDlq } from './dlq.operations';
+import { listDlqEntries } from './list.operations';
+import { requeueFromDlq } from './requeue.operations';
 import { getDlqStreamKey } from './stream.operations';
 
 /**

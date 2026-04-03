@@ -51,11 +51,11 @@ export {
   getPriorityForType
 } from './enums';
 
-// Base types
-export { BaseJobData } from './base.types';
+// Base types (type-only)
+export type { BaseJobData } from './base.types';
 
-// Message job types
-export {
+// Message job types (type-only)
+export type {
   MessageUpsertJobData,
   MessageStatusUpdateJobData,
   MessageDeleteJobData
@@ -68,8 +68,8 @@ export {
   queueMessageDelete
 } from './message.producer';
 
-// Instance & Contact job types
-export {
+// Instance & Contact job types (type-only)
+export type {
   InstanceStatusUpdateJobData,
   ContactUpdateJobData
 } from './instance.contact.types';
@@ -80,8 +80,8 @@ export {
   queueContactUpdate
 } from './instance.producer';
 
-// Analytics & Webhook job types
-export {
+// Analytics & Webhook job types (type-only)
+export type {
   AnalyticsEventJobData,
   WebhookEventJobData
 } from './analytics.webhook.types';
@@ -92,8 +92,8 @@ export {
   queueCriticalAlert
 } from './analytics.producer';
 
-// Maintenance job types
-export {
+// Maintenance job types (type-only)
+export type {
   DatabaseCleanupJobData,
   CacheRefreshJobData
 } from './maintenance.types';
@@ -104,8 +104,8 @@ export {
   queueCacheRefresh
 } from './maintenance.producer';
 
-// Union types and aliases
-export {
+// Union types and aliases (type-only)
+export type {
   AnyQueueJobData,
   AnyQueueJob,
   QueueMetrics,

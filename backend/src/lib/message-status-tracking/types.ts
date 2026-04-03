@@ -5,6 +5,8 @@
 
 import { MessageStatus } from '@prisma/client';
 
+export { MessageStatus } from '@prisma/client';
+
 // ============================================================================
 // Status Change Reason Types
 // ============================================================================

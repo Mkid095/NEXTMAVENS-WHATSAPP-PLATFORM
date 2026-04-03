@@ -47,7 +47,7 @@ export async function updateStatusMetrics(): Promise<void> {
 
     statusDistributionGauge.reset();
     for (const { status, _count } of counts) {
-      statusDistributionGauge.inc({ status, orgId: 'all' }, _count);
+      statusDistributionGauge.labels({ status, orgId: 'all' }).inc(_count.status);
     }
   } catch (error) {
     console.warn('[StatusMetrics] Failed to update metrics:', error);
@@ -146,7 +146,7 @@ export async function getStatusMetrics(orgId?: string): Promise<StatusMetrics> {
       const { statusDistributionGauge } = getOrCreateMetrics();
       statusDistributionGauge.reset();
       for (const [status, count] of Object.entries(distribution)) {
-        statusDistributionGauge.inc({ status, orgId: 'global' }, count);
+        statusDistributionGauge.labels({ status, orgId: 'global' }).inc(count);
       }
     }
 

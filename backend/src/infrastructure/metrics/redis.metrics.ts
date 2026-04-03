@@ -2,7 +2,7 @@
  * Redis Metrics
  */
 
-import { Counter, Gauge } from 'prom-client';
+import { Counter, Gauge, Histogram } from 'prom-client';
 
 /**
  * Total Redis commands executed

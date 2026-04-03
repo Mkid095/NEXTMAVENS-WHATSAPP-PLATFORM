@@ -3,9 +3,9 @@
  */
 
 import { prisma } from '../../prisma';
-import { getSocketService } from '../build-real-time-messaging-with-socket.io';
-import { broadcastToInstance } from './utils/broadcast';
-import { extractMessagePreview } from './utils/message-helpers';
+import { getSocketService } from '../../build-real-time-messaging-with-socket.io';
+import { broadcastToInstance } from '../utils/broadcast';
+import { extractMessagePreview } from '../utils/message-helpers';
 import { recordStatusChangeFromReceipt } from '../../message-status-tracking/status-manager';
 
 export async function handleMessageUpdate(

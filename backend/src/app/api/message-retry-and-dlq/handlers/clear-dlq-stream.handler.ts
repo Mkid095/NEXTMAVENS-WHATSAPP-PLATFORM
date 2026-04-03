@@ -4,7 +4,7 @@
  */
 
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { clearDlqStream, getDlqStreamKey } from '../../../lib/message-retry-and-dlq-system/dlq';
+import { clearDlqStream, getDlqStreamKey } from '../../../../lib/message-retry-and-dlq-system/dlq';
 
 export async function clearDlqStreamHandler(request: FastifyRequest, reply: FastifyReply) {
   try {

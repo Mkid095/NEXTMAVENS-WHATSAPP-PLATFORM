@@ -3,7 +3,7 @@
  */
 
 import { prisma } from '../../prisma';
-import { broadcastToInstance } from './utils/broadcast';
+import { broadcastToInstance } from '../utils/broadcast';
 
 export async function handleMessageDelete(
   event: { messageId: string },

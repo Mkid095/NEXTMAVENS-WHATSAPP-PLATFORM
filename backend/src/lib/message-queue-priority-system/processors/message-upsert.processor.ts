@@ -5,7 +5,7 @@
  */
 
 import type { Job } from 'bullmq';
-import type { PrismaMessageStatus, PrismaMessageType } from '@prisma/client';
+import type { MessageStatus, MessageType } from '@prisma/client';
 import { prisma } from '../../prisma';
 import { getSocketService } from '../../build-real-time-messaging-with-socket.io';
 import { createStatusHistoryEntry } from '../../message-status-tracking/status-manager';
@@ -22,7 +22,7 @@ export async function processMessageUpsert(job: Job): Promise<void> {
   }
 
   const { messageId, chatId, instanceId, orgId, from, to, type, content, status, timestamp } = data;
-  let finalStatus: PrismaMessageStatus;
+  let finalStatus: MessageStatus;
 
   // Ensure chat exists
   await ensureChatExists(orgId, instanceId, chatId, from, to);
@@ -37,13 +37,13 @@ export async function processMessageUpsert(job: Job): Promise<void> {
         messageId,
         from: from ?? 'unknown',
         to: to ?? '',
-        type: type as PrismaMessageType,
+        type: type as MessageType,
         content: content ?? null,
-        status: (status ?? 'PENDING') as PrismaMessageStatus,
+        status: (status ?? 'PENDING') as MessageStatus,
         sentAt: timestamp ? new Date(timestamp) : new Date(),
       },
     });
-    finalStatus = (status ?? 'PENDING') as PrismaMessageStatus;
+    finalStatus = (status ?? 'PENDING') as MessageStatus;
 
     // Broadcast via WebSocket
     const socketService = getSocketService();
@@ -65,7 +65,7 @@ export async function processMessageUpsert(job: Job): Promise<void> {
       const existing = await prisma.whatsAppMessage.findUnique({ where: { id: messageId } });
       if (!existing) throw new Error(`Message ${messageId} claimed duplicate but not found`);
 
-      const newStatus = (status ?? existing.status) as PrismaMessageStatus;
+      const newStatus = (status ?? existing.status) as MessageStatus;
       await prisma.whatsAppMessage.update({
         where: { id: messageId },
         data: {

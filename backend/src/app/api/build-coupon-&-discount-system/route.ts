@@ -18,7 +18,7 @@ import {
   getCouponUsageStats,
   initializeDefaultCoupons,
 } from '../../../lib/build-coupon-&-discount-system';
-import { requireFeature } from '../../../middleware/featureCheck';
+import { requireFeature } from '../../../shared/middleware/featureCheck.js';
 
 // Validation schemas
 const createCouponSchema = z.object({

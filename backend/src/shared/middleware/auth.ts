@@ -1,7 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import type { FastifyError } from 'fastify';
+import { FastifyError } from 'fastify';
 import * as jwt from 'jsonwebtoken';
-import { prisma } from '../../lib/prisma.js';
+import { prisma } from '../../lib/prisma';
 
 /**
  * Authentication Middleware
@@ -13,77 +13,74 @@ import { prisma } from '../../lib/prisma.js';
  */
 export async function authMiddleware(
   request: FastifyRequest,
-  reply: FastifyReply,
-  done: (err?: Error | undefined) => void
+  reply: FastifyReply
 ): Promise<void> {
-  try {
-    // Extract token from Authorization header
-    const authHeader = request.headers.authorization as string | undefined;
+  // Public routes that don't require authentication
+  const publicRoutes = [
+    '/health',
+    '/metrics',
+    '/webhooks/evolution',
+  ];
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      done(new Error('Missing or invalid Authorization header') as any);
-      return;
-    }
+  // Check if current route is public
+  const path = request.url || '';
+  const isPublic = publicRoutes.some(route =>
+    path === route || path.startsWith(route + '/')
+  );
 
-    const token = authHeader.slice(7); // Remove 'Bearer ' prefix
-
-    // Verify JWT signature and expiration
-    const JWT_SECRET = process.env.JWT_SECRET;
-    if (!JWT_SECRET) {
-      throw new Error('JWT_SECRET environment variable not set');
-    }
-
-    const payload = jwt.verify(token, JWT_SECRET) as JwtPayload;
-
-    // Fetch user from database with essential data
-    console.log(`[Auth] Looking up user ${payload.userId}`);
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        isActive: true,
-        mfaEnabled: true, // Required for 2FA enforcement
-      },
-    });
-    console.log(`[Auth] User lookup result:`, user ? 'found' : 'not found');
-
-    if (!user) {
-      done(new Error('User not found') as any);
-      return;
-    }
-
-    if (!user.isActive) {
-      done(new Error('User account is deactivated') as any);
-      return;
-    }
-
-    // Attach orgId from JWT payload if present (used by orgGuard)
-    if (payload.orgId) {
-      (user as any).orgId = payload.orgId;
-    }
-
-    // Attach user to request object for downstream middleware/handlers
-    (request as any).user = user;
-
-    console.log('[Auth] Success, attaching user and calling done');
-    done();
-  } catch (error: any) {
-    // Handle specific JWT errors
-    if (error.name === 'JsonWebTokenError') {
-      done(new Error('Invalid token') as any);
-      return;
-    }
-    if (error.name === 'TokenExpiredError') {
-      done(new Error('Token expired') as any);
-      return;
-    }
-
-    console.error('Auth middleware error:', error);
-    done(error as any);
+  if (isPublic) {
+    return; // Skip authentication for public routes
   }
+
+  // Extract token from Authorization header
+  const authHeader = request.headers.authorization as string | undefined;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new Error('Missing or invalid Authorization header');
+  }
+
+  const token = authHeader.slice(7); // Remove 'Bearer ' prefix
+
+  // Verify JWT signature and expiration
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable not set');
+  }
+
+  const payload = jwt.verify(token, JWT_SECRET) as JwtPayload;
+
+  // Fetch user from database with essential data
+  console.log(`[Auth] Looking up user ${payload.userId}`);
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      isActive: true,
+      mfaEnabled: true, // Required for 2FA enforcement
+    },
+  });
+  console.log(`[Auth] User lookup result:`, user ? 'found' : 'not found');
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  if (!user.isActive) {
+    throw new Error('User account is deactivated');
+  }
+
+  // Attach orgId from JWT payload if present (used by orgGuard)
+  if (payload.orgId) {
+    (user as any).orgId = payload.orgId;
+  }
+
+  // Attach user to request object for downstream middleware/handlers
+  (request as any).user = user;
+
+  console.log('[Auth] Success, user attached');
 }
 
 /**
@@ -91,26 +88,24 @@ export async function authMiddleware(
  */
 export async function optionalAuth(
   request: FastifyRequest,
-  reply: FastifyReply,
-  done: (err?: FastifyError | undefined) => void
+  reply: FastifyReply
 ): Promise<void> {
+  const authHeader = request.headers.authorization as string | undefined;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // No token provided - continue without user
+    (request as any).user = null;
+    return;
+  }
+
+  const token = authHeader.slice(7);
+  const JWT_SECRET = process.env.JWT_SECRET;
+
+  if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET not configured');
+  }
+
   try {
-    const authHeader = request.headers.authorization as string | undefined;
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      // No token provided - continue without user
-      (request as any).user = null;
-      done();
-      return;
-    }
-
-    const token = authHeader.slice(7);
-    const JWT_SECRET = process.env.JWT_SECRET;
-
-    if (!JWT_SECRET) {
-      throw new Error('JWT_SECRET not configured');
-    }
-
     const payload = jwt.verify(token, JWT_SECRET) as JwtPayload;
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
@@ -122,12 +117,9 @@ export async function optionalAuth(
     } else {
       (request as any).user = null;
     }
-
-    done();
-  } catch (error: any) {
+  } catch (error) {
     // Silently ignore auth errors for optional routes
     (request as any).user = null;
-    done();
   }
 }
 

@@ -12,24 +12,36 @@
 
 export * from './types';
 
+// Core services
 export {
-  // Core services
   updateMessageStatus,
   validateTransition,
-  // Query services
-  getStatusHistory,
-  getLatestStatus,
-  // Metrics services
-  getStatusMetrics,
-  updateStatusMetrics,
-  // System integration
-  setSocketService,
-  recordStatusChangeFromReceipt,
-  recordDlqTransfer,
-  createStatusHistoryEntry
 } from './services';
 
-export { emitStatusChangeEvent } from './utils';
+// Query services
+export {
+  getStatusHistory,
+  getLatestStatus,
+} from './services';
+
+// Metrics services
+export {
+  getStatusMetrics,
+  updateStatusMetrics,
+} from './services';
+
+// System integration functions
+export {
+  recordStatusChangeFromReceipt,
+  recordDlqTransfer,
+  createStatusHistoryEntry,
+} from './system';
+
+// Socket utilities
+export {
+  setSocketService,
+  emitStatusChangeEvent,
+} from './utils/socket.utils';
 
 // Re-export types for convenience
 export { MessageStatus } from '@prisma/client';

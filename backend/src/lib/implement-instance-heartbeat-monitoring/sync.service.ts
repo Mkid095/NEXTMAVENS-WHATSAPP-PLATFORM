@@ -1,7 +1,7 @@
 import { prisma } from '../prisma';
-import { getRedisClient, HEARTBEAT_KEY_PREFIX } from './redis.client';
-import { DEFAULT_HEARTBEAT_CONFIG } from './types';
-import { broadcastStatusChange } from './broadcast.service';
+import { getRedisClient, HEARTBEAT_KEY_PREFIX } from './redis.client.ts';
+import { DEFAULT_HEARTBEAT_CONFIG } from './types.ts';
+import { broadcastStatusChange } from './broadcast.service.ts';
 
 // Import metrics
 import {

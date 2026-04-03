@@ -1,5 +1,5 @@
 import { Job } from 'bullmq';
-import type { AnyQueueJob } from '../message-queue-priority-system/types';
+import type { AnyQueueJob } from '../../lib/message-queue-priority-system/types';
 import { shouldRetry, shouldMoveToDlq } from './retry-evaluator';
 import { calculateRetryDelay } from './retry-delay.calculator';
 import { recordRetryAttempt, recordDlqMove } from './retry-metrics';
@@ -11,7 +11,7 @@ import {
   queueProcessingDuration,
   queueJobsCompletedTotal,
   queueJobsFailedTotal
-} from '../create-comprehensive-metrics-dashboard-(grafana)/index';
+} from '../../lib/create-comprehensive-metrics-dashboard-(grafana)/index';
 
 // Original processors (set by registration)
 let originalProcessors: Map<string, (job: Job<AnyQueueJob>) => Promise<void>> = new Map();

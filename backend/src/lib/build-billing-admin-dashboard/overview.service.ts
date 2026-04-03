@@ -4,6 +4,7 @@
  */
 
 import { prisma } from '../prisma';
+import type { BillingOverview } from './types';
 
 /**
  * Get overall billing overview metrics

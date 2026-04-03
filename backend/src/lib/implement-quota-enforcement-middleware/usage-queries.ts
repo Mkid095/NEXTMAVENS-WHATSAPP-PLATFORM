@@ -5,7 +5,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import type { QuotaMetric, QuotaPeriod } from './types';
+import { QuotaMetric, QuotaPeriod } from './types';
 import { calculatePeriodStart } from './utils';
 
 /**

@@ -4,7 +4,7 @@
  */
 
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { checkWorkflowHealth } from '../../../lib/workflow-orchestration';
+import { checkWorkflowHealth } from '../../../../lib/workflow-orchestration';
 
 export async function getWorkflowInstanceHealthHandler(request: FastifyRequest, reply: FastifyReply) {
   try {

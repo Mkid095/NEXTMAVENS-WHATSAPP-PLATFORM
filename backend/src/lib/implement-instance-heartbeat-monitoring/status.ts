@@ -1,4 +1,4 @@
-import { HeartbeatStatus, HeartbeatConfig, DEFAULT_HEARTBEAT_CONFIG } from './types';
+import { HeartbeatStatus, HeartbeatConfig, DEFAULT_HEARTBEAT_CONFIG } from './types.ts';
 
 export function calculateInstanceStatus(
   lastSeen: Date | null | undefined,

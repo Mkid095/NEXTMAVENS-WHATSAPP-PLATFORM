@@ -4,7 +4,7 @@
  */
 
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { updateWorkflowDefinition } from '../../../lib/workflow-orchestration';
+import { updateWorkflowDefinition } from '../../../../lib/workflow-orchestration';
 
 export async function deleteWorkflowHandler(request: FastifyRequest, reply: FastifyReply) {
   try {

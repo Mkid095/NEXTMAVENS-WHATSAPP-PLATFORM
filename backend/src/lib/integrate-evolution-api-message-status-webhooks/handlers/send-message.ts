@@ -2,7 +2,7 @@
  * Handle SEND_MESSAGE - Confirmation that a message was sent
  */
 
-import { broadcastToInstance } from './utils/broadcast';
+import { broadcastToInstance } from '../utils/broadcast';
 import { updateMessageStatus } from '../../message-status-tracking/status-manager';
 import { StatusChangeReason } from '../../message-status-tracking/types';
 

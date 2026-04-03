@@ -7,7 +7,7 @@
 import { prisma } from '../../prisma';
 import { MessageStatus } from '@prisma/client';
 import { StatusChangeReason, StatusUpdateRequest, StatusUpdateResponse } from '../types';
-import { setSocketService } from '../utils/socket.utils';
+import { setSocketService, emitStatusChangeEvent } from '../utils/socket.utils';
 import { isSuccessStatus } from '../types';
 
 // Optional metrics integration

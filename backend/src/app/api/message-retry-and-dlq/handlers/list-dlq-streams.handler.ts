@@ -4,7 +4,7 @@
  */
 
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { getAllDlqStreamKeys } from '../../../lib/message-retry-and-dlq-system/dlq';
+import { getAllDlqStreamKeys } from '../../../../lib/message-retry-and-dlq-system/dlq';
 
 export async function listDlqStreamsHandler(request: FastifyRequest, reply: FastifyReply) {
   try {
@@ -13,7 +13,7 @@ export async function listDlqStreamsHandler(request: FastifyRequest, reply: Fast
     // Group by message type and get counts
     const streams = await Promise.all(
       streamKeys.map(async (key) => {
-        const { getRedisClient } = await import('../../../lib/message-retry-and-dlq-system/dlq');
+        const { getRedisClient } = await import('../../../../lib/message-retry-and-dlq-system/dlq');
         const client = await getRedisClient();
         const count = await client.xlen(key);
         const parts = key.split(':');

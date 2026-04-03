@@ -4,7 +4,6 @@
 
 import type { RateLimitRule } from './types';
 import { RateLimiterInstance } from './instance.class';
-import { generateIdentifier } from './utils';
 
 export interface RateLimitMiddlewareOptions {
   /** Rate limiter instance */

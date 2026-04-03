@@ -1,4 +1,4 @@
-import { ErrorCategory } from './types';
+import { ErrorCategory } from './error-classification.types';
 
 // In-memory metrics tracking (could be replaced with Prometheus counters)
 const retryAttempts: Map<string, number[]> = new Map();

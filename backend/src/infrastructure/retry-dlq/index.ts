@@ -41,12 +41,6 @@ export {
 } from './dlq.types';
 
 export {
-  // Retry Policy Types
-  type RetryPolicy,
-  DEFAULT_RETRY_POLICIES
-} from './retry-policy.types';
-
-export {
   // Retry Delay Calculation
   calculateRetryDelay,
   formatRetryDelay

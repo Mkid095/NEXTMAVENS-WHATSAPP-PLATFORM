@@ -1,9 +1,9 @@
-import { Worker } from 'bullmq';
-import type { AnyQueueJob } from '../message-queue-priority-system/types';
+import { Worker, type Job } from 'bullmq';
+import type { AnyQueueJob } from '../../lib/message-queue-priority-system/types';
 import { redisConnectionOptions } from './dlq.config';
 import { initializeDlqConsumerGroups } from './admin.operations';
 import { closeRedisClient } from './dlq.redis.client';
-import { QUEUE_NAME, DEFAULT_CONCURRENCY } from '../message-queue-priority-system';
+import { QUEUE_NAME, DEFAULT_CONCURRENCY } from '../../lib/message-queue-priority-system';
 import { processJobEnhanced } from './worker.processor';
 
 let enhancedWorker: Worker | null = null;

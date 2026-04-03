@@ -1,6 +1,6 @@
 import { prisma } from '../prisma';
-import { HeartbeatMetrics, HeartbeatConfig, DEFAULT_HEARTBEAT_CONFIG } from './types';
-import { getRedisClient, HEARTBEAT_KEY_PREFIX, METRICS_KEY_PREFIX } from './redis.client';
+import { HeartbeatMetrics, HeartbeatConfig, DEFAULT_HEARTBEAT_CONFIG } from './types.ts';
+import { getRedisClient, HEARTBEAT_KEY_PREFIX, METRICS_KEY_PREFIX } from './redis.client.ts';
 
 // Import metrics
 import {
@@ -8,7 +8,7 @@ import {
   instanceHeartbeatAge,
 } from '../create-comprehensive-metrics-dashboard-(grafana)/index';
 
-import { broadcastStatusChange } from './broadcast.service';
+import { broadcastStatusChange } from './broadcast.service.ts';
 
 /**
  * Record a heartbeat from an instance

@@ -94,36 +94,33 @@ export async function recordUsage(input: RecordUsageInput): Promise<RecordUsageR
       },
     });
 
+    // Compute post-usage values
+    const currentAfter = currentUsage + input.value;
+    const remaining = Math.max(0, quota.includedUnits - currentAfter);
+    const overageAmountCents = quotaResult.estimatedOverageCostCents || 0;
+
     // Update gauges
-    currentUsageGauge.set(quotaResult.currentAfter, {
-      org_id: orgId,
-      meter_name: meterName,
-    });
-    quotaRemainingGauge.set(Math.max(0, quotaResult.remaining), {
-      org_id: orgId,
-      meter_name: meterName,
-    });
+    currentUsageGauge.labels(orgId, meterName).set(currentAfter);
+    quotaRemainingGauge.labels(orgId, meterName).set(remaining);
 
     const duration = performance.now() - startTime;
-    usageRecordingDuration.record(duration, { org_id: orgId, meter_name: meterName });
+    usageRecordingDuration.labels({ meter_name: meterName }).observe(duration);
 
     return {
       success: true,
-      usageEventId: usageEvent.id,
-      withinQuota: quotaResult.withinQuota,
-      remaining: quotaResult.remaining,
-      overageAmountCents: quotaResult.overageAmountCents,
+      eventId: usageEvent.id,
+      currentUsage: currentAfter,
+      quotaRemaining: remaining,
+      overageWarning: !quotaResult.withinQuota,
+      message: `Overage: ${overageAmountCents} cents`,
     };
   } catch (error: any) {
     const duration = performance.now() - startTime;
-    usageRecordingDuration.record(duration, { org_id: input.orgId, meter_name: meterName, error: error.message });
+    usageRecordingDuration.labels({ meter_name: meterName }).observe(duration);
 
     return {
       success: false,
-      error: error.message,
-      withinQuota: false,
-      remaining: 0,
-      overageAmountCents: 0,
+      message: error.message,
     };
   }
 }

@@ -32,6 +32,8 @@ export interface ConnectionUpdateData {
   instanceId: string;
   connection: string;
   status: string;
+  // Human-readable message often included by Evolution
+  message?: string;
 }
 
 /**
@@ -56,13 +58,22 @@ export interface MessageUpsertData {
     body: string;
     from: string;
   };
+  // Optional state/ack for status mapping
+  state?: string;
+  ack?: number;
+  // Additional media fields that may appear
+  mediaUrl?: string;
+  caption?: string;
+  fileName?: string;
+  mimeType?: string;
 }
 
 /**
  * Message update data (status change)
  */
 export interface MessageUpdateData {
-  messageId: string;
+  // Raw payload uses `id` for the WhatsApp message identifier
+  id: string;
   status: 'PENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED' | 'REJECTED';
 }
 
@@ -70,14 +81,14 @@ export interface MessageUpdateData {
  * Message delete data
  */
 export interface MessageDeleteData {
-  messageId: string;
+  id: string;
 }
 
 /**
  * Send message confirmation
  */
 export interface SendMessageData {
-  messageId: string;
+  id: string;
   status: 'success' | 'failure';
 }
 

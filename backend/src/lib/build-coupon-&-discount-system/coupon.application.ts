@@ -11,6 +11,7 @@ import type {
   Coupon,
 } from './types';
 import { validateCoupon } from './coupon.validation';
+import { getCoupon } from './coupon.management';
 
 /**
  * Apply a coupon to a purchase, recording usage

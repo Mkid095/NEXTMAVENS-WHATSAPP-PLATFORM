@@ -4,6 +4,7 @@
 
 import type { PrismaClient } from '@prisma/client';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import type { QuotaLimiter } from './quota-limiter.class';
 
 export enum QuotaMetric {
   MESSAGES_SENT = 'messages_sent',

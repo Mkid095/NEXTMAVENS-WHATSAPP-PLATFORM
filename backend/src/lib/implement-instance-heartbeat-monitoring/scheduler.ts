@@ -1,6 +1,6 @@
 import { Queue, Worker, Job } from 'bullmq';
 import { Redis } from 'ioredis';
-import { syncInstanceStatuses } from './storage';
+import { syncInstanceStatuses } from './sync.service.ts';
 
 // Import metrics
 import {

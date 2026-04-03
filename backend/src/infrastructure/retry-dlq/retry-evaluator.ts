@@ -1,6 +1,5 @@
 import type { Job } from 'bullmq';
-import { ErrorCategory } from './types';
-import { classifyError } from './error-classification.types';
+import { ErrorCategory, classifyError } from './error-classification.types';
 import type { RetryPolicy } from './retry-policy.types';
 import { getRetryPolicy } from './retry-policy.queries';
 

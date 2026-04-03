@@ -24,7 +24,7 @@ export { QuotaLimiter } from './quota-limiter.class';
 export { quotaMiddleware } from './middleware';
 
 // Re-export usage queries service
-export { getUsage } from './usage-queries.service';
+export { getUsage } from './usage-queries';
 
 // Re-export admin queries service
 export { getNearLimitOrgs } from './admin-queries.service';

@@ -4,7 +4,7 @@
  * Routes webhook events to appropriate handlers.
  */
 
-import { ParsedWebhookEvent } from './parsers';
+import type { ParsedWebhookEvent } from './types';
 import * as handlers from './handlers';
 
 /**
@@ -21,22 +21,22 @@ export async function dispatchWebhookHandler(
   try {
     switch (event.event) {
       case 'MESSAGES_UPSERT':
-        return await handlers.handleMessageUpsert(event, orgId);
+        return await handlers.handleMessageUpsert(event as any, orgId);
 
       case 'MESSAGES_UPDATE':
-        return await handlers.handleMessageUpdate(event, orgId);
+        return await handlers.handleMessageUpdate(event as any, orgId);
 
       case 'MESSAGES_DELETE':
-        return await handlers.handleMessageDelete(event, orgId);
+        return await handlers.handleMessageDelete(event as any, orgId);
 
       case 'CONNECTION_UPDATE':
         return await handlers.handleConnectionUpdate(event, orgId);
 
       case 'QRCODE_UPDATED':
-        return await handlers.handleQRCodeUpdate(event, orgId);
+        return await handlers.handleQRCodeUpdate(event as any, orgId);
 
       case 'SEND_MESSAGE':
-        return await handlers.handleSendMessage(event, orgId);
+        return await handlers.handleSendMessage(event as any, orgId);
 
       case 'APPLICATION_STARTUP':
         return await handlers.handleApplicationStartup(event, orgId);

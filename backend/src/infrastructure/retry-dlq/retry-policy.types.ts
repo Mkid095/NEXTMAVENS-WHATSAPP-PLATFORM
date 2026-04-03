@@ -3,6 +3,20 @@
  */
 
 /**
+ * Result of retry delay calculation
+ */
+export interface RetryDelayResult {
+  /** Delay in milliseconds before next retry */
+  delayMs: number;
+  /** Current attempt number (1-indexed) */
+  attempt: number;
+  /** Jitter amount applied (-1 to 1) */
+  jitter: number;
+  /** Max attempts for this job type */
+  maxAttempts: number;
+}
+
+/**
  * Configuration for retry behavior per message type
  */
 export interface RetryPolicy {

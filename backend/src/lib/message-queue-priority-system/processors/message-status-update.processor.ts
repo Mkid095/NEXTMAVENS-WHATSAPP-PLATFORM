@@ -5,7 +5,7 @@
  */
 
 import type { Job } from 'bullmq';
-import type { PrismaMessageStatus } from '@prisma/client';
+import type { MessageStatus } from '@prisma/client';
 import { prisma } from '../../prisma';
 import { getSocketService } from '../../build-real-time-messaging-with-socket.io';
 import { createStatusHistoryEntry } from '../../message-status-tracking/status-manager';
@@ -22,7 +22,7 @@ export async function processMessageStatusUpdate(job: Job): Promise<void> {
   }
 
   const { messageId, status, instanceId, chatId, orgId } = data;
-  const newStatus = status as PrismaMessageStatus;
+  const newStatus = status as MessageStatus;
 
   // Verify instance belongs to org
   const instance = await prisma.whatsAppInstance.findFirst({

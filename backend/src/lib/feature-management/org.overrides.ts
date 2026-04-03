@@ -27,7 +27,7 @@ export async function getOrgFeatureOverride(
 
   return {
     orgId: override.orgId,
-    featureKey: override.featureKey,
+    featureKey: override.featureKey as FeatureFlagKey,
     enabled: override.enabled,
   };
 }
@@ -72,7 +72,7 @@ export async function setOrgFeatureOverride(
 
   return {
     orgId: override.orgId,
-    featureKey: override.featureKey,
+    featureKey: override.featureKey as FeatureFlagKey,
     enabled: override.enabled,
   };
 }
@@ -88,7 +88,7 @@ export async function listOrgFeatureOverrides(orgId: string): Promise<Array<{ or
 
   return overrides.map(o => ({
     orgId: o.orgId,
-    featureKey: o.featureKey,
+    featureKey: o.featureKey as FeatureFlagKey,
     enabled: o.enabled,
   }));
 }

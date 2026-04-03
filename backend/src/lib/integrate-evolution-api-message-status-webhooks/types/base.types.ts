@@ -4,6 +4,23 @@
  * Core structures for Evolution API webhook payloads.
  */
 
+import {
+  ConnectionUpdateData,
+  MessageUpsertData,
+  MessageUpdateData,
+  MessageDeleteData,
+  SendMessageData,
+  QRCodeUpdateData,
+  ApplicationStartupData,
+  ContactData,
+  ChatData,
+  GroupData,
+  PresenceData,
+  NewTokenData,
+  TypebotStartData,
+  TypebotStatusData
+} from './event-data.types';
+
 /**
  * Main webhook payload from Evolution API
  */

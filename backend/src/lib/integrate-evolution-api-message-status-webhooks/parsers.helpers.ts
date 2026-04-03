@@ -5,7 +5,22 @@
  */
 
 import type { ParsedWebhookEvent } from './types';
-import { EvolutionEventData, MessageUpsertData, MessageUpdateData, MessageDeleteData, ConnectionUpdateData, QRCodeUpdateData } from './types';
+import type {
+  MessageUpsertData,
+  MessageUpdateData,
+  MessageDeleteData,
+  ConnectionUpdateData,
+  QRCodeUpdateData,
+  SendMessageData,
+} from './types';
+import type {
+  ParsedMessageUpsertEvent,
+  ParsedMessageUpdateEvent,
+  ParsedMessageDeleteEvent,
+  ParsedConnectionUpdateEvent,
+  ParsedQRCodeUpdateEvent,
+  ParsedSendMessageEvent,
+} from './types';
 
 /**
  * Parse MESSAGES_UPSERT event
@@ -14,12 +29,19 @@ export function parseMessageUpsert(
   instanceId: string,
   data: MessageUpsertData,
   timestampMs: number | undefined
-): ParsedWebhookEvent {
-  const { messageId, chatId, from, to, type, content, status } = data;
+): ParsedMessageUpsertEvent {
+  const { id, from, to, type, key, body, base64, state, mediaUrl, caption } = data;
+  // Derive chatId from key.remoteJid; fallback to from or to
+  const chatId = key?.remoteJid ?? from ?? to;
+  // Use body or base64 as content, or keep entire data for flexibility
+  const content = body ?? base64 ?? data;
+  // Map raw status (state/ack) to a string if needed
+  const status = state ?? (typeof (data as any).ack === 'number' ? String((data as any).ack) : undefined);
+
   return {
     event: 'MESSAGES_UPSERT',
     instanceId,
-    messageId,
+    messageId: id,
     chatId,
     from,
     to,
@@ -38,12 +60,12 @@ export function parseMessageUpdate(
   instanceId: string,
   data: MessageUpdateData,
   timestampMs: number | undefined
-): ParsedWebhookEvent {
-  const { messageId, status } = data;
+): ParsedMessageUpdateEvent {
+  const { id, status } = data;
   return {
     event: 'MESSAGES_UPDATE',
     instanceId,
-    messageId,
+    messageId: id,
     status,
     timestamp: timestampMs,
     data,
@@ -57,12 +79,12 @@ export function parseMessageDelete(
   instanceId: string,
   data: MessageDeleteData,
   timestampMs: number | undefined
-): ParsedWebhookEvent {
-  const { messageId } = data;
+): ParsedMessageDeleteEvent {
+  const { id } = data;
   return {
     event: 'MESSAGES_DELETE',
     instanceId,
-    messageId,
+    messageId: id,
     timestamp: timestampMs,
     data,
   };
@@ -75,11 +97,14 @@ export function parseConnectionUpdate(
   instanceId: string,
   data: ConnectionUpdateData,
   timestampMs: number | undefined
-): ParsedWebhookEvent {
+): ParsedConnectionUpdateEvent {
+  const { status, message: rawMessage } = data as any;
+  // Build a message like "status changed to: CONNECTED" if raw message missing
+  const message = rawMessage ?? `status changed to: ${status}`;
   return {
     event: 'CONNECTION_UPDATE',
     instanceId,
-    message: data.message,
+    message,
     timestamp: timestampMs,
     data,
   };
@@ -92,7 +117,7 @@ export function parseQRCodeUpdate(
   instanceId: string,
   data: QRCodeUpdateData,
   timestampMs: number | undefined
-): ParsedWebhookEvent {
+): ParsedQRCodeUpdateEvent {
   const { qrCode, status } = data;
   return {
     event: 'QRCODE_UPDATED',
@@ -109,14 +134,14 @@ export function parseQRCodeUpdate(
  */
 export function parseSendMessage(
   instanceId: string,
-  data: any,
+  data: SendMessageData,
   timestampMs: number | undefined
-): ParsedWebhookEvent {
-  const { messageId, status } = data;
+): ParsedSendMessageEvent {
+  const { id, status } = data;
   return {
     event: 'SEND_MESSAGE',
     instanceId,
-    messageId,
+    messageId: id,
     status,
     timestamp: timestampMs,
     data,

@@ -1,6 +1,6 @@
 import { prisma } from '../prisma';
-import { getRedisClient, HEARTBEAT_KEY_PREFIX } from './redis.client';
-import { DEFAULT_HEARTBEAT_CONFIG } from './types';
+import { getRedisClient, HEARTBEAT_KEY_PREFIX } from './redis.client.ts';
+import { DEFAULT_HEARTBEAT_CONFIG } from './types.ts';
 
 /**
  * Get all instances with their current status

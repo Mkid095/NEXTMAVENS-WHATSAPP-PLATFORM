@@ -7,7 +7,7 @@
 import type { Job } from 'bullmq';
 import { prisma } from '../../prisma';
 import { getSocketService } from '../../build-real-time-messaging-with-socket.io';
-import type { PrismaInstanceStatus } from '@prisma/client';
+import type { InstanceStatus } from '@prisma/client';
 
 /**
  * Process an instance status update job
@@ -34,7 +34,7 @@ export async function processInstanceStatusUpdate(job: Job): Promise<void> {
   await prisma.whatsAppInstance.update({
     where: { id: instanceId },
     data: {
-      status: status.toUpperCase() as PrismaInstanceStatus,
+      status: status.toUpperCase() as InstanceStatus,
       lastSeen: new Date()
     }
   });

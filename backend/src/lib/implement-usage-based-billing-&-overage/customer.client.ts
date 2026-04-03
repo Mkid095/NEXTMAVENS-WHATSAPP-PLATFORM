@@ -18,7 +18,7 @@ export async function getOrCreateCustomer(
 ): Promise<{ id: number; customer_code: string; email: string }> {
   // First, try to find existing customer by email
   try {
-    const searchResult = await paystackRequest<{ data: PaystackCustomer[] }>(
+    const searchResult = await paystackRequest<PaystackCustomer[]>(
       `/customer?email=${encodeURIComponent(email)}`,
       'GET'
     );
@@ -44,7 +44,7 @@ export async function getOrCreateCustomer(
   if (lastName) createData.last_name = lastName;
   if (phone) createData.phone = phone;
 
-  const createResult = await paystackRequest<{ data: PaystackCustomer }>('/customer', 'POST', createData);
+  const createResult = await paystackRequest<PaystackCustomer>('/customer', 'POST', createData);
 
   const customer = createResult.data;
   return {
